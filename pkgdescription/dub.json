@@ -1,0 +1,8 @@
+{
+	"name": "pkgdescription",
+	"targetType": "library",
+	"dependencies" : {
+		"semver": { "path" : "../semver" },
+		"path": { "path" : "../path" }
+	}
+}
