@@ -8,7 +8,7 @@ module dud.semver;
 	Semantic Versioning Specification v2.0.0 at http://semver.org/).
 */
 struct SemVer {
-@safe:
+@safe pure:
 	import dud.semver.operations;
 	private {
 		static immutable MAX_VERS = "99999.0.0";
