@@ -10,18 +10,19 @@ module dud.semver;
 struct SemVer {
 @safe pure:
 	import dud.semver.operations;
-	private {
+	public {
 		static immutable MAX_VERS = "99999.0.0";
 		static immutable UNKNOWN_VERS = "unknown";
 		static immutable masterString = "~master";
 		enum branchPrefix = '~';
-		string m_version;
+
+		static immutable SemVer minRelease = SemVer("0.0.0");
+		static immutable SemVer maxRelease = SemVer(MAX_VERS);
+		static immutable SemVer masterBranch = SemVer(masterString);
+		static immutable SemVer unknown = SemVer(UNKNOWN_VERS);
 	}
 
-	static immutable SemVer minRelease = SemVer("0.0.0");
-	static immutable SemVer maxRelease = SemVer(MAX_VERS);
-	static immutable SemVer masterBranch = SemVer(masterString);
-	static immutable SemVer unknown = SemVer(UNKNOWN_VERS);
+	string m_version;
 
 	/** Constructs a new `SemVer` from its string representation.
 	*/

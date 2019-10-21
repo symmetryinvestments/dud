@@ -2,6 +2,9 @@ module dud.pkgdescription;
 
 import dud.path;
 import dud.semver;
+import pkgdescription.versionspecifier;
+
+@safe pure:
 
 enum TargetType {
 	autodetect,
@@ -31,7 +34,7 @@ struct PackageDescription {
 	string[] authors;
 	string copyright;
 	string license;
-	string[] dependencies;
+	Dependency[string] dependencies;
 
 	TargetType targetType;
 	Path targetPath;
@@ -55,4 +58,12 @@ struct PackageDescription {
 	string[] preRunCommands; /// Commands to execute prior to every run
 	string[] postRunCommands; /// Commands to execute after every run
 	PackageDescription[] configurations;
+}
+
+struct Dependency {
+	import std.typecons : Nullable;
+	VersionSpecifier version_;
+	Nullable!Path path;
+	Nullable!bool optional;
+	Nullable!bool default_;
 }
