@@ -2,7 +2,7 @@ module dud.pkgdescription;
 
 import dud.path;
 import dud.semver;
-import pkgdescription.versionspecifier;
+import dud.pkgdescription.versionspecifier;
 
 @safe pure:
 

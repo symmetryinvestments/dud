@@ -1,4 +1,4 @@
-module pkgdescription.versionspecifier;
+module dud.pkgdescription.versionspecifier;
 
 import std.exception : enforce;
 

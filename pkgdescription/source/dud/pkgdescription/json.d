@@ -113,7 +113,7 @@ Dependency extractDependency(ref JSONValue jv) {
 }
 
 Dependency extractDependencyStr(ref JSONValue jv) {
-	import pkgdescription.versionspecifier : parseVersionSpecifier;
+	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
 	enforce(jv.type == JSONType.string, 
 			format("Expected an string not a %s while extracting a dependency", 
@@ -125,7 +125,7 @@ Dependency extractDependencyStr(ref JSONValue jv) {
 }
 
 Dependency extractDependencyObj(ref JSONValue jv) {
-	import pkgdescription.versionspecifier : parseVersionSpecifier;
+	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
 	enforce(jv.type == JSONType.object, 
 			format("Expected an object not a %s while extracting a dependency", 
