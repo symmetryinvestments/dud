@@ -4,10 +4,13 @@ import dud.pkgdescription : Dependency, PackageDescription, TargetType;
 import dud.semver : SemVer;
 import dud.path : Path;
 
+import dud.sdlang;
+
 PackageDescription sdlToPackageDescription(string sdl) {
 	Tag jv = parseFile(sdl);
-	return jsonToPackageDescription(jv);
+	return sdlToPackageDescription(jv);
 }
 
-PackageDescription sdlPackageDescription(Tag t) {
+PackageDescription sdlToPackageDescription(Tag t) {
+	return PackageDescription.init;
 }
