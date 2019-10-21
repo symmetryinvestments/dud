@@ -6,8 +6,9 @@
 	"description": "A dub replacement",
 	"license": "LGPL3",
 	"name": "dud",
-	"subpackages" : [
-		"path",
-		"semver"
-	]
+	"dependencies" : {
+		"semver": { "path" : "semver" },
+		"path": { "path" : "path" },
+		"pkgdescription": { "path" : "pkgdescription" }
+	}
 }
