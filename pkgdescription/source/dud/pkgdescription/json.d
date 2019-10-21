@@ -18,15 +18,6 @@ PackageDescription jsonToPackageDescription(string js) {
 	return jsonToPackageDescription(jv);
 }
 
-private template PreprocessKey(string key) {
-	import std.algorithm.searching : endsWith;
-	static if(key.endsWith("_")) {
-		enum PreprocessKey = key[0 .. $ - 1];
-	} else {
-		enum PreprocessKey = key;
-	}
-}
-
 PackageDescription jsonToPackageDescription(JSONValue js) {
 	enforce(js.type == JSONType.object, "Expected and object");
 
@@ -69,6 +60,15 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 		}
 	}
 	return ret;
+}
+
+private template PreprocessKey(string key) {
+	import std.algorithm.searching : endsWith;
+	static if(key.endsWith("_")) {
+		enum PreprocessKey = key[0 .. $ - 1];
+	} else {
+		enum PreprocessKey = key;
+	}
 }
 
 string[] extractStrings(ref JSONValue jv) {
