@@ -19,6 +19,7 @@ PackageDescription jsonToPackageDescription(string js) {
 }
 
 PackageDescription jsonToPackageDescription(JSONValue js) {
+	import dud.pkgdescription.helper : PreprocessKey;
 	enforce(js.type == JSONType.object, "Expected and object");
 
 	PackageDescription ret;
@@ -36,6 +37,8 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 						__traits(getMember, ret, mem) = extractSemVer(value);
 					} else static if(is(MemType == Path)) {
 						__traits(getMember, ret, mem) = extractPath(value);
+					} else static if(is(MemType == Path[])) {
+						__traits(getMember, ret, mem) = extractPaths(value);
 					} else static if(is(MemType == string[])) {
 						__traits(getMember, ret, mem) = extractStrings(value);
 					} else static if(is(MemType == Dependency[string])) {
@@ -62,36 +65,27 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 	return ret;
 }
 
-private template PreprocessKey(string key) {
-	import std.algorithm.searching : endsWith;
-	static if(key.endsWith("_")) {
-		enum PreprocessKey = key[0 .. $ - 1];
-	} else {
-		enum PreprocessKey = key;
-	}
-}
-
 string[] extractStrings(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array, 
+	enforce(jv.type == JSONType.array,
 			format("Expected an array not a %s", jv.type));
 	return jv.arrayNoRef().map!(it => extractString(it)).array;
 }
 
 string extractString(ref JSONValue jv) {
-	enforce(jv.type == JSONType.string, 
+	enforce(jv.type == JSONType.string,
 			format("Expected a string not a %s", jv.type));
 	return jv.str();
 }
 
 bool extractBool(ref JSONValue jv) {
-	enforce(jv.type == JSONType.true_ || jv.type == JSONType.false_, 
+	enforce(jv.type == JSONType.true_ || jv.type == JSONType.false_,
 			format("Expected a boolean not a %s", jv.type));
 	return jv.boolean();
 }
 
 Dependency[string] extractDependencies(ref JSONValue jv) {
-	enforce(jv.type == JSONType.object, 
-			format("Expected an object not a %s while extracting dependencies", 
+	enforce(jv.type == JSONType.object,
+			format("Expected an object not a %s while extracting dependencies",
 				jv.type));
 
 	Dependency[string] ret;
@@ -102,7 +96,7 @@ Dependency[string] extractDependencies(ref JSONValue jv) {
 }
 
 Dependency extractDependency(ref JSONValue jv) {
-	enforce(jv.type == JSONType.object || jv.type == JSONType.string, 
+	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
 			format("Expected an object or a string not a %s while extracting "
 				~ "a dependency", jv.type));
 	if(jv.type == JSONType.object) {
@@ -115,8 +109,8 @@ Dependency extractDependency(ref JSONValue jv) {
 Dependency extractDependencyStr(ref JSONValue jv) {
 	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
-	enforce(jv.type == JSONType.string, 
-			format("Expected an string not a %s while extracting a dependency", 
+	enforce(jv.type == JSONType.string,
+			format("Expected an string not a %s while extracting a dependency",
 				jv.type));
 
 	Dependency ret;
@@ -127,14 +121,14 @@ Dependency extractDependencyStr(ref JSONValue jv) {
 Dependency extractDependencyObj(ref JSONValue jv) {
 	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
-	enforce(jv.type == JSONType.object, 
-			format("Expected an object not a %s while extracting a dependency", 
+	enforce(jv.type == JSONType.object,
+			format("Expected an object not a %s while extracting a dependency",
 				jv.type));
 
 	Dependency ret;
 	foreach(key, value; jv.objectNoRef()) {
 		switch(key) {
-			case "version": 
+			case "version":
 				ret.version_ = parseVersionSpecifier(extractString(value));
 				break;
 			case "path":
@@ -148,16 +142,16 @@ Dependency extractDependencyObj(ref JSONValue jv) {
 				break;
 			default:
 				throw new Exception(format(
-						"Key '%s' is not part of a Dependency declaration", 
+						"Key '%s' is not part of a Dependency declaration",
 						key));
 		}
 	}
-		
+
 	return ret;
 }
 
 PackageDescription[] extractPackageDescriptions(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array, 
+	enforce(jv.type == JSONType.array,
 			format("Expected an array not a %s", jv.type));
 	return jv.arrayNoRef().map!(it => jsonToPackageDescription(it)).array;
 }
@@ -165,6 +159,12 @@ PackageDescription[] extractPackageDescriptions(ref JSONValue jv) {
 SemVer extractSemVer(ref JSONValue jv) {
 	string s = extractString(jv);
 	return SemVer(s);
+}
+
+Path[] extractPaths(ref JSONValue jv) {
+	enforce(jv.type == JSONType.array,
+			format("Expected an array not a %s", jv.type));
+	return jv.arrayNoRef().map!(it => extractPath(it)).array;
 }
 
 Path extractPath(ref JSONValue jv) {

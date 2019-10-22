@@ -49,8 +49,8 @@ struct PackageDescription {
 	string[] extraDependencyFiles; /// Files to check for rebuild dub project
 	string[] versions; /// D version identifiers to set
 	string[] debugVersions; /// D debug version identifiers to set
-	string[] importPaths;
-	string[] stringImportPaths;
+	Path[] importPaths;
+	Path[] stringImportPaths;
 	string[] preGenerateCommands; /// commands executed before creating the description
 	string[] postGenerateCommands; /// commands executed after creating the description
 	string[] preBuildCommands; /// Commands to execute prior to every build

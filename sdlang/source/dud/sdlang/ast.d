@@ -3,9 +3,6 @@
 
 module dud.sdlang.ast;
 
-version (Have_sdlang_d) public import sdlang.ast;
-else:
-
 import std.algorithm;
 import std.array;
 import std.conv;
