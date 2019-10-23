@@ -484,9 +484,15 @@ struct Token
 		return true;
 	}
 
+	void valueAssign(ref Value to, ref Value from) @trusted {
+		to = from;
+	}
+
 	void opAssign(Token other) @safe pure {
-		this.symbol = other;
-		this.value = other.value;
+		auto dl = assumePure(&valueAssign);
+		dl(this.value, other.value);
+
+		this.symbol = other.symbol;
 		this.location = other.location;
 		this.data = other.data;
 	}

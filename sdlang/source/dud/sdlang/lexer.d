@@ -359,7 +359,7 @@ class Lexer
 			advanceChar(errorOnEOF);
 	}
 
-	void popFront() @safe pure
+	void popFront()
 	{
 		// -- Main Lexer -------------
 
@@ -444,11 +444,8 @@ class Lexer
 		}
 	}
 
-	//static keywordsInited = false;
-	//if(!keywordsInited)
-
 	/// Lex Ident or Keyword
-	private void lexIdentKeyword() @safe pure
+	private void lexIdentKeyword()
 	{
 		assert(isAlpha(ch) || ch == '_');
 
@@ -459,15 +456,18 @@ class Lexer
 			Value value;
 			bool failed = false;
 		}
-
-		Key[5] keywords = [
+		static Key[5] keywords;
+		static keywordsInited = false;
+		if(!keywordsInited)
+		{
 			// Value (as a std.variant-based type) can't be statically inited
-			Key("true",  Value(true )),
-			Key("false", Value(false)),
-			Key("on",    Value(true )),
-			Key("off",   Value(false)),
-			Key("null",  Value(null ))
-		];
+			keywords[0] = Key("true",  Value(true ));
+			keywords[1] = Key("false", Value(false));
+			keywords[2] = Key("on",    Value(true ));
+			keywords[3] = Key("off",   Value(false));
+			keywords[4] = Key("null",  Value(null ));
+			keywordsInited = true;
+		}
 
 		foreach(ref key; keywords)
 			key.failed = false;
@@ -727,13 +727,14 @@ class Lexer
 			}
 		}
 
-		try
+		try {
 			//Base64.decode(Base64InputRange(this), OutputBuf());
-			Base64.decode(tmpBuf, OutputBuf());
+			() @trusted { Base64.decode(tmpBuf, OutputBuf()); }();
 
 		//TODO: Starting with dmd 2.062, this should be a Base64Exception
-		catch(Exception e)
+		} catch(Exception e) {
 			error("Invalid character in base64 binary literal.");
+		}
 
 		advanceChar(ErrorOnEOF.No); // Skip ']'
 		mixin(accept!("Value", "outputBuf.data"));
@@ -767,10 +768,15 @@ class Lexer
 		return source[spanStart..location.index];
 	}
 
+	string pureBItoStr(BigInt bi) @trusted {
+		return to!string(bi);
+	}
+
 	/// Lex anything that starts with 0-9 or '-'. Ints, floats, dates, etc.
 	private void lexNumeric(LookaheadTokenInfo laTokenInfo = LookaheadTokenInfo.init)
-			pure @safe
 	{
+		auto bigIntToString = assumePure(&pureBItoStr);
+
 		bool isNegative;
 		string firstFragment;
 		if(laTokenInfo.exists)
@@ -804,8 +810,11 @@ class Lexer
 
 			// BigInt(long.min) is a workaround for DMD issue #9548
 			auto num = toBigInt(isNegative, firstFragment);
-			if(num < BigInt(long.min) || num > long.max)
-				error(tokenStart, "Value doesn't fit in 64-bit signed long integer: "~to!string(num));
+			if(num < BigInt(long.min) || num > long.max) {
+				string ns = bigIntToString(num);
+				error(tokenStart,
+					"Value doesn't fit in 64-bit signed long integer: " ~ ns);
+			}
 
 			mixin(accept!("Value", "num.toLong()"));
 		}
@@ -855,8 +864,11 @@ class Lexer
 		else if(isEndOfNumber())
 		{
 			auto num = toBigInt(isNegative, firstFragment);
-			if(num < int.min || num > int.max)
-				error(tokenStart, "Value doesn't fit in 32-bit signed integer: "~to!string(num));
+			if(num < int.min || num > int.max) {
+				string ns = bigIntToString(num);
+				error(tokenStart,
+					"Value doesn't fit in 32-bit signed integer: " ~ ns);
+			}
 
 			mixin(accept!("Value", "num.toInt()"));
 		}
@@ -1145,7 +1157,7 @@ class Lexer
 	}
 
 	/// Lex date or datetime (after the initial numeric fragment was lexed)
-	private void lexDate(bool isDateNegative, string yearStr) pure @safe
+	private void lexDate(bool isDateNegative, string yearStr) @safe
 	{
 		assert(ch == '/');
 
@@ -1472,7 +1484,7 @@ package {
 	private int numErrors = 0;
 	private void testLex(string source, Token[] expected,
 			bool test_locations = false, string file=__FILE__,
-			size_t line=__LINE__) pure @safe
+			size_t line=__LINE__)
 	{
 		Token[] actual;
 		try
