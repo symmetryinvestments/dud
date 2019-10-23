@@ -1,4 +1,4 @@
-﻿// SDLang-D
+// SDLang-D
 // Written in the D programming language.
 
 module dud.sdlang.parser;
@@ -523,13 +523,7 @@ private struct DOMParser
 // Other parser tests are part of the AST's tests over in the ast module.
 
 // Regression test, issue #16: https://github.com/Abscissa/SDLang-D/issues/16
-version(sdlangUnittest)
-unittest
-{
-	import std.stdio;
-	writeln("parser: Regression test issue #16...");
-	stdout.flush();
-
+unittest {
 	// Shouldn't crash
 	foreach(event; pullParseSource(`tag "data"`))
 	{
@@ -539,13 +533,7 @@ unittest
 
 // Regression test, issue #31: https://github.com/Abscissa/SDLang-D/issues/31
 // "Escape sequence results in range violation error"
-version(sdlangUnittest)
-unittest
-{
-	import std.stdio;
-	writeln("parser: Regression test issue #31...");
-	stdout.flush();
-
+unittest {
 	// Shouldn't get a Range violation
 	parseSource(`test "\"foo\""`);
 }

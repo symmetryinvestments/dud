@@ -1125,150 +1125,147 @@ class Tag
 	}
 }
 
-version(sdlangUnittest)
+private void testRandomAccessRange(R, E)(R range, E[] expected,
+		bool function(E, E) equals=null)
 {
-	private void testRandomAccessRange(R, E)(R range, E[] expected, bool function(E, E) equals=null)
+	static assert(isRandomAccessRange!R);
+	static assert(is(ElementType!R == E));
+	static assert(hasLength!R);
+	static assert(!isInfinite!R);
+
+	assert(range.length == expected.length);
+	if(range.length == 0)
 	{
-		static assert(isRandomAccessRange!R);
-		static assert(is(ElementType!R == E));
-		static assert(hasLength!R);
-		static assert(!isInfinite!R);
-
-		assert(range.length == expected.length);
-		if(range.length == 0)
-		{
-			assert(range.empty);
-			return;
-		}
-
-		static bool defaultEquals(E e1, E e2)
-		{
-			return e1 == e2;
-		}
-		if(equals is null)
-			equals = &defaultEquals;
-
-		assert(equals(range.front, expected[0]));
-		assert(equals(range.front, expected[0]));  // Ensure consistent result from '.front'
-		assert(equals(range.front, expected[0]));  // Ensure consistent result from '.front'
-
-		assert(equals(range.back, expected[$-1]));
-		assert(equals(range.back, expected[$-1]));  // Ensure consistent result from '.back'
-		assert(equals(range.back, expected[$-1]));  // Ensure consistent result from '.back'
-
-		// Forward iteration
-		auto original = range.save;
-		auto r2 = range.save;
-		foreach(i; 0..expected.length)
-		{
-			//trace("Forward iteration: ", i);
-
-			// Test length/empty
-			assert(range.length == expected.length - i);
-			assert(range.length == r2.length);
-			assert(!range.empty);
-			assert(!r2.empty);
-
-			// Test front
-			assert(equals(range.front, expected[i]));
-			assert(equals(range.front, r2.front));
-
-			// Test back
-			assert(equals(range.back, expected[$-1]));
-			assert(equals(range.back, r2.back));
-
-			// Test opIndex(0)
-			assert(equals(range[0], expected[i]));
-			assert(equals(range[0], r2[0]));
-
-			// Test opIndex($-1)
-			assert(equals(range[$-1], expected[$-1]));
-			assert(equals(range[$-1], r2[$-1]));
-
-			// Test popFront
-			range.popFront();
-			assert(range.length == r2.length - 1);
-			r2.popFront();
-			assert(range.length == r2.length);
-		}
 		assert(range.empty);
-		assert(r2.empty);
-		assert(original.length == expected.length);
+		return;
+	}
 
-		// Backwards iteration
-		range = original.save;
-		r2    = original.save;
-		foreach(i; iota(0, expected.length).retro())
-		{
-			//trace("Backwards iteration: ", i);
+	static bool defaultEquals(E e1, E e2)
+	{
+		return e1 == e2;
+	}
+	if(equals is null)
+		equals = &defaultEquals;
 
-			// Test length/empty
-			assert(range.length == i+1);
-			assert(range.length == r2.length);
-			assert(!range.empty);
-			assert(!r2.empty);
+	assert(equals(range.front, expected[0]));
+	assert(equals(range.front, expected[0]));  // Ensure consistent result from '.front'
+	assert(equals(range.front, expected[0]));  // Ensure consistent result from '.front'
 
-			// Test front
-			assert(equals(range.front, expected[0]));
-			assert(equals(range.front, r2.front));
+	assert(equals(range.back, expected[$-1]));
+	assert(equals(range.back, expected[$-1]));  // Ensure consistent result from '.back'
+	assert(equals(range.back, expected[$-1]));  // Ensure consistent result from '.back'
 
-			// Test back
-			assert(equals(range.back, expected[i]));
-			assert(equals(range.back, r2.back));
+	// Forward iteration
+	auto original = range.save;
+	auto r2 = range.save;
+	foreach(i; 0..expected.length)
+	{
+		//trace("Forward iteration: ", i);
 
-			// Test opIndex(0)
-			assert(equals(range[0], expected[0]));
-			assert(equals(range[0], r2[0]));
-
-			// Test opIndex($-1)
-			assert(equals(range[$-1], expected[i]));
-			assert(equals(range[$-1], r2[$-1]));
-
-			// Test popBack
-			range.popBack();
-			assert(range.length == r2.length - 1);
-			r2.popBack();
-			assert(range.length == r2.length);
-		}
-		assert(range.empty);
-		assert(r2.empty);
-		assert(original.length == expected.length);
-
-		// Random access
-		range = original.save;
-		r2    = original.save;
-		foreach(i; 0..expected.length)
-		{
-			//trace("Random access: ", i);
-
-			// Test length/empty
-			assert(range.length == expected.length);
-			assert(range.length == r2.length);
-			assert(!range.empty);
-			assert(!r2.empty);
-
-			// Test front
-			assert(equals(range.front, expected[0]));
-			assert(equals(range.front, r2.front));
-
-			// Test back
-			assert(equals(range.back, expected[$-1]));
-			assert(equals(range.back, r2.back));
-
-			// Test opIndex(i)
-			assert(equals(range[i], expected[i]));
-			assert(equals(range[i], r2[i]));
-		}
+		// Test length/empty
+		assert(range.length == expected.length - i);
+		assert(range.length == r2.length);
 		assert(!range.empty);
 		assert(!r2.empty);
-		assert(original.length == expected.length);
+
+		// Test front
+		assert(equals(range.front, expected[i]));
+		assert(equals(range.front, r2.front));
+
+		// Test back
+		assert(equals(range.back, expected[$-1]));
+		assert(equals(range.back, r2.back));
+
+		// Test opIndex(0)
+		assert(equals(range[0], expected[i]));
+		assert(equals(range[0], r2[0]));
+
+		// Test opIndex($-1)
+		assert(equals(range[$-1], expected[$-1]));
+		assert(equals(range[$-1], r2[$-1]));
+
+		// Test popFront
+		range.popFront();
+		assert(range.length == r2.length - 1);
+		r2.popFront();
+		assert(range.length == r2.length);
 	}
+	assert(range.empty);
+	assert(r2.empty);
+	assert(original.length == expected.length);
+
+	// Backwards iteration
+	range = original.save;
+	r2    = original.save;
+	foreach(i; iota(0, expected.length).retro())
+	{
+		//trace("Backwards iteration: ", i);
+
+		// Test length/empty
+		assert(range.length == i+1);
+		assert(range.length == r2.length);
+		assert(!range.empty);
+		assert(!r2.empty);
+
+		// Test front
+		assert(equals(range.front, expected[0]));
+		assert(equals(range.front, r2.front));
+
+		// Test back
+		assert(equals(range.back, expected[i]));
+		assert(equals(range.back, r2.back));
+
+		// Test opIndex(0)
+		assert(equals(range[0], expected[0]));
+		assert(equals(range[0], r2[0]));
+
+		// Test opIndex($-1)
+		assert(equals(range[$-1], expected[i]));
+		assert(equals(range[$-1], r2[$-1]));
+
+		// Test popBack
+		range.popBack();
+		assert(range.length == r2.length - 1);
+		r2.popBack();
+		assert(range.length == r2.length);
+	}
+	assert(range.empty);
+	assert(r2.empty);
+	assert(original.length == expected.length);
+
+	// Random access
+	range = original.save;
+	r2    = original.save;
+	foreach(i; 0..expected.length)
+	{
+		//trace("Random access: ", i);
+
+		// Test length/empty
+		assert(range.length == expected.length);
+		assert(range.length == r2.length);
+		assert(!range.empty);
+		assert(!r2.empty);
+
+		// Test front
+		assert(equals(range.front, expected[0]));
+		assert(equals(range.front, r2.front));
+
+		// Test back
+		assert(equals(range.back, expected[$-1]));
+		assert(equals(range.back, r2.back));
+
+		// Test opIndex(i)
+		assert(equals(range[i], expected[i]));
+		assert(equals(range[i], r2[i]));
+	}
+	assert(!range.empty);
+	assert(!r2.empty);
+	assert(original.length == expected.length);
 }
 
-version(sdlangUnittest)
 unittest
 {
-	import sdlang.parser;
+	import dud.sdlang.parser;
 	writeln("Unittesting sdlang ast...");
 	stdout.flush();
 
@@ -1798,10 +1795,9 @@ unittest
 }
 
 // Regression test, issue #11: https://github.com/Abscissa/SDLang-D/issues/11
-version(sdlangUnittest)
 unittest
 {
-	import sdlang.parser;
+	import dud.sdlang.parser;
 	writeln("ast: Regression test issue #11...");
 	stdout.flush();
 
