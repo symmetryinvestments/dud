@@ -14,8 +14,6 @@ import dud.path : Path;
 
 import dud.sdlang;
 
-@safe pure:
-
 PackageDescription sdlToPackageDescription(string sdl) @trusted {
 	Tag jv = parseSource(sdl);
 	return sdlToPackageDescription(jv);
@@ -28,12 +26,10 @@ PackageDescription sdlToPackageDescription(Tag t) {
 
 	PackageDescription ret;
 
-	writeln("Attributes");
 	foreach(it; t.attributes()) {
 		writeln(it);
 	}
 
-	writeln("Tags");
 	foreach(Tag it; t.tags()) {
 		writefln("%s %s", it.name, it.values);
 		try {
