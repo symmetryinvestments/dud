@@ -13,6 +13,7 @@ name "pkgdescription"
 dependency "semver" path="../semver"
 dependency "path" path="../path"
 dependency "sdlang" path="../sdlang"
+dependency "graphql" version=">=1.0.0" default=true optional=false
 targetType "library"
 importPaths "source" "source1" "source2"
 `;

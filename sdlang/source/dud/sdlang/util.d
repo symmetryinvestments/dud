@@ -10,11 +10,13 @@ import std.string;
 
 import dud.sdlang.token;
 
+@safe:
+
 enum sdlangVersion = "0.9.1";
 
 alias immutable(ubyte)[] ByteString;
 
-auto startsWith(T)(string haystack, T needle)
+auto startsWith(T)(string haystack, T needle) pure
 	if( is(T:ByteString) || is(T:string) )
 {
 	return std.algorithm.startsWith( cast(ByteString)haystack, cast(ByteString)needle );
@@ -22,6 +24,7 @@ auto startsWith(T)(string haystack, T needle)
 
 struct Location
 {
+	pure:
 	string file; /// Filename (including path)
 	int line; /// Zero-indexed
 	int col;  /// Zero-indexed, Tab counts as 1
@@ -48,12 +51,13 @@ struct Location
 	}
 }
 
-void removeIndex(E)(ref E[] arr, ptrdiff_t index)
+void removeIndex(E)(ref E[] arr, ptrdiff_t index) pure
 {
 	arr = arr[0..index] ~ arr[index+1..$];
 }
 
 void trace(string file=__FILE__, size_t line=__LINE__, TArgs...)(TArgs args)
+	pure
 {
 	version(sdlangTrace)
 	{
@@ -62,7 +66,23 @@ void trace(string file=__FILE__, size_t line=__LINE__, TArgs...)(TArgs args)
 	}
 }
 
-string toString(TypeInfo ti)
+// very dirty hack because object.opEquals is not pure
+import std.traits : isFunctionPointer, isDelegate, functionAttributes,
+	   FunctionAttribute, SetFunctionAttributes, functionLinkage;
+
+auto assumePure(T)(T t) @trusted
+if (isFunctionPointer!T || isDelegate!T)
+{
+    enum attrs = functionAttributes!T | FunctionAttribute.pure_;
+    return cast(SetFunctionAttributes!(T, functionLinkage!T, attrs)) t;
+}
+
+string toString(TypeInfo ti) @safe pure {
+	auto dl = assumePure(&toStringImpl);
+	return dl(ti);
+}
+
+string toStringImpl(TypeInfo ti) @trusted
 {
 	if     (ti == typeid( bool         )) return "bool";
 	else if(ti == typeid( string       )) return "string";
@@ -100,3 +120,8 @@ immutable ubyte[][NBOM] ByteOrderMarks =
 	[0xFF, 0xFE, 0x00, 0x00],   //UTF32LE
 	[0x00, 0x00, 0xFE, 0xFF]    //UTF32BE
 ];
+
+void strAssert(string a, string b) {
+	import std.format : format;
+	assert(a == b, format("\nexp: %s\ngot: %s", b, a));
+}

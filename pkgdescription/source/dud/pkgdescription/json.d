@@ -91,7 +91,11 @@ Dependency[string] extractDependencies(ref JSONValue jv) {
 	Dependency[string] ret;
 	jv.objectNoRef()
 		.byKeyValue()
-		.each!(it => ret[it.key] = extractDependency(it.value));
+		.each!(it => {
+				Dependency t = extractDependency(it.value);
+				t.name = it.key;
+				ret[it.key] = t;
+			});
 	return ret;
 }
 

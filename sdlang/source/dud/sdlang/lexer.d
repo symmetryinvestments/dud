@@ -1455,8 +1455,7 @@ class Lexer
 	}
 }
 
-version(sdlangUnittest)
-{
+package {
 	import std.stdio;
 
 	private auto loc  = Location("filename", 0, 0, 0);
@@ -1538,10 +1537,7 @@ version(sdlangUnittest)
 	}
 }
 
-version(sdlangUnittest)
-unittest
-{
-	writeln("Unittesting sdlang lexer...");
+unittest {
 	stdout.flush();
 
 	testLex("",        []);
@@ -2000,10 +1996,8 @@ unittest
 		stderr.writeln(numErrors, " failed test(s)");
 }
 
-version(sdlangUnittest)
 unittest
 {
-	writeln("lexer: Regression test issue #8...");
 	stdout.flush();
 
 	testLex(`"\n \n"`, [ Token(symbol!"Value",loc,Value("\n \n"),`"\n \n"`) ]);
@@ -2011,10 +2005,8 @@ unittest
 	testLex(`"\n\n"`, [ Token(symbol!"Value",loc,Value("\n\n"),`"\n\n"`) ]);
 }
 
-version(sdlangUnittest)
 unittest
 {
-	writeln("lexer: Regression test issue #11...");
 	stdout.flush();
 
 	void test(string input)
@@ -2034,7 +2026,6 @@ unittest
 	test("#\na");
 }
 
-version(sdlangUnittest)
 unittest
 {
 	writeln("lexer: Regression test issue #28...");

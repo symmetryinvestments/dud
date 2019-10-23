@@ -9,12 +9,8 @@ import std.conv;
 import std.range;
 import std.string;
 
-version(sdlangUnittest)
-version(unittest)
-{
-	import std.stdio;
-	import std.exception;
-}
+import std.stdio;
+import std.exception;
 
 import dud.sdlang.exception;
 import dud.sdlang.token;

@@ -1,9 +1,18 @@
 {
+	"dependencies": {
+		"path": {
+			"path": "../path",
+			"version": ">=0.0.0"
+		},
+		"sdlang": {
+			"path": "../sdlang",
+			"version": ">=0.0.0"
+		},
+		"semver": {
+			"path": "../semver",
+			"version": ">=0.0.0"
+		}
+	},
 	"name": "pkgdescription",
-	"targetType": "library",
-	"dependencies" : {
-		"semver": { "path" : "../semver" },
-		"path": { "path" : "../path" },
-		"sdlang": { "path" : "../sdlang" }
-	}
+	"targetType": "library"
 }

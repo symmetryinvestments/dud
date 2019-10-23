@@ -8,6 +8,8 @@ import std.string;
 
 import dud.sdlang.util;
 
+@safe pure:
+
 abstract class SDLangException : Exception
 {
 	this(string msg) { super(msg); }
