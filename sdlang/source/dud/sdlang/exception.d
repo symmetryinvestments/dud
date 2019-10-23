@@ -12,7 +12,7 @@ import dud.sdlang.util;
 
 abstract class SDLangException : Exception
 {
-	this(string msg) { super(msg); }
+	this(string msg) pure @safe { super(msg); }
 }
 
 class SDLangParseException : SDLangException
@@ -20,14 +20,12 @@ class SDLangParseException : SDLangException
 	Location location;
 	bool hasLocation;
 
-	this(string msg)
-	{
+	this(string msg) pure @safe {
 		hasLocation = false;
 		super(msg);
 	}
 
-	this(Location location, string msg)
-	{
+	this(Location location, string msg) pure @safe {
 		hasLocation = true;
 		super("%s: %s".format(location.toString(), msg));
 	}
@@ -35,10 +33,10 @@ class SDLangParseException : SDLangException
 
 class SDLangValidationException : SDLangException
 {
-	this(string msg) { super(msg); }
+	this(string msg) pure @safe { super(msg); }
 }
 
 class SDLangRangeException : SDLangException
 {
-	this(string msg) { super(msg); }
+	this(string msg) pure @safe { super(msg); }
 }

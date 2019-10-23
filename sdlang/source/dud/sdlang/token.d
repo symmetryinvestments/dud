@@ -484,6 +484,13 @@ struct Token
 		return true;
 	}
 
+	void opAssign(Token other) @safe pure {
+		this.symbol = other;
+		this.value = other.value;
+		this.location = other.location;
+		this.data = other.data;
+	}
+
 	bool matches(string symbolName)()
 	{
 		return this.symbol == .symbol!symbolName;

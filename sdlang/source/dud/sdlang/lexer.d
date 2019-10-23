@@ -60,7 +60,7 @@ private template accept(string symbolName, string value, string startLocation, s
 	enum accept = ("
 		{
 			_front = makeToken!"~symbolName.stringof~";
-			_front.value = "~value~";
+			() @trusted { _front.value = "~value~"; }();
 			_front.location = "~(startLocation==""? "tokenStart" : startLocation)~";
 			_front.data = source[
 				"~(startLocation==""? "tokenStart.index" : startLocation)~"
@@ -76,7 +76,7 @@ private template acceptImpl(string symbolName, string value)
 	enum acceptImpl = ("
 		{
 			_front = makeToken!"~symbolName.stringof~";
-			_front.value = "~value~";
+			() @trusted { _front.value = "~value~"; }();
 			return;
 		}
 	").replace("\n", "");
@@ -148,56 +148,56 @@ class Lexer
 		popFront();
 	}
 
-	@property bool empty()
+	@property bool empty() pure @safe
 	{
 		return _front.symbol == symbol!"EOF";
 	}
 
 	Token _front;
-	@property Token front()
+	@property Token front() pure @safe
 	{
 		return _front;
 	}
 
-	@property bool isEOF()
+	@property bool isEOF() pure @safe
 	{
 		return location.index == source.length && !lookaheadTokenInfo.exists;
 	}
 
-	private void error(string msg)
+	private void error(string msg) pure @safe
 	{
 		error(location, msg);
 	}
 
-	private void error(Location loc, string msg)
+	private void error(Location loc, string msg) pure @safe
 	{
 		throw new SDLangParseException(loc, "Error: "~msg);
 	}
 
-	private Token makeToken(string symbolName)()
+	private Token makeToken(string symbolName)() pure @safe
 	{
 		auto tok = Token(symbol!symbolName, tokenStart);
 		tok.data = tokenData;
 		return tok;
 	}
 
-	private @property string tokenData()
+	private @property string tokenData() pure @safe
 	{
 		return source[ tokenStart.index .. location.index ];
 	}
 
 	/// Check the lookahead character
-	private bool lookahead(dchar ch)
+	private bool lookahead(dchar ch) pure @safe
 	{
 		return hasNextCh && nextCh == ch;
 	}
 
-	private bool lookahead(bool function(dchar) condition)
+	private bool lookahead(bool function(dchar) pure @safe condition) pure @safe
 	{
 		return hasNextCh && condition(nextCh);
 	}
 
-	private static bool isNewline(dchar ch)
+	private static bool isNewline(dchar ch) pure @safe
 	{
 		return ch == '\n' || ch == '\r' || ch == lineSep || ch == paraSep;
 	}
@@ -207,7 +207,7 @@ class Lexer
 	///
 	/// Note that there are only single character sequences and the two
 	/// character sequence `\r\n` as used on Windows.
-	private size_t isAtNewline()
+	private size_t isAtNewline() @safe pure
 	{
 		if(ch == '\n' || ch == lineSep || ch == paraSep) return 1;
 		else if(ch == '\r') return lookahead('\n') ? 2 : 1;
@@ -215,7 +215,7 @@ class Lexer
 	}
 
 	/// Is 'ch' a valid base 64 character?
-	private bool isBase64(dchar ch)
+	private bool isBase64(dchar ch) @safe pure
 	{
 		if(ch >= 'A' && ch <= 'Z')
 			return true;
@@ -231,7 +231,7 @@ class Lexer
 
 	/// Is the current character one that's allowed
 	/// immediately *after* an int/float literal?
-	private bool isEndOfNumber()
+	private bool isEndOfNumber() @safe pure
 	{
 		if(isEOF)
 			return true;
@@ -242,7 +242,7 @@ class Lexer
 	/// Is current character the last one in an ident?
 	private bool isEndOfIdentCached = false;
 	private bool _isEndOfIdent;
-	private bool isEndOfIdent()
+	private bool isEndOfIdent() @safe pure
 	{
 		if(!isEndOfIdentCached)
 		{
@@ -258,7 +258,7 @@ class Lexer
 	}
 
 	/// Is 'ch' a character that's allowed *somewhere* in an identifier?
-	private bool isIdentChar(dchar ch)
+	private bool isIdentChar(dchar ch) @safe pure
 	{
 		if(isAlpha(ch))
 			return true;
@@ -274,7 +274,7 @@ class Lexer
 				ch == '$';
 	}
 
-	private bool isDigit(dchar ch)
+	private bool isDigit(dchar ch) @safe pure
 	{
 		return ch >= '0' && ch <= '9';
 	}
@@ -285,7 +285,7 @@ class Lexer
 		Continue, // Keyword is not matched *yet*
 		Failed,   // Keyword doesn't match
 	}
-	private KeywordResult checkKeyword(dstring keyword32)
+	private KeywordResult checkKeyword(dstring keyword32) @safe pure
 	{
 		// Still within length of keyword
 		if(tokenLength32 < keyword32.length)
@@ -314,7 +314,7 @@ class Lexer
 	enum ErrorOnEOF { No, Yes }
 
 	/// Advance one code point.
-	private void advanceChar(ErrorOnEOF errorOnEOF)
+	private void advanceChar(ErrorOnEOF errorOnEOF) @safe pure
 	{
 		if(auto cnt = isAtNewline())
 		{
@@ -353,13 +353,13 @@ class Lexer
 	}
 
 	/// Advances the specified amount of characters
-	private void advanceChar(size_t count, ErrorOnEOF errorOnEOF)
+	private void advanceChar(size_t count, ErrorOnEOF errorOnEOF) @safe pure
 	{
 		while(count-- > 0)
 			advanceChar(errorOnEOF);
 	}
 
-	void popFront()
+	void popFront() @safe pure
 	{
 		// -- Main Lexer -------------
 
@@ -444,8 +444,11 @@ class Lexer
 		}
 	}
 
+	//static keywordsInited = false;
+	//if(!keywordsInited)
+
 	/// Lex Ident or Keyword
-	private void lexIdentKeyword()
+	private void lexIdentKeyword() @safe pure
 	{
 		assert(isAlpha(ch) || ch == '_');
 
@@ -456,18 +459,15 @@ class Lexer
 			Value value;
 			bool failed = false;
 		}
-		static Key[5] keywords;
-		static keywordsInited = false;
-		if(!keywordsInited)
-		{
+
+		Key[5] keywords = [
 			// Value (as a std.variant-based type) can't be statically inited
-			keywords[0] = Key("true",  Value(true ));
-			keywords[1] = Key("false", Value(false));
-			keywords[2] = Key("on",    Value(true ));
-			keywords[3] = Key("off",   Value(false));
-			keywords[4] = Key("null",  Value(null ));
-			keywordsInited = true;
-		}
+			Key("true",  Value(true )),
+			Key("false", Value(false)),
+			Key("on",    Value(true )),
+			Key("off",   Value(false)),
+			Key("null",  Value(null ))
+		];
 
 		foreach(ref key; keywords)
 			key.failed = false;
@@ -513,7 +513,7 @@ class Lexer
 	}
 
 	/// Lex Ident
-	private void lexIdent()
+	private void lexIdent() pure @safe
 	{
 		if(tokenLength == 0)
 			assert(isAlpha(ch) || ch == '_');
@@ -525,7 +525,7 @@ class Lexer
 	}
 
 	/// Lex regular string
-	private void lexRegularString()
+	private void lexRegularString() pure @safe
 	{
 		assert(ch == '"');
 
@@ -586,7 +586,7 @@ class Lexer
 	}
 
 	/// Lex raw string
-	private void lexRawString()
+	private void lexRawString() pure @safe
 	{
 		assert(ch == '`');
 
@@ -599,7 +599,7 @@ class Lexer
 	}
 
 	/// Lex character literal
-	private void lexCharacter()
+	private void lexCharacter() pure @safe
 	{
 		assert(ch == '\'');
 		advanceChar(ErrorOnEOF.Yes); // Skip opening single-quote
@@ -633,7 +633,7 @@ class Lexer
 	}
 
 	/// Lex base64 binary literal
-	private void lexBinary()
+	private void lexBinary() pure @safe
 	{
 		assert(ch == '[');
 		advanceChar(ErrorOnEOF.Yes);
@@ -721,7 +721,7 @@ class Lexer
 		//TODO: Remove this when DMD #9102 is fixed
 		struct OutputBuf
 		{
-			void put(ubyte ch)
+			void put(ubyte ch) pure @safe
 			{
 				outputBuf.put(ch);
 			}
@@ -739,7 +739,7 @@ class Lexer
 		mixin(accept!("Value", "outputBuf.data"));
 	}
 
-	private BigInt toBigInt(bool isNegative, string absValue)
+	private BigInt toBigInt(bool isNegative, string absValue) pure @safe
 	{
 		auto num = BigInt(absValue);
 		assert(num >= 0);
@@ -752,7 +752,7 @@ class Lexer
 
 	/// Lex [0-9]+, but without emitting a token.
 	/// This is used by the other numeric parsing functions.
-	private string lexNumericFragment()
+	private string lexNumericFragment() pure @safe
 	{
 		if(!isDigit(ch))
 			error("Expected a digit 0-9.");
@@ -769,6 +769,7 @@ class Lexer
 
 	/// Lex anything that starts with 0-9 or '-'. Ints, floats, dates, etc.
 	private void lexNumeric(LookaheadTokenInfo laTokenInfo = LookaheadTokenInfo.init)
+			pure @safe
 	{
 		bool isNegative;
 		string firstFragment;
@@ -866,7 +867,7 @@ class Lexer
 	}
 
 	/// Lex any floating-point literal (after the initial numeric fragment was lexed)
-	private void lexFloatingPoint(string firstPart)
+	private void lexFloatingPoint(string firstPart) pure @safe
 	{
 		assert(ch == '.');
 		advanceChar(ErrorOnEOF.No);
@@ -923,6 +924,7 @@ class Lexer
 	}
 
 	private Date makeDate(bool isNegative, string yearStr, string monthStr, string dayStr)
+			pure @safe
 	{
 		BigInt biTmp;
 
@@ -949,7 +951,7 @@ class Lexer
 	private DateTimeFrac makeDateTimeFrac(
 		bool isNegative, Date date, string hourStr, string minuteStr,
 		string secondStr, string millisecondStr
-	)
+	) pure @safe
 	{
 		BigInt biTmp;
 
@@ -1003,7 +1005,7 @@ class Lexer
 		bool isNegative, string dayStr,
 		string hourStr, string minuteStr, string secondStr,
 		string millisecondStr
-	)
+	) pure @safe
 	{
 		BigInt biTmp;
 
@@ -1060,7 +1062,7 @@ class Lexer
 
 	// This has to reproduce some weird corner case behaviors from the
 	// original Java version of SDL. So some of this may seem weird.
-	private Nullable!Duration getTimeZoneOffset(string str)
+	private Nullable!Duration getTimeZoneOffset(string str) pure @safe
 	{
 		if(str.length < 2)
 			return Nullable!Duration(); // Unknown timezone
@@ -1143,7 +1145,7 @@ class Lexer
 	}
 
 	/// Lex date or datetime (after the initial numeric fragment was lexed)
-	private void lexDate(bool isDateNegative, string yearStr)
+	private void lexDate(bool isDateNegative, string yearStr) pure @safe
 	{
 		assert(ch == '/');
 
@@ -1285,7 +1287,7 @@ class Lexer
 	}
 
 	/// Lex time span (after the initial numeric fragment was lexed)
-	private void lexTimeSpan(bool isNegative, string firstPart)
+	private void lexTimeSpan(bool isNegative, string firstPart) pure @safe
 	{
 		assert(ch == ':' || ch == 'd');
 
@@ -1336,7 +1338,7 @@ class Lexer
 	}
 
 	/// Advances past whitespace and comments
-	private void eatWhite(bool allowComments=true)
+	private void eatWhite(bool allowComments=true) pure @safe
 	{
 		// -- Comment/Whitepace Lexer -------------
 
@@ -1468,7 +1470,9 @@ package {
 	}
 
 	private int numErrors = 0;
-	private void testLex(string source, Token[] expected, bool test_locations = false, string file=__FILE__, size_t line=__LINE__)
+	private void testLex(string source, Token[] expected,
+			bool test_locations = false, string file=__FILE__,
+			size_t line=__LINE__) pure @safe
 	{
 		Token[] actual;
 		try
@@ -2026,11 +2030,7 @@ unittest
 	test("#\na");
 }
 
-unittest
-{
-	writeln("lexer: Regression test issue #28...");
-	stdout.flush();
-
+unittest {
 	enum offset = 1; // workaround for an of-by-one error for line numbers
 	testLex("test", [
 		Token(symbol!"Ident", Location("filename", 0, 0, 0), Value(null), "test")
