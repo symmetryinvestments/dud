@@ -1,4 +1,4 @@
-﻿module dud.sdlang.libinputvisitor;
+module dud.sdlang.libinputvisitor;
 
 /++
 Copyright (C) 2012 Nick Sabalausky <http://semitwist.com/contact>

@@ -42,6 +42,7 @@ private Symbol _symbol(string name)
 /// template.
 struct Symbol
 {
+	@safe pure:
 	private string _name;
 	@property string name()
 	{
