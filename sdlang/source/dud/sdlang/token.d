@@ -98,7 +98,7 @@ template isSDLSink(T)
 		is(ElementType!(T)[] == string);
 }
 
-string toSDLString(T)(T value) if(
+string toSDLString(T)(T value) @trusted pure if(
 	is( T : Value        ) ||
 	is( T : bool         ) ||
 	is( T : string       ) ||
@@ -114,276 +114,326 @@ string toSDLString(T)(T value) if(
 	is( T : DateTimeFracUnknownZone ) ||
 	is( T : Duration     ) ||
 	is( T : ubyte[]      ) ||
-	is( T : typeof(null) )
-)
+	is( T : typeof(null) ))
 {
-	Appender!string sink;
-	toSDLString(value, sink);
+	alias App = Appender!string;
+	App sink;
+	toSDLStringImpl!(App).toSDLString(value, sink);
 	return sink.data;
 }
 
-void toSDLString(Sink)(Value value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	bool cmp(Value a, TypeInfo b) @trusted {
-		return a.type == b;
-	}
+private T pureSafeGet(T)(Value value) @trusted {
+	return value.get!T();
+}
 
-	auto dl = assumePure(&cmp);
+private string valueToString(Value value) @trusted {
+	return value.toString();
+}
 
-	foreach(T; ValueTypes) {
-		if(dl(value, typeid(T))) {
-			auto g = () @trusted { return value.get!T(); };
-			T v = g();
-			toSDLString(v, sink );
-			return;
+template toSDLStringImpl(Sink) if(isOutputRange!(Sink,char)) {
+
+	pure void toSDLString(Value value, ref Sink sink) {
+		bool cmp(Value a, TypeInfo b) @trusted {
+			return a.type == b;
 		}
+
+		auto dl = assumePure(&cmp);
+
+		static foreach(T; ValueTypes) {
+			if(dl(value, typeid(T))) {
+				auto g = assumePure(&pureSafeGet!T);
+				T v = g(value);
+				toSDLString(v, sink);
+				return;
+			}
+		}
+
+		auto ts = assumePure(&valueToString);
+
+		throw new Exception(
+			"Internal SDLang-D error: Unhandled type of Value. Contains: "
+			~ ts(value));
 	}
 
-	throw new Exception("Internal SDLang-D error: Unhandled type of Value. Contains: "~value.toString());
-}
+	void toSDLString(typeof(null) value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringNullImpl);
+		d(value, sink);
+	}
 
-void toSDLString(Sink)(typeof(null) value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put("null");
-}
+	void toSDLStringNullImpl(typeof(null) value, ref Sink sink) {
+		sink.put("null");
+	}
 
-void toSDLString(Sink)(bool value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put(value? "true" : "false");
-}
+	void toSDLString(bool value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringBoolImpl);
+		d(value, sink);
+	}
 
-//TODO: Figure out how to properly handle strings/chars containing lineSep or paraSep
-void toSDLString(Sink)(string value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put('"');
+	void toSDLStringBoolImpl(bool value, ref Sink sink) {
+		sink.put(value? "true" : "false");
+	}
 
-	// This loop is UTF-safe
-	foreach(char ch; value)
-	{
-		if     (ch == '\n') sink.put(`\n`);
-		else if(ch == '\r') sink.put(`\r`);
-		else if(ch == '\t') sink.put(`\t`);
-		else if(ch == '\"') sink.put(`\"`);
-		else if(ch == '\\') sink.put(`\\`);
+	void toSDLString(string value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringStrImpl);
+		d(value, sink);
+	}
+
+	//TODO: Figure out how to properly handle strings/chars containing lineSep or paraSep
+	void toSDLStringStrImpl(string value, ref Sink sink) {
+		sink.put('"');
+
+		// This loop is UTF-safe
+		foreach(char ch; value)
+		{
+			if     (ch == '\n') sink.put(`\n`);
+			else if(ch == '\r') sink.put(`\r`);
+			else if(ch == '\t') sink.put(`\t`);
+			else if(ch == '\"') sink.put(`\"`);
+			else if(ch == '\\') sink.put(`\\`);
+			else
+				sink.put(ch);
+		}
+
+		sink.put('"');
+	}
+
+	void toSDLString(dchar value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringDcharImpl);
+		d(value, sink);
+	}
+
+	void toSDLStringDcharImpl(dchar value, ref Sink sink) {
+		sink.put('\'');
+
+		if     (value == '\n') sink.put(`\n`);
+		else if(value == '\r') sink.put(`\r`);
+		else if(value == '\t') sink.put(`\t`);
+		else if(value == '\'') sink.put(`\'`);
+		else if(value == '\\') sink.put(`\\`);
 		else
-			sink.put(ch);
+			sink.put(value);
+
+		sink.put('\'');
+	}
+	void toSDLString(int value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringIntImpl);
+		d(value, sink);
 	}
 
-	sink.put('"');
-}
-
-void toSDLString(Sink)(dchar value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put('\'');
-
-	if     (value == '\n') sink.put(`\n`);
-	else if(value == '\r') sink.put(`\r`);
-	else if(value == '\t') sink.put(`\t`);
-	else if(value == '\'') sink.put(`\'`);
-	else if(value == '\\') sink.put(`\\`);
-	else
-		sink.put(value);
-
-	sink.put('\'');
-}
-
-void toSDLString(Sink)(int value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put( "%s".format(value) );
-}
-
-void toSDLString(Sink)(long value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put( "%sL".format(value) );
-}
-
-void toSDLString(Sink)(float value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	string ts() {
-		return format("%.10sF", value);
+	void toSDLStringIntImpl(int value, ref Sink sink) {
+		sink.put( "%s".format(value) );
 	}
 
-	auto dl = assumePure(&ts);
-	sink.put( dl() );
-}
-
-void toSDLString(Sink)(double value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	string ts() {
-		return format("%.30sD", value);
+	void toSDLString(long value, ref Sink sink) pure {
+		auto d = assumePure(&toSDLStringLongImpl);
+		d(value, sink);
 	}
 
-	auto dl = assumePure(&ts);
-	sink.put( dl() );
-}
-
-void toSDLString(Sink)(real value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	string ts() {
-		return format("%.30sBD", value);
+	void toSDLStringLongImpl(long value, ref Sink sink) {
+		sink.put( "%sL".format(value) );
 	}
 
-	auto dl = assumePure(&ts);
-	sink.put( dl() );
-}
+	void toSDLString(float value, ref Sink sink) pure {
+		string ts() {
+			return format("%.10sF", value);
+		}
 
-void toSDLString(Sink)(Date value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put(to!string(value.year));
-	sink.put('/');
-	sink.put(to!string(cast(int)value.month));
-	sink.put('/');
-	sink.put(to!string(value.day));
-}
+		auto dl = assumePure(&ts);
+		sink.put( dl() );
+	}
 
-void toSDLString(Sink)(DateTimeFrac value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	toSDLString(value.dateTime.date, sink);
-	sink.put(' ');
-	sink.put("%.2s".format(value.dateTime.hour));
-	sink.put(':');
-	sink.put("%.2s".format(value.dateTime.minute));
+	void toSDLString(double value, ref Sink sink) pure {
+		string ts() {
+			return format("%.30sD", value);
+		}
 
-	if(value.dateTime.second != 0)
-	{
+		auto dl = assumePure(&ts);
+		sink.put( dl() );
+	}
+
+	void toSDLString(real value, ref Sink sink) pure {
+		string ts() {
+			return format("%.30sBD", value);
+		}
+
+		auto dl = assumePure(&ts);
+		sink.put( dl() );
+	}
+
+	void toSDLString(Date value, ref Sink sink) pure {
+		sink.put(to!string(value.year));
+		sink.put('/');
+		sink.put(to!string(cast(int)value.month));
+		sink.put('/');
+		sink.put(to!string(value.day));
+	}
+
+	void toSDLString(DateTimeFrac value, ref Sink sink) pure {
+		toSDLString(value.dateTime.date, sink);
+		sink.put(' ');
+		sink.put("%.2s".format(value.dateTime.hour));
 		sink.put(':');
-		sink.put("%.2s".format(value.dateTime.second));
-	}
+		sink.put("%.2s".format(value.dateTime.minute));
 
-	if(value.fracSecs.total!"msecs" != 0)
-	{
-		sink.put('.');
-		sink.put("%.3s".format(value.fracSecs.total!"msecs"));
-	}
-}
+		if(value.dateTime.second != 0)
+		{
+			sink.put(':');
+			sink.put("%.2s".format(value.dateTime.second));
+		}
 
-private string timezoneToStr(immutable(TimeZone) tz, long stdTime) @safe {
-	return tz.dstInEffect(stdTime)? tz.dstName : tz.stdName;
-}
-
-private string timezoneStdName(immutable(TimeZone) tz) {
-	return tz.stdName;
-}
-
-private string timezoneName(immutable(TimeZone) tz) {
-	return tz.name;
-}
-
-private DateTimeFrac valueToDT(SysTime v) {
-	return DateTimeFrac(cast(DateTime)v, v.fracSecs);
-}
-
-private bool timezoneHasDST(immutable(TimeZone) tz) {
-	return tz.hasDST();
-}
-
-void toSDLString(Sink)(SysTime value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	auto dtf = assumePure(&valueToDT);
-	auto dateTimeFrac = dtf(value);
-	toSDLString(dateTimeFrac, sink);
-
-	sink.put("-");
-
-	auto ldl = assumePure(&timezoneName);
-	auto tzString = ldl(value.timezone);
-
-	// If name didn't exist, try abbreviation.
-	// Note that according to std.datetime docs, on Windows the
-	// stdName/dstName may not be properly abbreviated.
-	version(Windows) {} else
-	if(tzString == "")
-	{
-		immutable(TimeZone) tz = value.timezone;
-		long stdTime = value.stdTime;
-
-		auto dst = assumePure(&timezoneHasDST);
-
-		if(dst(tz)) {
-			auto dl = assumePure(&timezoneToStr);
-			tzString = dl(tz, stdTime);
-		} else {
-			auto dl = assumePure(&timezoneStdName);
-			tzString = dl(tz);
+		if(value.fracSecs.total!"msecs" != 0)
+		{
+			sink.put('.');
+			sink.put("%.3s".format(value.fracSecs.total!"msecs"));
 		}
 	}
 
-	if(tzString == "")
-	{
-		auto offset = value.timezone.utcOffsetAt(value.stdTime);
-		sink.put("GMT");
+	private string timezoneToStr(immutable(TimeZone) tz, long stdTime) @safe {
+		return tz.dstInEffect(stdTime)? tz.dstName : tz.stdName;
+	}
 
-		if(offset < seconds(0))
+	private string timezoneStdName(immutable(TimeZone) tz) {
+		return tz.stdName;
+	}
+
+	private string timezoneName(immutable(TimeZone) tz) {
+		return tz.name;
+	}
+
+	private DateTimeFrac valueToDT(SysTime v) {
+		return DateTimeFrac(cast(DateTime)v, v.fracSecs);
+	}
+
+	private bool timezoneHasDST(immutable(TimeZone) tz) {
+		return tz.hasDST();
+	}
+
+	void toSDLString(SysTime value, ref Sink sink) pure {
+		auto dl = assumePure(&toSDLStringSysTimeImpl);
+		dl(value, sink);
+	}
+
+	void toSDLStringSysTimeImpl(SysTime value, ref Sink sink) {
+		auto dtf = assumePure(&valueToDT);
+		auto dateTimeFrac = dtf(value);
+		toSDLString(dateTimeFrac, sink);
+
+		sink.put("-");
+
+		auto ldl = assumePure(&timezoneName);
+		auto tzString = ldl(value.timezone);
+
+		// If name didn't exist, try abbreviation.
+		// Note that according to std.datetime docs, on Windows the
+		// stdName/dstName may not be properly abbreviated.
+		version(Windows) {} else
+		if(tzString == "")
+		{
+			immutable(TimeZone) tz = value.timezone;
+			long stdTime = value.stdTime;
+
+			auto dst = assumePure(&timezoneHasDST);
+
+			if(dst(tz)) {
+				auto dl = assumePure(&timezoneToStr);
+				tzString = dl(tz, stdTime);
+			} else {
+				auto dl = assumePure(&timezoneStdName);
+				tzString = dl(tz);
+			}
+		}
+
+		if(tzString == "")
+		{
+			auto offset = value.timezone.utcOffsetAt(value.stdTime);
+			sink.put("GMT");
+
+			if(offset < seconds(0))
+			{
+				sink.put("-");
+				offset = -offset;
+			}
+			else
+				sink.put("+");
+
+			long hours, minutes;
+			offset.split!("hours", "minutes")(hours, minutes);
+
+			sink.put("%.2s".format(hours));
+			sink.put(":");
+			sink.put("%.2s".format(minutes));
+		}
+		else
+			sink.put(tzString);
+	}
+
+	void toSDLString(DateTimeFracUnknownZone value, ref Sink sink) pure {
+		auto dl = assumePure(&toSDLStringDTFUZimpl);
+		dl(value, sink);
+	}
+
+	void toSDLStringDTFUZimpl(DateTimeFracUnknownZone value, ref Sink sink) {
+		auto dateTimeFrac = DateTimeFrac(value.dateTime, value.fracSecs);
+		toSDLString(dateTimeFrac, sink);
+
+		sink.put("-");
+		sink.put(value.timeZone);
+	}
+
+	void toSDLString(Duration value, ref Sink sink) pure {
+		auto dl = assumePure(&toSDLStringDurationImpl);
+		dl(value, sink);
+	}
+
+	void toSDLStringDurationImpl(Duration value, ref Sink sink) {
+		if(value < seconds(0))
 		{
 			sink.put("-");
-			offset = -offset;
+			value = -value;
 		}
-		else
-			sink.put("+");
 
-		long hours, minutes;
-		offset.split!("hours", "minutes")(hours, minutes);
+		auto s = value.split();
+
+		auto days = value.total!"days"();
+		if(days != 0)
+		{
+			sink.put("%s".format(days));
+			sink.put("d:");
+		}
+
+		long hours = s.hours;
+		long minutes = s.minutes;
+		long seconds = s.seconds;
+		long msecs = s.msecs;
+		//	, minutes, seconds, msecs;
+		//value.split!("hours", "minutes", "seconds", "msecs")(hours, minutes, seconds, msecs);
 
 		sink.put("%.2s".format(hours));
-		sink.put(":");
+		sink.put(':');
 		sink.put("%.2s".format(minutes));
-	}
-	else
-		sink.put(tzString);
-}
+		sink.put(':');
+		sink.put("%.2s".format(seconds));
 
-void toSDLString(Sink)(DateTimeFracUnknownZone value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	auto dateTimeFrac = DateTimeFrac(value.dateTime, value.fracSecs);
-	toSDLString(dateTimeFrac, sink);
-
-	sink.put("-");
-	sink.put(value.timeZone);
-}
-
-void toSDLString(Sink)(Duration value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	if(value < seconds(0))
-	{
-		sink.put("-");
-		value = -value;
+		if(msecs != 0)
+		{
+			sink.put('.');
+			sink.put("%.3s".format(msecs));
+		}
 	}
 
-	auto s = value.split();
-
-	auto days = value.total!"days"();
-	if(days != 0)
-	{
-		sink.put("%s".format(days));
-		sink.put("d:");
+	void toSDLString(ubyte[] value, ref Sink sink) pure {
+		auto dl = assumePure(&toSDLStringUbyteImpl);
+		dl(value, sink);
 	}
 
-	long hours = s.hours;
-	long minutes = s.minutes;
-	long seconds = s.seconds;
-	long msecs = s.msecs;
-	//	, minutes, seconds, msecs;
-	//value.split!("hours", "minutes", "seconds", "msecs")(hours, minutes, seconds, msecs);
-
-	sink.put("%.2s".format(hours));
-	sink.put(':');
-	sink.put("%.2s".format(minutes));
-	sink.put(':');
-	sink.put("%.2s".format(seconds));
-
-	if(msecs != 0)
-	{
-		sink.put('.');
-		sink.put("%.3s".format(msecs));
+	void toSDLStringUbyteImpl(ubyte[] value, ref Sink sink) {
+		sink.put('[');
+		sink.put( Base64.encode(value) );
+		sink.put(']');
 	}
+
 }
 
-void toSDLString(Sink)(ubyte[] value, ref Sink sink) if(isOutputRange!(Sink,char))
-{
-	sink.put('[');
-	sink.put( Base64.encode(value) );
-	sink.put(']');
-}
 
 /// This only represents terminals. Nonterminals aren't
 /// constructed since the AST is directly built during parsing.
@@ -440,7 +490,7 @@ struct Token
 	}
 }
 
-@system unittest
+@system pure unittest
 {
 	import std.stdio;
 
@@ -471,7 +521,7 @@ struct Token
 	assert(Token(symbol!"Value",loc,Value(cast(float)1.2)) != Token(symbol!"Value",loc, Value(cast(double)1.2)));
 }
 
-unittest
+@system pure unittest
 {
 	import std.stdio;
 
@@ -484,7 +534,7 @@ unittest
 	strAssert(Value(cast(ubyte[])"hello world".dup).toSDLString(), "[aGVsbG8gd29ybGQ=]");
 }
 
-unittest {
+@system pure unittest {
 	// Integer
 	strAssert(Value(cast( int) 7).toSDLString(),  "7");
 	strAssert(Value(cast( int)-7).toSDLString(), "-7");

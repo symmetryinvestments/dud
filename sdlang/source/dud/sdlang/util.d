@@ -121,7 +121,7 @@ immutable ubyte[][NBOM] ByteOrderMarks =
 	[0x00, 0x00, 0xFE, 0xFF]    //UTF32BE
 ];
 
-void strAssert(string a, string b) {
+void strAssert(string a, string b) @safe pure {
 	import std.format : format;
 	assert(a == b, format("\nexp: %s\ngot: %s", b, a));
 }
