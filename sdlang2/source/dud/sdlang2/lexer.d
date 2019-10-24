@@ -205,7 +205,8 @@ struct Lexer {
 			string tmp = this.input[idx .. $];
 
 			if(tmp.empty || isWhite(tmp.front) || tmp.front == '.'
-					|| tmp.front == 'l' || tmp.front == 'L')
+					|| tmp.front == 'l' || tmp.front == 'L'
+					|| tmp.front == 'f' || tmp.front == 'F')
 			{
 				parseNumber(idx, l, c);
 				return;
@@ -280,6 +281,7 @@ struct Lexer {
 			} else if(this.input.startsWith('F')
 					|| this.input.startsWith('f'))
 			{
+				this.input.popFront();
 				this.cur = Token(TokenType.value, Value(to!float(theNum)),
 					theNum, l, c);
 			} else if(this.input.startsWith("BD")
@@ -287,6 +289,8 @@ struct Lexer {
 					|| this.input.startsWith("Bd")
 					|| this.input.startsWith("bD"))
 			{
+				this.input.popFront();
+				this.input.popFront();
 				this.cur = Token(TokenType.value, Value(to!real(theNum)),
 					theNum, l, c);
 			}
@@ -366,6 +370,12 @@ unittest {
 unittest {
 	auto l = Lexer("1337.0");
 	test(l, TokenType.value, ValueType.float64, 1337.0);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0f");
+	test(l, TokenType.value, ValueType.float32, 1337.0f);
 	assert(l.empty);
 }
 
