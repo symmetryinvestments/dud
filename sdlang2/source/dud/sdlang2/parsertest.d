@@ -49,3 +49,31 @@ unittest {
 
 	assert(vals.empty);
 }
+
+unittest {
+	auto l = Lexer(`
+			key "value"
+			key2 1337`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+
+	auto vals = tags(r);
+
+	assert(!vals.empty);
+	auto f = vals.front;
+	assert(f.identifer() == "key", f.identifer());
+	auto val = f.values();
+	assert(!val.empty);
+	assert(val.front.type == ValueType.str);
+	vals.popFront();
+
+	assert(!vals.empty);
+	f = vals.front;
+	assert(f.identifer() == "key2", f.identifer());
+	val = f.values();
+	assert(!val.empty);
+	assert(val.front.type == ValueType.int32);
+	vals.popFront();
+
+	assert(vals.empty);
+}

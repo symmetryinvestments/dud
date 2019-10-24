@@ -10,6 +10,7 @@ class Node {}
 
 enum RootEnum {
 	T,
+	TT,
 	E,
 }
 
@@ -371,6 +372,8 @@ class OptChild : Node {
 enum TagTerminatorEnum {
 	E,
 	S,
+	EF,
+	SF,
 }
 
 class TagTerminator : Node {

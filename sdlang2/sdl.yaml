@@ -1,5 +1,6 @@
 Root:
     T: [Tags#tags, eof]
+    TT: [TagTerminator, Tags#tags, eof]
     E: [eof]
 
 Tags:
@@ -45,3 +46,5 @@ OptChild:
 TagTerminator:
     E: [eol]
     S: [semicolon]
+    EF: [eol, TagTerminator]
+    SF: [semicolon, TagTerminator]

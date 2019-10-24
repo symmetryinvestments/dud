@@ -24,6 +24,7 @@ struct Parser {
 
 	bool firstRoot() const pure @nogc @safe {
 		return this.firstTags()
+			 || this.firstTagTerminator()
 			 || this.lex.front.type == TokenType.eof;
 	}
 
@@ -62,6 +63,42 @@ struct Parser {
 				["eof"]
 			);
 
+		} else if(this.firstTagTerminator()) {
+			this.parseTagTerminator();
+			subRules = ["TT"];
+			if(this.firstTags()) {
+				Tags tags = this.parseTags();
+				subRules = ["TT"];
+				if(this.lex.front.type == TokenType.eof) {
+					this.lex.popFront();
+
+					return new Root(RootEnum.TT
+						, tags
+					);
+				}
+				auto app = appender!string();
+				formattedWrite(app, 
+					"In 'Root' found a '%s' while looking for", 
+					this.lex.front
+				);
+				throw new ParseException(app.data,
+					__FILE__, __LINE__,
+					subRules,
+					["eof"]
+				);
+
+			}
+			auto app = appender!string();
+			formattedWrite(app, 
+				"In 'Root' found a '%s' while looking for", 
+				this.lex.front
+			);
+			throw new ParseException(app.data,
+				__FILE__, __LINE__,
+				subRules,
+				["ident -> Tag"]
+			);
+
 		} else if(this.lex.front.type == TokenType.eof) {
 			this.lex.popFront();
 
@@ -76,7 +113,7 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["ident -> Tag","eof"]
+			["ident -> Tag","eol","semicolon","eof"]
 		);
 
 	}
@@ -613,15 +650,27 @@ struct Parser {
 
 	TagTerminator parseTagTerminatorImpl() {
 		string[] subRules;
-		subRules = ["E"];
+		subRules = ["E", "EF"];
 		if(this.lex.front.type == TokenType.eol) {
 			this.lex.popFront();
+			subRules = ["EF"];
+			if(this.firstTagTerminator()) {
+				this.parseTagTerminator();
 
+				return new TagTerminator(TagTerminatorEnum.EF
+				);
+			}
 			return new TagTerminator(TagTerminatorEnum.E
 			);
 		} else if(this.lex.front.type == TokenType.semicolon) {
 			this.lex.popFront();
+			subRules = ["SF"];
+			if(this.firstTagTerminator()) {
+				this.parseTagTerminator();
 
+				return new TagTerminator(TagTerminatorEnum.SF
+				);
+			}
 			return new TagTerminator(TagTerminatorEnum.S
 			);
 		}

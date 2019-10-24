@@ -22,6 +22,9 @@ class Visitor : ConstVisitor {
 			case RootEnum.T:
 				obj.tags.visit(this);
 				break;
+			case RootEnum.TT:
+				obj.tags.visit(this);
+				break;
 			case RootEnum.E:
 				break;
 		}
@@ -215,6 +218,10 @@ class Visitor : ConstVisitor {
 				break;
 			case TagTerminatorEnum.S:
 				break;
+			case TagTerminatorEnum.EF:
+				break;
+			case TagTerminatorEnum.SF:
+				break;
 		}
 		exit(obj);
 	}
@@ -231,6 +238,9 @@ class ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case RootEnum.T:
+				obj.tags.visit(this);
+				break;
+			case RootEnum.TT:
 				obj.tags.visit(this);
 				break;
 			case RootEnum.E:
@@ -425,6 +435,10 @@ class ConstVisitor {
 			case TagTerminatorEnum.E:
 				break;
 			case TagTerminatorEnum.S:
+				break;
+			case TagTerminatorEnum.EF:
+				break;
+			case TagTerminatorEnum.SF:
 				break;
 		}
 		exit(obj);
