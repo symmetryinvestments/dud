@@ -54,17 +54,17 @@ class Tags : Node {
 @safe pure:
 
 	TagsEnum ruleSelection;
-	Tag tag;
 	Tags follow;
+	Tag cur;
 
-	this(TagsEnum ruleSelection, Tag tag) {
+	this(TagsEnum ruleSelection, Tag cur) {
 		this.ruleSelection = ruleSelection;
-		this.tag = tag;
+		this.cur = cur;
 	}
 
-	this(TagsEnum ruleSelection, Tag tag, Tags follow) {
+	this(TagsEnum ruleSelection, Tag cur, Tags follow) {
 		this.ruleSelection = ruleSelection;
-		this.tag = tag;
+		this.cur = cur;
 		this.follow = follow;
 	}
 
@@ -183,65 +183,25 @@ class Tag : Node {
 }
 
 enum IDFullEnum {
-	L,
 	S,
+	L,
 }
 
 class IDFull : Node {
 @safe pure:
 
 	IDFullEnum ruleSelection;
-	IDSuffix suff;
-	Token id;
+	IDFull follow;
+	Token cur;
 
-	this(IDFullEnum ruleSelection, Token id, IDSuffix suff) {
+	this(IDFullEnum ruleSelection, Token cur) {
 		this.ruleSelection = ruleSelection;
-		this.id = id;
-		this.suff = suff;
+		this.cur = cur;
 	}
 
-	this(IDFullEnum ruleSelection, Token id) {
+	this(IDFullEnum ruleSelection, Token cur, IDFull follow) {
 		this.ruleSelection = ruleSelection;
-		this.id = id;
-	}
-
-	void visit(Visitor vis) {
-		vis.accept(this);
-	}
-
-	void visit(Visitor vis) const {
-		vis.accept(this);
-	}
-
-	void visit(ConstVisitor vis) {
-		vis.accept(this);
-	}
-
-	void visit(ConstVisitor vis) const {
-		vis.accept(this);
-	}
-}
-
-enum IDSuffixEnum {
-	C,
-	F,
-}
-
-class IDSuffix : Node {
-@safe pure:
-
-	IDSuffixEnum ruleSelection;
-	IDSuffix follow;
-	Token id;
-
-	this(IDSuffixEnum ruleSelection, Token id) {
-		this.ruleSelection = ruleSelection;
-		this.id = id;
-	}
-
-	this(IDSuffixEnum ruleSelection, Token id, IDSuffix follow) {
-		this.ruleSelection = ruleSelection;
-		this.id = id;
+		this.cur = cur;
 		this.follow = follow;
 	}
 
@@ -271,17 +231,17 @@ class Values : Node {
 @safe pure:
 
 	ValuesEnum ruleSelection;
-	Token value;
 	Values follow;
+	Token cur;
 
-	this(ValuesEnum ruleSelection, Token value) {
+	this(ValuesEnum ruleSelection, Token cur) {
 		this.ruleSelection = ruleSelection;
-		this.value = value;
+		this.cur = cur;
 	}
 
-	this(ValuesEnum ruleSelection, Token value, Values follow) {
+	this(ValuesEnum ruleSelection, Token cur, Values follow) {
 		this.ruleSelection = ruleSelection;
-		this.value = value;
+		this.cur = cur;
 		this.follow = follow;
 	}
 
@@ -311,17 +271,17 @@ class Attributes : Node {
 @safe pure:
 
 	AttributesEnum ruleSelection;
-	Attribute attr;
 	Attributes follow;
+	Attribute cur;
 
-	this(AttributesEnum ruleSelection, Attribute attr) {
+	this(AttributesEnum ruleSelection, Attribute cur) {
 		this.ruleSelection = ruleSelection;
-		this.attr = attr;
+		this.cur = cur;
 	}
 
-	this(AttributesEnum ruleSelection, Attribute attr, Attributes follow) {
+	this(AttributesEnum ruleSelection, Attribute cur, Attributes follow) {
 		this.ruleSelection = ruleSelection;
-		this.attr = attr;
+		this.cur = cur;
 		this.follow = follow;
 	}
 

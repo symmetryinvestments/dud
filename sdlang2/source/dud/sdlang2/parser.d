@@ -100,18 +100,18 @@ struct Parser {
 		string[] subRules;
 		subRules = ["Tag", "TagFollow"];
 		if(this.firstTag()) {
-			Tag tag = this.parseTag();
+			Tag cur = this.parseTag();
 			subRules = ["TagFollow"];
 			if(this.firstTags()) {
 				Tags follow = this.parseTags();
 
 				return new Tags(TagsEnum.TagFollow
-					, tag
+					, cur
 					, follow
 				);
 			}
 			return new Tags(TagsEnum.Tag
-				, tag
+				, cur
 			);
 		}
 		auto app = appender!string();
@@ -306,19 +306,34 @@ struct Parser {
 		string[] subRules;
 		subRules = ["L", "S"];
 		if(this.lex.front.type == TokenType.ident) {
-			Token id = this.lex.front;
+			Token cur = this.lex.front;
 			this.lex.popFront();
 			subRules = ["L"];
-			if(this.firstIDSuffix()) {
-				IDSuffix suff = this.parseIDSuffix();
+			if(this.lex.front.type == TokenType.colon) {
+				this.lex.popFront();
+				subRules = ["L"];
+				if(this.firstIDFull()) {
+					IDFull follow = this.parseIDFull();
 
-				return new IDFull(IDFullEnum.L
-					, id
-					, suff
+					return new IDFull(IDFullEnum.L
+						, cur
+						, follow
+					);
+				}
+				auto app = appender!string();
+				formattedWrite(app, 
+					"In 'IDFull' found a '%s' while looking for", 
+					this.lex.front
 				);
+				throw new ParseException(app.data,
+					__FILE__, __LINE__,
+					subRules,
+					["ident"]
+				);
+
 			}
 			return new IDFull(IDFullEnum.S
-				, id
+				, cur
 			);
 		}
 		auto app = appender!string();
@@ -330,68 +345,6 @@ struct Parser {
 			__FILE__, __LINE__,
 			subRules,
 			["ident"]
-		);
-
-	}
-
-	bool firstIDSuffix() const pure @nogc @safe {
-		return this.lex.front.type == TokenType.colon;
-	}
-
-	IDSuffix parseIDSuffix() {
-		try {
-			return this.parseIDSuffixImpl();
-		} catch(ParseException e) {
-			throw new ParseException(
-				"While parsing a IDSuffix an Exception was thrown.",
-				e, __FILE__, __LINE__
-			);
-		}
-	}
-
-	IDSuffix parseIDSuffixImpl() {
-		string[] subRules;
-		subRules = ["C", "F"];
-		if(this.lex.front.type == TokenType.colon) {
-			this.lex.popFront();
-			subRules = ["C", "F"];
-			if(this.lex.front.type == TokenType.ident) {
-				Token id = this.lex.front;
-				this.lex.popFront();
-				subRules = ["F"];
-				if(this.firstIDSuffix()) {
-					IDSuffix follow = this.parseIDSuffix();
-
-					return new IDSuffix(IDSuffixEnum.F
-						, id
-						, follow
-					);
-				}
-				return new IDSuffix(IDSuffixEnum.C
-					, id
-				);
-			}
-			auto app = appender!string();
-			formattedWrite(app, 
-				"In 'IDSuffix' found a '%s' while looking for", 
-				this.lex.front
-			);
-			throw new ParseException(app.data,
-				__FILE__, __LINE__,
-				subRules,
-				["ident"]
-			);
-
-		}
-		auto app = appender!string();
-		formattedWrite(app, 
-			"In 'IDSuffix' found a '%s' while looking for", 
-			this.lex.front
-		);
-		throw new ParseException(app.data,
-			__FILE__, __LINE__,
-			subRules,
-			["colon"]
 		);
 
 	}
@@ -415,19 +368,19 @@ struct Parser {
 		string[] subRules;
 		subRules = ["Value", "ValueFollow"];
 		if(this.lex.front.type == TokenType.value) {
-			Token value = this.lex.front;
+			Token cur = this.lex.front;
 			this.lex.popFront();
 			subRules = ["ValueFollow"];
 			if(this.firstValues()) {
 				Values follow = this.parseValues();
 
 				return new Values(ValuesEnum.ValueFollow
-					, value
+					, cur
 					, follow
 				);
 			}
 			return new Values(ValuesEnum.Value
-				, value
+				, cur
 			);
 		}
 		auto app = appender!string();
@@ -462,18 +415,18 @@ struct Parser {
 		string[] subRules;
 		subRules = ["Attribute", "AttributeFollow"];
 		if(this.firstAttribute()) {
-			Attribute attr = this.parseAttribute();
+			Attribute cur = this.parseAttribute();
 			subRules = ["AttributeFollow"];
 			if(this.firstAttributes()) {
 				Attributes follow = this.parseAttributes();
 
 				return new Attributes(AttributesEnum.AttributeFollow
-					, attr
+					, cur
 					, follow
 				);
 			}
 			return new Attributes(AttributesEnum.Attribute
-				, attr
+				, cur
 			);
 		}
 		auto app = appender!string();

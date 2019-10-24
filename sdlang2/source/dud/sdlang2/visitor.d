@@ -35,10 +35,10 @@ class Visitor : ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case TagsEnum.Tag:
-				obj.tag.visit(this);
+				obj.cur.visit(this);
 				break;
 			case TagsEnum.TagFollow:
-				obj.tag.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -133,28 +133,11 @@ class Visitor : ConstVisitor {
 	void accept(IDFull obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case IDFullEnum.L:
-				obj.id.visit(this);
-				obj.suff.visit(this);
-				break;
 			case IDFullEnum.S:
-				obj.id.visit(this);
+				obj.cur.visit(this);
 				break;
-		}
-		exit(obj);
-	}
-
-	void enter(IDSuffix obj) {}
-	void exit(IDSuffix obj) {}
-
-	void accept(IDSuffix obj) {
-		enter(obj);
-		final switch(obj.ruleSelection) {
-			case IDSuffixEnum.C:
-				obj.id.visit(this);
-				break;
-			case IDSuffixEnum.F:
-				obj.id.visit(this);
+			case IDFullEnum.L:
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -168,10 +151,10 @@ class Visitor : ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case ValuesEnum.Value:
-				obj.value.visit(this);
+				obj.cur.visit(this);
 				break;
 			case ValuesEnum.ValueFollow:
-				obj.value.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -185,10 +168,10 @@ class Visitor : ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case AttributesEnum.Attribute:
-				obj.attr.visit(this);
+				obj.cur.visit(this);
 				break;
 			case AttributesEnum.AttributeFollow:
-				obj.attr.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -263,10 +246,10 @@ class ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case TagsEnum.Tag:
-				obj.tag.visit(this);
+				obj.cur.visit(this);
 				break;
 			case TagsEnum.TagFollow:
-				obj.tag.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -361,28 +344,11 @@ class ConstVisitor {
 	void accept(const(IDFull) obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case IDFullEnum.L:
-				obj.id.visit(this);
-				obj.suff.visit(this);
-				break;
 			case IDFullEnum.S:
-				obj.id.visit(this);
+				obj.cur.visit(this);
 				break;
-		}
-		exit(obj);
-	}
-
-	void enter(const(IDSuffix) obj) {}
-	void exit(const(IDSuffix) obj) {}
-
-	void accept(const(IDSuffix) obj) {
-		enter(obj);
-		final switch(obj.ruleSelection) {
-			case IDSuffixEnum.C:
-				obj.id.visit(this);
-				break;
-			case IDSuffixEnum.F:
-				obj.id.visit(this);
+			case IDFullEnum.L:
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -396,10 +362,10 @@ class ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case ValuesEnum.Value:
-				obj.value.visit(this);
+				obj.cur.visit(this);
 				break;
 			case ValuesEnum.ValueFollow:
-				obj.value.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}
@@ -413,10 +379,10 @@ class ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case AttributesEnum.Attribute:
-				obj.attr.visit(this);
+				obj.cur.visit(this);
 				break;
 			case AttributesEnum.AttributeFollow:
-				obj.attr.visit(this);
+				obj.cur.visit(this);
 				obj.follow.visit(this);
 				break;
 		}

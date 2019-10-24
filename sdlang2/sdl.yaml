@@ -3,8 +3,8 @@ Root:
     E: [eof]
 
 Tags:
-    Tag: [Tag#tag]
-    TagFollow: [Tag#tag, Tags#follow]
+    Tag: [Tag#cur]
+    TagFollow: [Tag#cur, Tags#follow]
 
 Tag:
     VAO: [IDFull#id, Values#vals, Attributes#attrs, OptChild#oc]
@@ -25,20 +25,16 @@ Tag:
     ET: [IDFull#id, TagTerminator]
 
 IDFull:
-    L: [ident#id, IDSuffix#suff]
-    S: [ident#id]
-
-IDSuffix:
-    C: [colon, ident#id]
-    F: [colon, ident#id, IDSuffix#follow]
+    S: [ident#cur]
+    L: [ident#cur, colon, IDFull#follow]
 
 Values:
-    Value: [value#value]
-    ValueFollow: [value#value, Values#follow]
+    Value: [value#cur]
+    ValueFollow: [value#cur, Values#follow]
 
 Attributes:
-    Attribute: [Attribute#attr]
-    AttributeFollow: [Attribute#attr, Attributes#follow]
+    Attribute: [Attribute#cur]
+    AttributeFollow: [Attribute#cur, Attributes#follow]
 
 Attribute:
     A: [IDFull#id, assign, value#value]
