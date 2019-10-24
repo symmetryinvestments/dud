@@ -22,6 +22,7 @@ IDFull:
 
 IDSuffix:
     C: [colon, ident#id]
+    F: [colon, ident#id, IDSuffix#follow]
 
 Values:
     Value: [value#value]

@@ -62,9 +62,6 @@ struct Lexer {
 				++this.column;
 			} else if(this.input.front == '\t') {
 				++this.column;
-			} else if(this.input.front == '\n') {
-				this.column = 1;
-				++this.line;
 			} else {
 				break;
 			}
@@ -91,6 +88,9 @@ struct Lexer {
 			return;
 		} else if(this.input.front == '}') {
 			this.singleCharToken(TokenType.rcurly);
+			return;
+		} else if(this.input.front == '\n') {
+			this.singleCharToken(TokenType.eol);
 			return;
 		} else if(this.input.front == '=') {
 			this.singleCharToken(TokenType.assign);
@@ -210,7 +210,9 @@ struct Lexer {
 			{
 				parseNumber(idx, l, c);
 				return;
-			} else if(tmp.front == 'd' || tmp.front == ':') {
+			} else if(tmp.front == 'd' || tmp.front == 'D'
+					|| tmp.front == ':')
+			{
 				parseDuration(idx, l, c);
 				return;
 			} else if(tmp.front == '/') {

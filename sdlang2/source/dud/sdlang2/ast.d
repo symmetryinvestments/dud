@@ -4,7 +4,7 @@ import dud.sdlang2.tokenmodule;
 
 import dud.sdlang2.visitor;
 
-@safe:
+@safe pure:
 
 class Node {}
 
@@ -14,6 +14,8 @@ enum RootEnum {
 }
 
 class Root : Node {
+@safe pure:
+
 	RootEnum ruleSelection;
 	Tags tags;
 
@@ -49,6 +51,8 @@ enum TagsEnum {
 }
 
 class Tags : Node {
+@safe pure:
+
 	TagsEnum ruleSelection;
 	Tag tag;
 	Tags follow;
@@ -93,6 +97,8 @@ enum TagEnum {
 }
 
 class Tag : Node {
+@safe pure:
+
 	TagEnum ruleSelection;
 	OptChild oc;
 	IDFull id;
@@ -168,6 +174,8 @@ enum IDFullEnum {
 }
 
 class IDFull : Node {
+@safe pure:
+
 	IDFullEnum ruleSelection;
 	IDSuffix suff;
 	Token id;
@@ -202,15 +210,25 @@ class IDFull : Node {
 
 enum IDSuffixEnum {
 	C,
+	F,
 }
 
 class IDSuffix : Node {
+@safe pure:
+
 	IDSuffixEnum ruleSelection;
+	IDSuffix follow;
 	Token id;
 
 	this(IDSuffixEnum ruleSelection, Token id) {
 		this.ruleSelection = ruleSelection;
 		this.id = id;
+	}
+
+	this(IDSuffixEnum ruleSelection, Token id, IDSuffix follow) {
+		this.ruleSelection = ruleSelection;
+		this.id = id;
+		this.follow = follow;
 	}
 
 	void visit(Visitor vis) {
@@ -236,6 +254,8 @@ enum ValuesEnum {
 }
 
 class Values : Node {
+@safe pure:
+
 	ValuesEnum ruleSelection;
 	Token value;
 	Values follow;
@@ -274,6 +294,8 @@ enum AttributesEnum {
 }
 
 class Attributes : Node {
+@safe pure:
+
 	AttributesEnum ruleSelection;
 	Attribute attr;
 	Attributes follow;
@@ -311,6 +333,8 @@ enum AttributeEnum {
 }
 
 class Attribute : Node {
+@safe pure:
+
 	AttributeEnum ruleSelection;
 	Token value;
 	IDFull id;
@@ -343,6 +367,8 @@ enum OptChildEnum {
 }
 
 class OptChild : Node {
+@safe pure:
+
 	OptChildEnum ruleSelection;
 	Tags tags;
 
@@ -373,6 +399,8 @@ enum TagTerminatorEnum {
 }
 
 class TagTerminator : Node {
+@safe pure:
+
 	TagTerminatorEnum ruleSelection;
 
 	this(TagTerminatorEnum ruleSelection) {

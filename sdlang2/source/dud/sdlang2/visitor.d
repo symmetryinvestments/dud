@@ -3,9 +3,9 @@ module dud.sdlang2.visitor;
 import dud.sdlang2.ast;
 import dud.sdlang2.tokenmodule;
 
-@safe:
-
 class Visitor : ConstVisitor {
+@safe pure:
+
 	alias accept = ConstVisitor.accept;
 
 	alias enter = ConstVisitor.enter;
@@ -117,6 +117,10 @@ class Visitor : ConstVisitor {
 			case IDSuffixEnum.C:
 				obj.id.visit(this);
 				break;
+			case IDSuffixEnum.F:
+				obj.id.visit(this);
+				obj.follow.visit(this);
+				break;
 		}
 		exit(obj);
 	}
@@ -196,6 +200,8 @@ class Visitor : ConstVisitor {
 }
 
 class ConstVisitor {
+@safe pure:
+
 
 	void enter(const(Root) obj) {}
 	void exit(const(Root) obj) {}
@@ -300,6 +306,10 @@ class ConstVisitor {
 		final switch(obj.ruleSelection) {
 			case IDSuffixEnum.C:
 				obj.id.visit(this);
+				break;
+			case IDSuffixEnum.F:
+				obj.id.visit(this);
+				obj.follow.visit(this);
 				break;
 		}
 		exit(obj);

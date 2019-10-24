@@ -9,9 +9,9 @@ import dud.sdlang2.lexer;
 
 import dud.sdlang2.exception;
 
-@safe:
-
 struct Parser {
+@safe pure:
+
 	import std.array : appender;
 
 	import std.format : formattedWrite;
@@ -395,14 +395,22 @@ struct Parser {
 
 	IDSuffix parseIDSuffixImpl() {
 		string[] subRules;
-		subRules = ["C"];
+		subRules = ["C", "F"];
 		if(this.lex.front.type == TokenType.colon) {
 			this.lex.popFront();
-			subRules = ["C"];
+			subRules = ["C", "F"];
 			if(this.lex.front.type == TokenType.ident) {
 				Token id = this.lex.front;
 				this.lex.popFront();
+				subRules = ["F"];
+				if(this.firstIDSuffix()) {
+					IDSuffix follow = this.parseIDSuffix();
 
+					return new IDSuffix(IDSuffixEnum.F
+						, id
+						, follow
+					);
+				}
 				return new IDSuffix(IDSuffixEnum.C
 					, id
 				);

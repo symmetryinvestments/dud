@@ -1,9 +1,9 @@
 module dud.sdlang2.exception;
 
-@safe:
-
 
 class ParseException : Exception {
+@safe pure:
+
 	int line;
 	string[] subRules;
 	string[] follows;
