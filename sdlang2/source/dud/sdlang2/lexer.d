@@ -123,7 +123,7 @@ struct Lexer {
 			this.input = this.input[rbrack + 1 .. $];
 			this.cur = Token(TokenType.value, Value(data), theData, l, c);
 			return;
-		} else if(this.input.front == '`') {
+		} else if(this.input.startsWith("`")) {
 			size_t l = this.line;
 			size_t c = this.column;
 			++this.column;
@@ -144,6 +144,7 @@ struct Lexer {
 
 			assert(this.input.front == '`', this.input);
 			this.input.popFront();
+			return;
 		} else if(this.input.front == '"') {
 			size_t l = this.line;
 			size_t c = this.column;
@@ -331,11 +332,25 @@ void test(T)(ref Lexer lex, TokenType tt) {
 }
 
 void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
+	import std.traits : isFloatingPoint;
+	import std.math : approxEqual;
+
+	import dud.sdlang2.util : floatToStringPure;
 	assert(!lex.empty);
 	assert(lex.front.type == tt,
 		format("\nexp: %s\ngot: %s", tt, lex.front.type));
 	assert(lex.front.value.type == vt,
 		format("\nexp: %s\ngot: %s", vt, lex.front.value.type));
+
+	T tValue = lex.front.value.get!T();
+	static if(isFloatingPoint!T) {
+		assert(approxEqual(value, tValue),
+			format("\nexp: %s\ngot: %s", floatToStringPure(value),
+				floatToStringPure(tValue)));
+	} else {
+		assert(value == tValue,
+			format("\nexp: %s\ngot: %s", value, tValue));
+	}
 
 	// TODO do value comparison
 	lex.popFront();
@@ -350,5 +365,18 @@ unittest {
 unittest {
 	auto l = Lexer("1337.0");
 	test(l, TokenType.value, ValueType.float64, 1337.0);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`"Hello World"`);
+	test(l, TokenType.value, ValueType.str, "Hello World");
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(q{`Hello
+ World`});
+	test(l, TokenType.value, ValueType.str, "Hello World");
 	assert(l.empty);
 }

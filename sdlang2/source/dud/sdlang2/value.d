@@ -64,14 +64,14 @@ enum ValueType {
 }
 
 private union Data {
-	long interger;
+	long integral;
 	double floating64;
 	real floating128;
 	bool boolean;
 	Duration duration;
 	Date date;
-	DateTimeFrac datetime;
-	DateTimeFracUnknownZone datetimeUZ;
+	DateTimeFrac datetime; // datetimeTZ
+	DateTimeFracUnknownZone datetimeUZ; //datetime
 	ubyte[] binary;
 	string str;
 	dchar character;
@@ -103,12 +103,12 @@ struct Value {
 	}
 
 	this(DateTimeFracUnknownZone i) @trusted {
-		this.type = ValueType.datetimeTZ;
+		this.type = ValueType.datetime;
 		this.data.datetimeUZ = i;
 	}
 
 	this(DateTimeFrac i) @trusted {
-		this.type = ValueType.datetime;
+		this.type = ValueType.datetimeTZ;
 		this.data.datetime = i;
 	}
 
@@ -124,12 +124,12 @@ struct Value {
 
 	this(int i) @trusted {
 		this.type = ValueType.int32;
-		this.data.interger = i;
+		this.data.integral = i;
 	}
 
 	this(long i) @trusted {
 		this.type = ValueType.int64;
-		this.data.interger = i;
+		this.data.integral = i;
 	}
 
 	this(float i) @trusted {
@@ -145,5 +145,93 @@ struct Value {
 	this(real i) @trusted {
 		this.type = ValueType.float128;
 		this.data.floating128 = i;
+	}
+
+	T get(T)() const pure @safe {
+		import std.algorithm.searching : canFind;
+		import std.conv : to;
+		import std.exception : enforce;
+		import std.traits : isFloatingPoint, isIntegral, isSomeString;
+		import std.format : format;
+		static if(isSomeString!T) {
+			enforce(this.type == ValueType.str,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return () @trusted { return this.data.str; }();
+		} else static if(is(T == ubyte[])) {
+			enforce(this.type == ValueType.binary,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.binary;
+		} else static if(is(T == dchar)) {
+			enforce(this.type == ValueType.char_,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.character;
+		} else static if(is(T == Duration)) {
+			enforce(this.type == ValueType.duration,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.duration;
+		} else static if(is(T == DateTimeFrac)) {
+			enforce(this.type == ValueType.datetimeTZ,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.datetime;
+		} else static if(is(T == DateTimeFracUnknownZone)) {
+			enforce(this.type == ValueType.datetime,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.datetimeUZ;
+		} else static if(is(T == bool)) {
+			enforce(this.type == ValueType.boolean,
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			return this.data.boolean;
+		} else static if(isIntegral!T) {
+			enum tt =
+				[ ValueType.int32, ValueType.int64, ValueType.float32 ];
+			enforce(canFind(tt, this.type),
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			switch(this.type) {
+				case ValueType.int32:
+					goto case;
+				case ValueType.int64:
+					return to!T(this.data.integral);
+				default:
+					assert(false, "We should never reach this");
+			}
+			assert(false, "We should never reach either");
+		} else static if(isFloatingPoint!T) {
+			enum tt =
+				[ ValueType.int32, ValueType.int64, ValueType.float32
+				, ValueType.float64, ValueType.float128, ValueType.decimal128
+				];
+
+			enforce(canFind(tt, this.type),
+				format("Can not get '%s' when the type is '%s'", T.stringof,
+					this.type));
+			switch(this.type) {
+				case ValueType.int32:
+					goto case;
+				case ValueType.int64:
+					return to!T(this.data.integral);
+				case ValueType.float32:
+					goto case;
+				case ValueType.float64:
+					return to!T(this.data.floating64);
+				case ValueType.float128:
+					return to!T(this.data.floating128);
+				case ValueType.decimal128:
+					return to!T(this.data.floating128);
+				default:
+					assert(false, "We should never reach this");
+			}
+			assert(false, "We should never reach either");
+		} else {
+			static assert(false, format("getting a %s is not handled",
+				T.stringof));
+		}
 	}
 }
