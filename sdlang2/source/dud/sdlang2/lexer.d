@@ -1,9 +1,10 @@
 module dud.sdlang2.lexer;
 
-import std.ascii : isWhite;
+import std.ascii;
 import std.array : appender, empty, front, popFront, popBack;
 import std.algorithm.searching : startsWith;
 import std.base64;
+import std.conv : to;
 import std.experimental.logger;
 import std.format : format;
 import std.typecons : Flag;
@@ -20,14 +21,14 @@ struct Lexer {
 
 	Token cur;
 
-	this(string input) @safe {
+	this(string input) @safe pure {
 		this.input = input;
 		this.line = 1;
 		this.column = 1;
 		this.buildToken();
 	}
 
-	private bool eatComment() @safe {
+	private bool eatComment() @safe pure {
 		if(this.input.startsWith("#") || this.input.startsWith("--")
 				|| this.input.startsWith("//"))
 		{
@@ -53,7 +54,7 @@ struct Lexer {
 		return false;
 	}
 
-	private void eatWhitespace() @safe {
+	private void eatWhitespace() @safe pure {
 		while(!this.input.empty) {
 			if(this.eatComment()) {
 				continue;
@@ -71,13 +72,13 @@ struct Lexer {
 		}
 	}
 
-	private void singleCharToken(TokenType tt) @safe {
+	private void singleCharToken(TokenType tt) @safe pure {
 		this.cur = Token(tt, this.line, this.column);
 		++this.column;
 		this.input.popFront();
 	}
 
-	private void buildToken() @safe {
+	private void buildToken() @safe pure {
 		this.eatWhitespace();
 
 		if(this.input.empty) {
@@ -143,8 +144,6 @@ struct Lexer {
 
 			assert(this.input.front == '`', this.input);
 			this.input.popFront();
-
-
 		} else if(this.input.front == '"') {
 			size_t l = this.line;
 			size_t c = this.column;
@@ -187,398 +186,125 @@ struct Lexer {
 
 			this.cur = Token(TokenType.value, Value(app.data), app.data, l, c);
 			return;
-		}
-	}
+		} else if(this.input.front == '-' || isDigit(this.input.front)) {
+			size_t l = this.line;
+			size_t c = this.column;
 
-	/*private void buildToken() @safe {
-		import std.ascii : isAlphaNum;
-		this.eatWhitespace();
-
-		if(this.stringPos >= this.input.length) {
-			this.cur = Token(TokenType.undefined);
-			return;
-		}
-
-		if(this.input[this.stringPos] == ')') {
-			this.cur = Token(TokenType.rparen, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '(') {
-			this.cur = Token(TokenType.lparen, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == ']') {
-			this.cur = Token(TokenType.rbrack, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '[') {
-			this.cur = Token(TokenType.lbrack, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '}') {
-			this.cur = Token(TokenType.rcurly, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '$') {
-			this.cur = Token(TokenType.dollar, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '!') {
-			this.cur = Token(TokenType.exclamation, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '{') {
-			this.cur = Token(TokenType.lcurly, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '|') {
-			this.cur = Token(TokenType.pipe, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '@') {
-			this.cur = Token(TokenType.at, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == ',') {
-			this.cur = Token(TokenType.comma, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == '=') {
-			this.cur = Token(TokenType.equal, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else if(this.input[this.stringPos] == ':') {
-			this.cur = Token(TokenType.colon, this.line, this.column);
-			++this.column;
-			++this.stringPos;
-		} else {
-			size_t b = this.stringPos;
-			size_t e = this.stringPos;
-			switch(this.input[this.stringPos]) {
-				case 'm':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"utation"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.mutation, this.line,
-										this.column);
-							return;
-						}
-					}
-					goto default;
-				case 's':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.isNotQueryParser() &&
-							this.testStrAndInc!"ubscription"(e))
-					{
-						if(this.isTokenStop()) {
-							this.cur =
-								Token(TokenType.subscription,
-										this.line,
-										this.column);
-							return;
-						}
-					} else if(this.isNotQueryParser()
-								&& this.testCharAndInc('c', e))
-					{
-						if(this.testStrAndInc!"alar"(e)) {
-							if(this.isTokenStop()) {
-								this.cur = Token(TokenType.scalar, this.line, this.column);
-								return;
-							}
-						} else if(this.isNotQueryParser()
-									&& this.testStrAndInc!"hema"(e))
-						{
-							if(this.isTokenStop()) {
-								this.cur = Token(TokenType.schema, this.line, this.column);
-								return;
-							}
-						}
-					}
-					goto default;
-				case 'o':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testCharAndInc('n', e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.on_, this.line,
-									this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'd':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"irective"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.directive,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'e':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"num"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.enum_,
-									this.line, this.column);
-							return;
-						}
-					} else if(this.testStrAndInc!"xtend"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.extend,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'i':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testCharAndInc('n', e)) {
-						if(this.isNotQueryParser()
-								&& this.testCharAndInc('p', e)
-							)
-						{
-							if(this.testStrAndInc!"ut"(e)) {
-								if(this.isTokenStop()) {
-									this.cur = Token(TokenType.input,
-											this.line, this.column);
-									return;
-								}
-							}
-						} else if(this.testStrAndInc!"terface"(e)) {
-							if(this.isTokenStop()) {
-								this.cur = Token(TokenType.interface_,
-										this.line, this.column);
-								return;
-							}
-						}
-					} else if(this.testStrAndInc!"mplements"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.implements,
-									this.line, this.column);
-							return;
-						}
-					}
-
-					goto default;
-				case 'f':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"alse"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.false_,
-									this.line, this.column);
-							return;
-						}
-					} else if(this.testStrAndInc!"ragment"(e)) {
-						if(this.isTokenStop()) {
-							this.cur =
-								Token(TokenType.fragment,
-										this.line,
-										this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'q':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"uery"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.query,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case 't':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"rue"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.true_,
-									this.line, this.column);
-							return;
-						}
-					} else if(this.isNotQueryParser()
-							&& this.testStrAndInc!"ype"(e))
-					{
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.type,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'n':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"ull"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.null_,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case 'u':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!"nion"(e)) {
-						if(this.isTokenStop()) {
-							this.cur = Token(TokenType.union_,
-									this.line, this.column);
-							return;
-						}
-					}
-					goto default;
-				case '.':
-					++this.stringPos;
-					++this.column;
-					++e;
-					if(this.testStrAndInc!".."(e)) {
-						if(this.isTokenStop()
-								|| (this.stringPos < this.input.length
-									&& isAlphaNum(this.input[this.stringPos])
-									)
-							)
-						{
-							this.cur = Token(TokenType.dots, this.line,
-									this.column);
-							return;
-						}
-					}
-					throw new Exception(format(
-							"failed to parse \"...\" at line %s column %s",
-							this.line, this.column
-						));
-				case '-':
-					++this.stringPos;
-					++this.column;
-					++e;
-					goto case '0';
-				case '+':
-					++this.stringPos;
-					++this.column;
-					++e;
-					goto case '0';
-				case '0': .. case '9':
-					do {
-						++this.stringPos;
-						++this.column;
-						++e;
-					} while(this.stringPos < this.input.length
-							&& this.input[this.stringPos] >= '0'
-							&& this.input[this.stringPos] <= '9');
-
-					if(this.stringPos >= this.input.length
-							|| this.input[this.stringPos] != '.')
-					{
-						this.cur = Token(TokenType.intValue, this.input[b ..
-								e], this.line, this.column);
-						return;
-					} else if(this.stringPos < this.input.length
-							&& this.input[this.stringPos] == '.')
-					{
-						do {
-							++this.stringPos;
-							++this.column;
-							++e;
-						} while(this.stringPos < this.input.length
-								&& this.input[this.stringPos] >= '0'
-								&& this.input[this.stringPos] <= '9');
-
-						this.cur = Token(TokenType.floatValue, this.input[b ..
-								e], this.line, this.column);
-						return;
-					}
-					goto default;
-				case '"':
-					++this.stringPos;
-					++this.column;
-					++e;
-					while(this.stringPos < this.input.length
-							&& (this.input[this.stringPos] != '"'
-								|| (this.input[this.stringPos] == '"'
-									&& this.input[this.stringPos - 1U] == '\\')
-						 		)
-						)
-					{
-						++this.stringPos;
-						++this.column;
-						++e;
-					}
-					++this.stringPos;
-					++this.column;
-					this.cur = Token(TokenType.stringValue, this.input[b + 1
-							.. e], this.line, this.column);
-					break;
-				default:
-					while(!this.isTokenStop()) {
-						//writefln("455 '%s'", this.input[this.stringPos]);
-						++this.stringPos;
-						++this.column;
-						++e;
-					}
-					this.cur = Token(TokenType.name, this.input[b .. e],
-							this.line, this.column
-						);
-					break;
+			size_t idx;
+			if(this.input.front == '-') {
+				++idx;
 			}
-		}
-	}*/
 
-	/*bool testCharAndInc(const(char) c, ref size_t e) @safe {
-		if(this.stringPos < this.input.length
-				&& this.input[this.stringPos] == c)
-		{
-			++this.column;
-			++this.stringPos;
-			++e;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	bool testStrAndInc(string s)(ref size_t e) @safe {
-		for(size_t i = 0; i < s.length; ++i) {
-			if(this.stringPos < this.input.length
-					&& this.input[this.stringPos] == s[i])
-			{
+			while(idx < this.input.length && isDigit(this.input[idx])) {
+				++idx;
 				++this.column;
-				++this.stringPos;
-				++e;
+			}
+
+			string tmp = this.input[idx .. $];
+
+			if(tmp.empty || isWhite(tmp.front) || tmp.front == '.'
+					|| tmp.front == 'l' || tmp.front == 'L')
+			{
+				parseNumber(idx, l, c);
+				return;
+			} else if(tmp.front == 'd' || tmp.front == ':') {
+				parseDuration(idx, l, c);
+				return;
+			} else if(tmp.front == '/') {
+				parseDate(idx, l, c);
+				return;
 			} else {
-				return false;
+				assert(false, this.input);
 			}
 		}
-		return true;
-	}*/
+		assert(false, this.input);
+	}
 
-	@property bool empty() const @safe {
+	void parseNumber(size_t idx, size_t l, size_t c) @safe pure {
+		string prefix = this.input[0 .. idx];
+		string tmp = this.input[idx .. $];
+		if(tmp.empty) {
+			this.cur = Token(TokenType.value, Value(to!int(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+		} else if(tmp.startsWith('L')
+				|| tmp.startsWith('l'))
+		{
+			this.cur = Token(TokenType.value, Value(to!long(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith('F')
+				|| tmp.startsWith('f'))
+		{
+			this.cur = Token(TokenType.value, Value(to!float(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith('D') || tmp.startsWith('d'))
+		{
+			this.cur = Token(TokenType.value, Value(to!double(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith("bd")
+				|| tmp.startsWith("BD")
+				|| tmp.startsWith("bD")
+				|| tmp.startsWith("Bd"))
+		{
+			this.cur = Token(TokenType.value, Value(to!real(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			this.input.popFront();
+			this.column += 2;
+		} else if(tmp.startsWith('.')) {
+			tmp.popFront();
+			++this.column;
+			while(!tmp.empty && isDigit(tmp.front)) {
+				++idx;
+				++this.column;
+				tmp.popFront();
+			}
+			++idx;
+			string theNum = this.input[0 .. idx];
+			this.input = this.input[idx .. $];
+			if(this.input.empty) {
+				this.cur = Token(TokenType.value, Value(to!double(theNum)),
+					theNum, l, c);
+			} else if(this.input.startsWith('F')
+					|| this.input.startsWith('f'))
+			{
+				this.cur = Token(TokenType.value, Value(to!float(theNum)),
+					theNum, l, c);
+			} else if(this.input.startsWith("BD")
+					|| this.input.startsWith("bd")
+					|| this.input.startsWith("Bd")
+					|| this.input.startsWith("bD"))
+			{
+				this.cur = Token(TokenType.value, Value(to!real(theNum)),
+					theNum, l, c);
+			}
+		} else {
+			assert(false, this.input);
+		}
+	}
+
+	void parseDuration(size_t idx, size_t l, size_t c) @safe pure {
+	}
+
+	void parseDate(size_t idx, size_t l, size_t c) @safe pure {
+	}
+
+	@property bool empty() const @safe pure {
 		return this.input.empty
 			&& this.cur.type == TokenType.undefined;
 	}
 
-	Token front() @property @safe {
+	Token front() @property @safe pure {
 		return this.cur;
 	}
 
@@ -586,11 +312,43 @@ struct Lexer {
 		return this.cur;
 	}
 
-	void popFront() @safe {
+	void popFront() @safe pure {
 		this.buildToken();
 	}
 
-	string getRestOfInput() const @safe {
+	string getRestOfInput() const @safe pure {
 		return this.input;
 	}
+}
+
+@safe pure:
+
+void test(T)(ref Lexer lex, TokenType tt) {
+	assert(!lex.empty);
+	assert(lex.front.type == tt,
+		format("\nexp: %s\ngot: %s", tt, lex.front.type));
+	l.popFront();
+}
+
+void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
+	assert(!lex.empty);
+	assert(lex.front.type == tt,
+		format("\nexp: %s\ngot: %s", tt, lex.front.type));
+	assert(lex.front.value.type == vt,
+		format("\nexp: %s\ngot: %s", vt, lex.front.value.type));
+
+	// TODO do value comparison
+	lex.popFront();
+}
+
+unittest {
+	auto l = Lexer("1337");
+	test(l, TokenType.value, ValueType.int32, 1337);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0");
+	test(l, TokenType.value, ValueType.float64, 1337.0);
+	assert(l.empty);
 }
