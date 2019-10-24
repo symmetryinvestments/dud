@@ -94,6 +94,14 @@ enum TagEnum {
 	A,
 	V,
 	E,
+	VAOT,
+	AOT,
+	VOT,
+	VAT,
+	OT,
+	AT,
+	VT,
+	ET,
 }
 
 class Tag : Node {
@@ -138,6 +146,12 @@ class Tag : Node {
 		this.ruleSelection = ruleSelection;
 		this.id = id;
 		this.oc = oc;
+	}
+
+	this(TagEnum ruleSelection, IDFull id, Attributes attrs) {
+		this.ruleSelection = ruleSelection;
+		this.id = id;
+		this.attrs = attrs;
 	}
 
 	this(TagEnum ruleSelection, IDFull id, Values vals) {
@@ -396,6 +410,7 @@ class OptChild : Node {
 
 enum TagTerminatorEnum {
 	E,
+	S,
 }
 
 class TagTerminator : Node {

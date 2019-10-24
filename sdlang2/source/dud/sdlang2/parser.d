@@ -24,7 +24,7 @@ struct Parser {
 
 	bool firstRoot() const pure @nogc @safe {
 		return this.firstTags()
-			 || this.lex.front.type == TokenType.eol;
+			 || this.lex.front.type == TokenType.eof;
 	}
 
 	Root parseRoot() {
@@ -43,11 +43,26 @@ struct Parser {
 		subRules = ["T"];
 		if(this.firstTags()) {
 			Tags tags = this.parseTags();
+			subRules = ["T"];
+			if(this.lex.front.type == TokenType.eof) {
+				this.lex.popFront();
 
-			return new Root(RootEnum.T
-				, tags
+				return new Root(RootEnum.T
+					, tags
+				);
+			}
+			auto app = appender!string();
+			formattedWrite(app, 
+				"In 'Root' found a '%s' while looking for", 
+				this.lex.front
 			);
-		} else if(this.lex.front.type == TokenType.eol) {
+			throw new ParseException(app.data,
+				__FILE__, __LINE__,
+				subRules,
+				["eof"]
+			);
+
+		} else if(this.lex.front.type == TokenType.eof) {
 			this.lex.popFront();
 
 			return new Root(RootEnum.E
@@ -61,7 +76,7 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["ident -> Tag","eol"]
+			["ident -> Tag","eof"]
 		);
 
 	}
@@ -86,14 +101,8 @@ struct Parser {
 		subRules = ["Tag", "TagFollow"];
 		if(this.firstTag()) {
 			Tag tag = this.parseTag();
-			subRules = ["Tag"];
-			if(this.firstTagTerminator()) {
-				this.parseTagTerminator();
-
-				return new Tags(TagsEnum.Tag
-					, tag
-				);
-			} else if(this.firstTags()) {
+			subRules = ["TagFollow"];
+			if(this.firstTags()) {
 				Tags follow = this.parseTags();
 
 				return new Tags(TagsEnum.TagFollow
@@ -101,17 +110,9 @@ struct Parser {
 					, follow
 				);
 			}
-			auto app = appender!string();
-			formattedWrite(app, 
-				"In 'Tags' found a '%s' while looking for", 
-				this.lex.front
+			return new Tags(TagsEnum.Tag
+				, tag
 			);
-			throw new ParseException(app.data,
-				__FILE__, __LINE__,
-				subRules,
-				["eol","ident -> Tag"]
-			);
-
 		}
 		auto app = appender!string();
 		formattedWrite(app, 
@@ -143,180 +144,135 @@ struct Parser {
 
 	Tag parseTagImpl() {
 		string[] subRules;
-		subRules = ["A", "AO", "E", "O", "V", "VA", "VAO", "VO"];
+		subRules = ["A", "AO", "AOT", "AT", "E", "ET", "O", "OT", "V", "VA", "VAO", "VAOT", "VAT", "VO", "VOT", "VT"];
 		if(this.firstIDFull()) {
 			IDFull id = this.parseIDFull();
-			subRules = ["V", "VA", "VAO", "VO"];
+			subRules = ["V", "VA", "VAO", "VAOT", "VAT", "VO", "VOT", "VT"];
 			if(this.firstValues()) {
 				Values vals = this.parseValues();
-				subRules = ["VA", "VAO"];
+				subRules = ["VA", "VAO", "VAOT", "VAT"];
 				if(this.firstAttributes()) {
 					Attributes attrs = this.parseAttributes();
-					subRules = ["VAO"];
+					subRules = ["VAO", "VAOT"];
 					if(this.firstOptChild()) {
 						OptChild oc = this.parseOptChild();
-						subRules = ["VAO"];
+						subRules = ["VAOT"];
 						if(this.firstTagTerminator()) {
 							this.parseTagTerminator();
 
-							return new Tag(TagEnum.VAO
+							return new Tag(TagEnum.VAOT
 								, id
 								, vals
 								, attrs
 								, oc
 							);
 						}
-						auto app = appender!string();
-						formattedWrite(app, 
-							"In 'Tag' found a '%s' while looking for", 
-							this.lex.front
+						return new Tag(TagEnum.VAO
+							, id
+							, vals
+							, attrs
+							, oc
 						);
-						throw new ParseException(app.data,
-							__FILE__, __LINE__,
-							subRules,
-							["eol"]
-						);
-
 					} else if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.VA
+						return new Tag(TagEnum.VAT
 							, id
 							, vals
 							, attrs
 						);
 					}
-					auto app = appender!string();
-					formattedWrite(app, 
-						"In 'Tag' found a '%s' while looking for", 
-						this.lex.front
+					return new Tag(TagEnum.VA
+						, id
+						, vals
+						, attrs
 					);
-					throw new ParseException(app.data,
-						__FILE__, __LINE__,
-						subRules,
-						["lcurly","eol"]
-					);
-
 				} else if(this.firstOptChild()) {
 					OptChild oc = this.parseOptChild();
-					subRules = ["VO"];
+					subRules = ["VOT"];
 					if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.VO
+						return new Tag(TagEnum.VOT
 							, id
 							, vals
 							, oc
 						);
 					}
-					auto app = appender!string();
-					formattedWrite(app, 
-						"In 'Tag' found a '%s' while looking for", 
-						this.lex.front
+					return new Tag(TagEnum.VO
+						, id
+						, vals
+						, oc
 					);
-					throw new ParseException(app.data,
-						__FILE__, __LINE__,
-						subRules,
-						["eol"]
-					);
-
 				} else if(this.firstTagTerminator()) {
 					this.parseTagTerminator();
 
-					return new Tag(TagEnum.V
+					return new Tag(TagEnum.VT
 						, id
 						, vals
 					);
 				}
-				auto app = appender!string();
-				formattedWrite(app, 
-					"In 'Tag' found a '%s' while looking for", 
-					this.lex.front
+				return new Tag(TagEnum.V
+					, id
+					, vals
 				);
-				throw new ParseException(app.data,
-					__FILE__, __LINE__,
-					subRules,
-					["ident -> Attribute","lcurly","eol"]
-				);
-
 			} else if(this.firstAttributes()) {
 				Attributes attrs = this.parseAttributes();
-				subRules = ["AO"];
+				subRules = ["AO", "AOT"];
 				if(this.firstOptChild()) {
 					OptChild oc = this.parseOptChild();
-					subRules = ["AO"];
+					subRules = ["AOT"];
 					if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.AO
+						return new Tag(TagEnum.AOT
 							, id
 							, attrs
 							, oc
 						);
 					}
-					auto app = appender!string();
-					formattedWrite(app, 
-						"In 'Tag' found a '%s' while looking for", 
-						this.lex.front
+					return new Tag(TagEnum.AO
+						, id
+						, attrs
+						, oc
 					);
-					throw new ParseException(app.data,
-						__FILE__, __LINE__,
-						subRules,
-						["eol"]
-					);
+				} else if(this.firstTagTerminator()) {
+					this.parseTagTerminator();
 
+					return new Tag(TagEnum.AT
+						, id
+						, attrs
+					);
 				}
-				auto app = appender!string();
-				formattedWrite(app, 
-					"In 'Tag' found a '%s' while looking for", 
-					this.lex.front
+				return new Tag(TagEnum.A
+					, id
+					, attrs
 				);
-				throw new ParseException(app.data,
-					__FILE__, __LINE__,
-					subRules,
-					["lcurly"]
-				);
-
 			} else if(this.firstOptChild()) {
 				OptChild oc = this.parseOptChild();
-				subRules = ["A", "O"];
+				subRules = ["OT"];
 				if(this.firstTagTerminator()) {
 					this.parseTagTerminator();
 
-					return new Tag(TagEnum.A
+					return new Tag(TagEnum.OT
 						, id
 						, oc
 					);
 				}
-				auto app = appender!string();
-				formattedWrite(app, 
-					"In 'Tag' found a '%s' while looking for", 
-					this.lex.front
+				return new Tag(TagEnum.O
+					, id
+					, oc
 				);
-				throw new ParseException(app.data,
-					__FILE__, __LINE__,
-					subRules,
-					["eol"]
-				);
-
 			} else if(this.firstTagTerminator()) {
 				this.parseTagTerminator();
 
-				return new Tag(TagEnum.E
+				return new Tag(TagEnum.ET
 					, id
 				);
 			}
-			auto app = appender!string();
-			formattedWrite(app, 
-				"In 'Tag' found a '%s' while looking for", 
-				this.lex.front
+			return new Tag(TagEnum.E
+				, id
 			);
-			throw new ParseException(app.data,
-				__FILE__, __LINE__,
-				subRules,
-				["value","ident -> Attribute","lcurly","eol"]
-			);
-
 		}
 		auto app = appender!string();
 		formattedWrite(app, 
@@ -687,7 +643,8 @@ struct Parser {
 	}
 
 	bool firstTagTerminator() const pure @nogc @safe {
-		return this.lex.front.type == TokenType.eol;
+		return this.lex.front.type == TokenType.eol
+			 || this.lex.front.type == TokenType.semicolon;
 	}
 
 	TagTerminator parseTagTerminator() {
@@ -709,6 +666,11 @@ struct Parser {
 
 			return new TagTerminator(TagTerminatorEnum.E
 			);
+		} else if(this.lex.front.type == TokenType.semicolon) {
+			this.lex.popFront();
+
+			return new TagTerminator(TagTerminatorEnum.S
+			);
 		}
 		auto app = appender!string();
 		formattedWrite(app, 
@@ -718,7 +680,7 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["eol"]
+			["eol","semicolon"]
 		);
 
 	}

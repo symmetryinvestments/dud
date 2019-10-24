@@ -78,13 +78,49 @@ class Visitor : ConstVisitor {
 				break;
 			case TagEnum.A:
 				obj.id.visit(this);
-				obj.oc.visit(this);
+				obj.attrs.visit(this);
 				break;
 			case TagEnum.V:
 				obj.id.visit(this);
 				obj.vals.visit(this);
 				break;
 			case TagEnum.E:
+				obj.id.visit(this);
+				break;
+			case TagEnum.VAOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.AOT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.VOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.VAT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.OT:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.AT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.VT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.ET:
 				obj.id.visit(this);
 				break;
 		}
@@ -194,6 +230,8 @@ class Visitor : ConstVisitor {
 		final switch(obj.ruleSelection) {
 			case TagTerminatorEnum.E:
 				break;
+			case TagTerminatorEnum.S:
+				break;
 		}
 		exit(obj);
 	}
@@ -268,13 +306,49 @@ class ConstVisitor {
 				break;
 			case TagEnum.A:
 				obj.id.visit(this);
-				obj.oc.visit(this);
+				obj.attrs.visit(this);
 				break;
 			case TagEnum.V:
 				obj.id.visit(this);
 				obj.vals.visit(this);
 				break;
 			case TagEnum.E:
+				obj.id.visit(this);
+				break;
+			case TagEnum.VAOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.AOT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.VOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.VAT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.OT:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.AT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.VT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.ET:
 				obj.id.visit(this);
 				break;
 		}
@@ -383,6 +457,8 @@ class ConstVisitor {
 		enter(obj);
 		final switch(obj.ruleSelection) {
 			case TagTerminatorEnum.E:
+				break;
+			case TagTerminatorEnum.S:
 				break;
 		}
 		exit(obj);

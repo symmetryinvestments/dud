@@ -79,7 +79,9 @@ struct Lexer {
 		this.eatWhitespace();
 
 		if(this.input.empty) {
-			this.cur = Token(TokenType.undefined);
+			this.cur = this.cur.type == TokenType.eof
+				? Token(TokenType.undefined)
+				: Token(TokenType.eof);
 			return;
 		}
 
@@ -347,11 +349,11 @@ struct Lexer {
 
 @safe pure:
 
-void test(T)(ref Lexer lex, TokenType tt) {
+void test(ref Lexer lex, TokenType tt) {
 	assert(!lex.empty);
 	assert(lex.front.type == tt,
 		format("\nexp: %s\ngot: %s", tt, lex.front.type));
-	l.popFront();
+	lex.popFront();
 }
 
 void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
@@ -382,36 +384,42 @@ void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
 unittest {
 	auto l = Lexer("1337");
 	test(l, TokenType.value, ValueType.int32, 1337);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
 unittest {
 	auto l = Lexer("1337l");
 	test(l, TokenType.value, ValueType.int64, 1337);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
 unittest {
 	auto l = Lexer("1337.0");
 	test(l, TokenType.value, ValueType.float64, 1337.0);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
 unittest {
 	auto l = Lexer("1337.0BD");
 	test(l, TokenType.value, ValueType.float128, 1337.0);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
 unittest {
 	auto l = Lexer("1337.0f");
 	test(l, TokenType.value, ValueType.float32, 1337.0f);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
 unittest {
 	auto l = Lexer(`"Hello World"`);
 	test(l, TokenType.value, ValueType.str, "Hello World");
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
@@ -419,6 +427,7 @@ unittest {
 	auto l = Lexer(q{`Hello
  World`});
 	test(l, TokenType.value, ValueType.str, "Hello\n World");
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
@@ -426,6 +435,7 @@ unittest {
 	auto l = Lexer(`Hello "World"`);
 	test(l, TokenType.ident, ValueType.str, "Hello");
 	test(l, TokenType.value, ValueType.str, "World");
+	test(l, TokenType.eof);
 	assert(l.empty);
 }
 
@@ -434,5 +444,6 @@ unittest {
 	test(l, TokenType.ident, ValueType.str, "Hello");
 	test(l, TokenType.value, ValueType.str, "World");
 	test(l, TokenType.value, ValueType.int32, 1337);
+	test(l, TokenType.eof);
 	assert(l.empty);
 }

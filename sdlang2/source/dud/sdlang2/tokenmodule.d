@@ -13,6 +13,7 @@ enum TokenType {
 	semicolon,
 	assign,
 	eol,
+	eof,
 	value
 }
 
