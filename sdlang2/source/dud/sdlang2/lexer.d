@@ -219,6 +219,22 @@ struct Lexer {
 			} else {
 				assert(false, this.input);
 			}
+		} else if(isAlpha(this.input.front)) {
+			size_t e;
+			while(e < this.input.length &&
+					( isAlphaNum(this.input[e]) || this.input[e] == '_'
+					|| this.input[e] == '-' || this.input[e] == '.'
+					|| this.input[e] == '$'
+					)
+				)
+			{
+				++e;
+			}
+			this.cur = Token(TokenType.ident, Value(this.input[0 .. e]),
+					this.input[0 .. e], this.line, this.column);
+			this.column += e;
+			this.input = this.input[e .. $];
+			return;
 		}
 		assert(false, this.input);
 	}
@@ -368,8 +384,20 @@ unittest {
 }
 
 unittest {
+	auto l = Lexer("1337l");
+	test(l, TokenType.value, ValueType.int64, 1337);
+	assert(l.empty);
+}
+
+unittest {
 	auto l = Lexer("1337.0");
 	test(l, TokenType.value, ValueType.float64, 1337.0);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0BD");
+	test(l, TokenType.value, ValueType.float128, 1337.0);
 	assert(l.empty);
 }
 
@@ -389,5 +417,20 @@ unittest {
 	auto l = Lexer(q{`Hello
  World`});
 	test(l, TokenType.value, ValueType.str, "Hello\n World");
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`Hello "World"`);
+	test(l, TokenType.ident, ValueType.str, "Hello");
+	test(l, TokenType.value, ValueType.str, "World");
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`Hello "World"1337`);
+	test(l, TokenType.ident, ValueType.str, "Hello");
+	test(l, TokenType.value, ValueType.str, "World");
+	test(l, TokenType.value, ValueType.int32, 1337);
 	assert(l.empty);
 }
