@@ -1,0 +1,41 @@
+Root:
+    T: [Tags#tags]
+    E: [eol]
+
+Tags:
+    Tag: [Tag#tag, TagTerminator]
+    TagFollow: [Tag#tag, Tags#follow]
+
+Tag:
+    VAO: [IDFull#id, Values#vals, Attributes#attrs, OptChild#oc, TagTerminator]
+    AO: [IDFull#id, Attributes#attrs, OptChild#oc, TagTerminator]
+    VO: [IDFull#id, Values#vals, OptChild#oc, TagTerminator]
+    VA: [IDFull#id, Values#vals, Attributes#attrs, TagTerminator]
+    O: [IDFull#id, OptChild#oc, TagTerminator]
+    A: [IDFull#id, OptChild#oc, TagTerminator]
+    V: [IDFull#id, Values#vals, TagTerminator]
+    E: [IDFull#id, TagTerminator]
+
+IDFull:
+    L: [ident#id, IDSuffix#suff]
+    S: [ident#id]
+
+IDSuffix:
+    C: [colon, ident#id]
+
+Values:
+    Value: [value#value]
+    ValueFollow: [value#value, Values#follow]
+
+Attributes:
+    Attribute: [Attribute#attr]
+    AttributeFollow: [Attribute#attr, Attributes#follow]
+
+Attribute:
+    A: [IDFull#id, assign, value#value]
+
+OptChild:
+    C: [lcurly, eol, Tags#tags, rcurly]
+
+TagTerminator:
+    E: [eol]
