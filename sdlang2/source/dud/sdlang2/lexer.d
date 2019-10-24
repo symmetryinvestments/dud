@@ -144,6 +144,7 @@ struct Lexer {
 
 			assert(this.input.front == '`', this.input);
 			this.input.popFront();
+			this.cur = Token(TokenType.value, Value(app.data), app.data, l, c);
 			return;
 		} else if(this.input.front == '"') {
 			size_t l = this.line;
@@ -377,6 +378,6 @@ unittest {
 unittest {
 	auto l = Lexer(q{`Hello
  World`});
-	test(l, TokenType.value, ValueType.str, "Hello World");
+	test(l, TokenType.value, ValueType.str, "Hello\n World");
 	assert(l.empty);
 }
