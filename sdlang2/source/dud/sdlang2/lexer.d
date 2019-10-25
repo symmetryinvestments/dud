@@ -4,6 +4,7 @@ import std.ascii;
 import std.array : appender, empty, front, popFront, popBack;
 import std.algorithm.searching : startsWith;
 import std.base64;
+import std.exception : enforce;
 import std.conv : to;
 import std.experimental.logger;
 import std.format : format;
@@ -40,7 +41,7 @@ struct Lexer {
 			this.column = 1;
 			return true;
 		} else if(this.input.startsWith("/*")) {
-			while(!this.input.startsWith("*/")) {
+			while(!this.input.empty && !this.input.startsWith("*/")) {
 				if(this.input.startsWith('\n')) {
 					++this.line;
 					this.column = 1;
@@ -49,6 +50,9 @@ struct Lexer {
 				}
 				this.input.popFront();
 			}
+			enforce(!this.input.empty,
+				"No more input while parsing a C comment");
+			this.input = this.input[2 .. $];
 			return true;
 		}
 		return false;

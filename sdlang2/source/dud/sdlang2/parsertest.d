@@ -165,3 +165,21 @@ unittest {
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+// C++ style
+
+/*
+C style multiline
+*/
+
+tag /*foo=true*/ bar=false
+
+# Shell style
+
+-- Lua style
+	`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
