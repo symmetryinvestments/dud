@@ -105,7 +105,16 @@ struct Lexer {
 			this.singleCharToken(TokenType.colon);
 			return;
 		} else if(this.input.front == '\\') {
-			this.singleCharToken(TokenType.backslash);
+			++this.column;
+			this.input.popFront();
+			while(this.input.front != '\n') {
+				this.input.popFront();
+				++this.column;
+			}
+			this.column = 1;
+			++this.line;
+			this.input.popFront();
+			this.buildToken();
 			return;
 		} else if(this.input.front == ';') {
 			this.singleCharToken(TokenType.semicolon);
