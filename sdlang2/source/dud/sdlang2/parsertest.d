@@ -183,3 +183,26 @@ tag /*foo=true*/ bar=false
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+// Trailing semicolons are optional
+title "Some title";
+
+// They can be used to separate multiple nodes
+title "Some title"; author "Peter Parker"
+
+// Tags may contain certain non-alphanumeric characters
+this-is_a.valid$tag-name
+
+// Namespaces are supported
+renderer:options "invisible"
+physics:options "nocollide"
+
+// Nodes can be separated into multiple lines
+title \
+	"Some title"
+	`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
