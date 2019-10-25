@@ -113,8 +113,35 @@ unittest {
 			-- some lua style comment
 // a c++ comment
 someKEy "value" attr=1337 {
-	a_nested_child "\"foobar"
+	a_nested_child "\"foobar" {
+		and_a$depper_nesting:foo 123.3 ; args null
+	}
 }`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+someKEy {
+	and_a$depper_nesting:foo 123.3 ; args null
+}`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+			matrix
+		`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+			matrix 1 12 32 323 1
+	`);
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }

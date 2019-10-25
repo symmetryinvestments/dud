@@ -474,3 +474,10 @@ unittest {
 	test(l, TokenType.eof);
 	assert(l.empty);
 }
+
+unittest {
+	auto l = Lexer(`H`);
+	test(l, TokenType.ident, ValueType.str, "H");
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
