@@ -324,3 +324,36 @@ values 3.5 true false "hello" \
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+greetings {
+   "hello" language="English"
+}
+
+# If we have a handle on the "greetings" tag we can access the
+# anonymous child tag by calling
+#    Tag child1 = greetingTag.getChild("content");
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+    tag1; tag2 "a value";
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+    tag1; tag2 "a value"; tag3 name="foo"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
