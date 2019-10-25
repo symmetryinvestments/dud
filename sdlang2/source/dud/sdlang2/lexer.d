@@ -234,8 +234,29 @@ struct Lexer {
 			{
 				++e;
 			}
-			this.cur = Token(TokenType.ident, Value(this.input[0 .. e]),
-					this.input[0 .. e], this.line, this.column);
+			string str = this.input[0 .. e];
+			switch(str) {
+				case "null":
+					this.cur = Token(TokenType.value, Value.init,
+							str, this.line, this.column);
+					break;
+				case "on":
+					goto case;
+				case "true":
+					this.cur = Token(TokenType.value, Value(true),
+							str, this.line, this.column);
+					break;
+				case "off":
+					goto case;
+				case "false":
+					this.cur = Token(TokenType.value, Value(false),
+							str, this.line, this.column);
+					break;
+				default:
+					this.cur = Token(TokenType.ident, Value(str), str,
+							this.line, this.column);
+					break;
+			}
 			this.column += e;
 			this.input = this.input[e .. $];
 			return;
@@ -313,9 +334,15 @@ struct Lexer {
 				this.input.popFront();
 				this.cur = Token(TokenType.value, Value(to!real(theNum)),
 					theNum, l, c);
+			} else {
+				this.cur = Token(TokenType.value, Value(to!double(prefix)),
+					prefix, l, c);
+				this.input = tmp;
 			}
 		} else {
-			assert(false, this.input);
+			this.cur = Token(TokenType.value, Value(to!int(prefix)), prefix,
+				l, c);
+			this.input = tmp;
 		}
 	}
 
