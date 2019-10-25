@@ -170,26 +170,30 @@ struct Lexer {
 			auto app = appender!string();
 
 			while(!this.input.startsWith('"')) {
-				if(this.input.length > 1 && this.input.front == '\\') {
+				if(this.input.startsWith("\\\"")) {
+					app.put('"');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.startsWith("\\t")) {
+					app.put('\t');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.startsWith("\\n")) {
+					app.put('\n');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.length > 1 && this.input.front == '\\') {
 					this.input.popFront();
-					if(this.input.front == '"') {
-						app.put('"');
-						this.column += 2;
-						this.input = this.input[2 .. $];
-						continue;
-					} else {
-						while(this.input.front.isWhite()) {
-							if(this.input.front == ' ') {
-								++this.column;
-							} else if(this.input.front == '\t') {
-								++this.column;
-							} else if(this.input.front == '\n') {
-								++this.line;
-								this.column = 1;
-							}
-							this.input.popFront();
+					while(this.input.front.isWhite()) {
+						if(this.input.front == ' ') {
+							++this.column;
+						} else if(this.input.front == '\t') {
+							++this.column;
+						} else if(this.input.front == '\n') {
+							++this.line;
+							this.column = 1;
 						}
-						continue;
+						this.input.popFront();
 					}
 				} else {
 					app.put(this.input.front);
