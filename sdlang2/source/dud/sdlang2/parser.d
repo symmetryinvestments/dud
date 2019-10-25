@@ -96,7 +96,7 @@ struct Parser {
 			throw new ParseException(app.data,
 				__FILE__, __LINE__,
 				subRules,
-				["ident -> Tag"]
+				["ident -> Tag","lcurly -> Tag","value -> Tag"]
 			);
 
 		} else if(this.lex.front.type == TokenType.eof) {
@@ -113,7 +113,7 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["ident -> Tag","eol","semicolon","eof"]
+			["ident -> Tag","lcurly -> Tag","value -> Tag","eol","semicolon","eof"]
 		);
 
 	}
@@ -159,13 +159,15 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["ident -> IDFull"]
+			["ident -> IDFull","lcurly -> OptChild","value -> Values"]
 		);
 
 	}
 
 	bool firstTag() const pure @nogc @safe {
-		return this.firstIDFull();
+		return this.firstIDFull()
+			 || this.firstValues()
+			 || this.firstOptChild();
 	}
 
 	Tag parseTag() {
@@ -181,30 +183,30 @@ struct Parser {
 
 	Tag parseTagImpl() {
 		string[] subRules;
-		subRules = ["A", "AO", "AOT", "AT", "E", "ET", "O", "OT", "V", "VA", "VAO", "VAOT", "VAT", "VO", "VOT", "VT"];
+		subRules = ["IA", "IAO", "IAOT", "IAT", "IE", "IET", "IO", "IOT", "IV", "IVA", "IVAO", "IVAOT", "IVAT", "IVO", "IVOT", "IVT"];
 		if(this.firstIDFull()) {
 			IDFull id = this.parseIDFull();
-			subRules = ["V", "VA", "VAO", "VAOT", "VAT", "VO", "VOT", "VT"];
+			subRules = ["IV", "IVA", "IVAO", "IVAOT", "IVAT", "IVO", "IVOT", "IVT"];
 			if(this.firstValues()) {
 				Values vals = this.parseValues();
-				subRules = ["VA", "VAO", "VAOT", "VAT"];
+				subRules = ["IVA", "IVAO", "IVAOT", "IVAT"];
 				if(this.firstAttributes()) {
 					Attributes attrs = this.parseAttributes();
-					subRules = ["VAO", "VAOT"];
+					subRules = ["IVAO", "IVAOT"];
 					if(this.firstOptChild()) {
 						OptChild oc = this.parseOptChild();
-						subRules = ["VAOT"];
+						subRules = ["IVAOT"];
 						if(this.firstTagTerminator()) {
 							this.parseTagTerminator();
 
-							return new Tag(TagEnum.VAOT
+							return new Tag(TagEnum.IVAOT
 								, id
 								, vals
 								, attrs
 								, oc
 							);
 						}
-						return new Tag(TagEnum.VAO
+						return new Tag(TagEnum.IVAO
 							, id
 							, vals
 							, attrs
@@ -213,30 +215,30 @@ struct Parser {
 					} else if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.VAT
+						return new Tag(TagEnum.IVAT
 							, id
 							, vals
 							, attrs
 						);
 					}
-					return new Tag(TagEnum.VA
+					return new Tag(TagEnum.IVA
 						, id
 						, vals
 						, attrs
 					);
 				} else if(this.firstOptChild()) {
 					OptChild oc = this.parseOptChild();
-					subRules = ["VOT"];
+					subRules = ["IVOT"];
 					if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.VOT
+						return new Tag(TagEnum.IVOT
 							, id
 							, vals
 							, oc
 						);
 					}
-					return new Tag(TagEnum.VO
+					return new Tag(TagEnum.IVO
 						, id
 						, vals
 						, oc
@@ -244,31 +246,31 @@ struct Parser {
 				} else if(this.firstTagTerminator()) {
 					this.parseTagTerminator();
 
-					return new Tag(TagEnum.VT
+					return new Tag(TagEnum.IVT
 						, id
 						, vals
 					);
 				}
-				return new Tag(TagEnum.V
+				return new Tag(TagEnum.IV
 					, id
 					, vals
 				);
 			} else if(this.firstAttributes()) {
 				Attributes attrs = this.parseAttributes();
-				subRules = ["AO", "AOT"];
+				subRules = ["IAO", "IAOT"];
 				if(this.firstOptChild()) {
 					OptChild oc = this.parseOptChild();
-					subRules = ["AOT"];
+					subRules = ["IAOT"];
 					if(this.firstTagTerminator()) {
 						this.parseTagTerminator();
 
-						return new Tag(TagEnum.AOT
+						return new Tag(TagEnum.IAOT
 							, id
 							, attrs
 							, oc
 						);
 					}
-					return new Tag(TagEnum.AO
+					return new Tag(TagEnum.IAO
 						, id
 						, attrs
 						, oc
@@ -276,39 +278,112 @@ struct Parser {
 				} else if(this.firstTagTerminator()) {
 					this.parseTagTerminator();
 
-					return new Tag(TagEnum.AT
+					return new Tag(TagEnum.IAT
 						, id
 						, attrs
 					);
 				}
-				return new Tag(TagEnum.A
+				return new Tag(TagEnum.IA
 					, id
 					, attrs
 				);
 			} else if(this.firstOptChild()) {
 				OptChild oc = this.parseOptChild();
-				subRules = ["OT"];
+				subRules = ["IOT"];
 				if(this.firstTagTerminator()) {
 					this.parseTagTerminator();
 
-					return new Tag(TagEnum.OT
+					return new Tag(TagEnum.IOT
 						, id
 						, oc
 					);
 				}
-				return new Tag(TagEnum.O
+				return new Tag(TagEnum.IO
 					, id
 					, oc
 				);
 			} else if(this.firstTagTerminator()) {
 				this.parseTagTerminator();
 
-				return new Tag(TagEnum.ET
+				return new Tag(TagEnum.IET
 					, id
 				);
 			}
-			return new Tag(TagEnum.E
+			return new Tag(TagEnum.IE
 				, id
+			);
+		} else if(this.firstValues()) {
+			Values vals = this.parseValues();
+			subRules = ["VA", "VAO", "VAOT", "VAT"];
+			if(this.firstAttributes()) {
+				Attributes attrs = this.parseAttributes();
+				subRules = ["VAO", "VAOT"];
+				if(this.firstOptChild()) {
+					OptChild oc = this.parseOptChild();
+					subRules = ["VAOT"];
+					if(this.firstTagTerminator()) {
+						this.parseTagTerminator();
+
+						return new Tag(TagEnum.VAOT
+							, vals
+							, attrs
+							, oc
+						);
+					}
+					return new Tag(TagEnum.VAO
+						, vals
+						, attrs
+						, oc
+					);
+				} else if(this.firstTagTerminator()) {
+					this.parseTagTerminator();
+
+					return new Tag(TagEnum.VAT
+						, vals
+						, attrs
+					);
+				}
+				return new Tag(TagEnum.VA
+					, vals
+					, attrs
+				);
+			} else if(this.firstOptChild()) {
+				OptChild oc = this.parseOptChild();
+				subRules = ["VOT"];
+				if(this.firstTagTerminator()) {
+					this.parseTagTerminator();
+
+					return new Tag(TagEnum.VOT
+						, vals
+						, oc
+					);
+				}
+				return new Tag(TagEnum.VO
+					, vals
+					, oc
+				);
+			} else if(this.firstTagTerminator()) {
+				this.parseTagTerminator();
+
+				return new Tag(TagEnum.VT
+					, vals
+				);
+			}
+			return new Tag(TagEnum.V
+				, vals
+			);
+		} else if(this.firstOptChild()) {
+			OptChild oc = this.parseOptChild();
+			subRules = ["OT"];
+			if(this.firstTagTerminator()) {
+				this.parseTagTerminator();
+
+				return new Tag(TagEnum.OT
+					, oc
+				);
+			}
+			return new Tag(TagEnum.O
+				, oc
 			);
 		}
 		auto app = appender!string();
@@ -319,7 +394,7 @@ struct Parser {
 		throw new ParseException(app.data,
 			__FILE__, __LINE__,
 			subRules,
-			["ident"]
+			["ident","value","lcurly"]
 		);
 
 	}
@@ -603,7 +678,7 @@ struct Parser {
 				throw new ParseException(app.data,
 					__FILE__, __LINE__,
 					subRules,
-					["ident -> Tag"]
+					["ident -> Tag","lcurly -> Tag","value -> Tag"]
 				);
 
 			}

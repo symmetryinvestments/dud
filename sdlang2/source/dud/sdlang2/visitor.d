@@ -54,77 +54,115 @@ class Visitor : ConstVisitor {
 	void accept(Tag obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case TagEnum.VAO:
+			case TagEnum.IVAO:
 				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
-			case TagEnum.AO:
+			case TagEnum.IAO:
 				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVO:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVA:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IO:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IA:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IV:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.IE:
+				obj.id.visit(this);
+				break;
+			case TagEnum.IVAOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IAOT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVAT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IOT:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IAT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IVT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.IET:
+				obj.id.visit(this);
+				break;
+			case TagEnum.VAO:
+				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VO:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VA:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				break;
 			case TagEnum.O:
-				obj.id.visit(this);
 				obj.oc.visit(this);
-				break;
-			case TagEnum.A:
-				obj.id.visit(this);
-				obj.attrs.visit(this);
 				break;
 			case TagEnum.V:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				break;
-			case TagEnum.E:
-				obj.id.visit(this);
 				break;
 			case TagEnum.VAOT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				obj.attrs.visit(this);
-				obj.oc.visit(this);
-				break;
-			case TagEnum.AOT:
-				obj.id.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VOT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VAT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				break;
 			case TagEnum.OT:
-				obj.id.visit(this);
 				obj.oc.visit(this);
 				break;
-			case TagEnum.AT:
-				obj.id.visit(this);
-				obj.attrs.visit(this);
-				break;
 			case TagEnum.VT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				break;
-			case TagEnum.ET:
-				obj.id.visit(this);
 				break;
 		}
 		exit(obj);
@@ -272,77 +310,115 @@ class ConstVisitor {
 	void accept(const(Tag) obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case TagEnum.VAO:
+			case TagEnum.IVAO:
 				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
-			case TagEnum.AO:
+			case TagEnum.IAO:
 				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVO:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVA:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IO:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IA:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IV:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.IE:
+				obj.id.visit(this);
+				break;
+			case TagEnum.IVAOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IAOT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVOT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IVAT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IOT:
+				obj.id.visit(this);
+				obj.oc.visit(this);
+				break;
+			case TagEnum.IAT:
+				obj.id.visit(this);
+				obj.attrs.visit(this);
+				break;
+			case TagEnum.IVT:
+				obj.id.visit(this);
+				obj.vals.visit(this);
+				break;
+			case TagEnum.IET:
+				obj.id.visit(this);
+				break;
+			case TagEnum.VAO:
+				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VO:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VA:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				break;
 			case TagEnum.O:
-				obj.id.visit(this);
 				obj.oc.visit(this);
-				break;
-			case TagEnum.A:
-				obj.id.visit(this);
-				obj.attrs.visit(this);
 				break;
 			case TagEnum.V:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				break;
-			case TagEnum.E:
-				obj.id.visit(this);
 				break;
 			case TagEnum.VAOT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				obj.attrs.visit(this);
-				obj.oc.visit(this);
-				break;
-			case TagEnum.AOT:
-				obj.id.visit(this);
 				obj.attrs.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VOT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.oc.visit(this);
 				break;
 			case TagEnum.VAT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
 				obj.attrs.visit(this);
 				break;
 			case TagEnum.OT:
-				obj.id.visit(this);
 				obj.oc.visit(this);
 				break;
-			case TagEnum.AT:
-				obj.id.visit(this);
-				obj.attrs.visit(this);
-				break;
 			case TagEnum.VT:
-				obj.id.visit(this);
 				obj.vals.visit(this);
-				break;
-			case TagEnum.ET:
-				obj.id.visit(this);
 				break;
 		}
 		exit(obj);

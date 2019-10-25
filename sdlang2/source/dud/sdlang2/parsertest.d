@@ -145,3 +145,23 @@ unittest {
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+			matrix 1 12 32 323 1 foo="bar" foo2="bar2"
+	`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+			matrix {
+				1 12 32
+				2 22 42
+				3 32 52
+			}
+	`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}

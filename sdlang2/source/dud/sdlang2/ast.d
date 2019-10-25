@@ -87,22 +87,32 @@ class Tags : Node {
 }
 
 enum TagEnum {
+	IVAO,
+	IAO,
+	IVO,
+	IVA,
+	IO,
+	IA,
+	IV,
+	IE,
+	IVAOT,
+	IAOT,
+	IVOT,
+	IVAT,
+	IOT,
+	IAT,
+	IVT,
+	IET,
 	VAO,
-	AO,
 	VO,
 	VA,
 	O,
-	A,
 	V,
-	E,
 	VAOT,
-	AOT,
 	VOT,
 	VAT,
 	OT,
-	AT,
 	VT,
-	ET,
 }
 
 class Tag : Node {
@@ -164,6 +174,35 @@ class Tag : Node {
 	this(TagEnum ruleSelection, IDFull id) {
 		this.ruleSelection = ruleSelection;
 		this.id = id;
+	}
+
+	this(TagEnum ruleSelection, Values vals, Attributes attrs, OptChild oc) {
+		this.ruleSelection = ruleSelection;
+		this.vals = vals;
+		this.attrs = attrs;
+		this.oc = oc;
+	}
+
+	this(TagEnum ruleSelection, Values vals, OptChild oc) {
+		this.ruleSelection = ruleSelection;
+		this.vals = vals;
+		this.oc = oc;
+	}
+
+	this(TagEnum ruleSelection, Values vals, Attributes attrs) {
+		this.ruleSelection = ruleSelection;
+		this.vals = vals;
+		this.attrs = attrs;
+	}
+
+	this(TagEnum ruleSelection, OptChild oc) {
+		this.ruleSelection = ruleSelection;
+		this.oc = oc;
+	}
+
+	this(TagEnum ruleSelection, Values vals) {
+		this.ruleSelection = ruleSelection;
+		this.vals = vals;
 	}
 
 	void visit(Visitor vis) {
