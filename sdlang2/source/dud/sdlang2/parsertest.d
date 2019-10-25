@@ -357,3 +357,41 @@ unittest {
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+greetings {
+   "hello" language="English"
+}
+
+# If we have a handle on the "greetings" tag we can access the
+# anonymous child tag by calling
+#    Tag child1 = greetingTag.getChild("content");
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+test "john \
+    doe"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+name "hello"
+line "he said \"hello there\""
+whitespace "item1\titem2\nitem3\titem4"
+continued "this is a long line \
+    of text"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
