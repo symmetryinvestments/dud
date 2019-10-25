@@ -206,3 +206,36 @@ title \
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+// This is a node with a single string value
+title "Hello, World"
+
+// Multiple values are supported, too
+bookmarks 12 15 188 1234
+
+// Nodes can have attributes
+author "Peter Parker" email="peter@example.org" active=true
+
+// Nodes can be arbitrarily nested
+contents {
+	section "First section" {
+		paragraph "This is the first paragraph"
+		paragraph "This is the second paragraph"
+	}
+}
+
+// Anonymous nodes are supported
+"This text is the value of an anonymous node!"
+
+// This makes things like matrix definitions very convenient
+matrix {
+	1 0 0
+	0 1 0
+	0 0 1
+}
+	`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
