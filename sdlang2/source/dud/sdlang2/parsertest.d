@@ -239,3 +239,88 @@ matrix {
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+	people location="Tokyo" {
+    person "Akiko" friendly=true {
+        hobbies {
+            hobby "hiking" times_per_week=2
+            hobby "swimming" times_per_week=1
+        }
+    }
+
+    person "Jim" {
+        hobbies {
+            hobby "karate" times_per_week=5
+        }
+    }
+}`);
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+people location="Tokyo" {
+    "Akiko" friendly=true {
+        hobbies {
+            "hiking" times_per_week=2 skill_level=5
+            "swimming" times_per_week=1
+        }
+    }
+
+    "Jim" {
+        hobbies {
+            "karate" times_per_week=5
+        }
+    }
+}`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+numbers 12 53 2 635
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+pets chihuahua="small" dalmation="hyper" mastiff="big"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+plants {
+    trees {
+        deciduous {
+            elm
+            oak
+        }
+    }
+}
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+values 3.5 true false "hello" \
+    "more" "values" 345
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
