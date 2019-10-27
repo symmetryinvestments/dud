@@ -30,7 +30,7 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 
 	foreach(Tag it; tags(t)) {
 		string key = it.identifier();
-		writefln("%s", key);
+		//writefln("%s", key);
 		try {
 			sw: switch(key) {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
