@@ -151,10 +151,10 @@ Dependency extractDependency(Tag t) @safe pure {
 		switch(it.identifier()) {
 			case "version":
 				ret.version_ = it
-						.value
-						.value
-						.extractString
-						.parseVersionSpecifier;
+					.value
+					.value
+					.extractString
+					.parseVersionSpecifier;
 				break;
 			case "path":
 				ret.path = it.value.value.extractPath;
@@ -175,8 +175,8 @@ Dependency extractDependency(Tag t) @safe pure {
 				break;
 			default:
 				throw new Exception(format(
-						"Key '%s' is not part of a Dependency declaration",
-						it.identifier()));
+					"Key '%s' is not part of a Dependency declaration",
+					it.identifier()));
 		}
 	}
 	return ret;

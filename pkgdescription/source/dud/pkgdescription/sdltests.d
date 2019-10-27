@@ -1,9 +1,10 @@
 module dud.pkgdescription.sdltests;
 
-import std.stdio;
+import std.conv;
 
-import dud.pkgdescription.sdl;
+import dud.path : Path;
 import dud.pkgdescription : PackageDescription, TargetType;
+import dud.pkgdescription.sdl;
 
 unittest {
 	import dud.semver : SemVer;
@@ -19,6 +20,9 @@ importPaths "source" "source1" "source2"
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
-	writeln(pkg);
 	assert(pkg.name == "pkgdescription", pkg.name);
+	assert(pkg.targetType == TargetType.library, to!string(pkg.targetType));
+	assert(pkg.importPaths ==
+			[ Path("source") , Path("source1"), Path("source2") ],
+			to!string(pkg.importPaths));
 }
