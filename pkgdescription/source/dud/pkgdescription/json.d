@@ -30,7 +30,9 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 			static foreach(mem; __traits(allMembers, PackageDescription)) {{
 				enum Mem = PreprocessKey!(mem);
 				case Mem: {
-					alias MemType = typeof(__traits(getMember, PackageDescription, mem));
+					alias MemType = typeof(
+							__traits(getMember, PackageDescription, mem));
+
 					static if(is(MemType == string)) {
 						__traits(getMember, ret, mem) = extractString(value);
 					} else static if(is(MemType == SemVer)) {

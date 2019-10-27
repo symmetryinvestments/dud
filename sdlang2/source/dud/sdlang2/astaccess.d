@@ -51,8 +51,19 @@ AttributeAccessor attributes(Tag tag) {
 	return AttributeAccessor(tag.attrs);
 }
 
-string identifer(Tag tag) {
+string identifier(Attribute attr) {
+	auto a = IDAccessor(attr.id);
+	return identifierImpl(a);
+}
+
+string identifier(Tag tag) {
 	auto a = IDAccessor(tag.id);
+	return identifierImpl(a);
+}
+
+string identifierImpl(IDAccessor a) {
+	import std.exception : enforce;
+	enforce(!a.empty, "Can get an ID from an empty IDAccessor");
 	string cur;
 	while(!a.empty) {
 		cur = a.front.value.get!string();
@@ -78,6 +89,10 @@ struct ValueRange {
 	}
 }
 
+ValueRange values(Values vals) {
+	return ValueRange(ValueAccessor(vals));
+}
+
 ValueRange values(Tag tag) {
-	return ValueRange(ValueAccessor(tag.vals));
+	return values(tag.vals);
 }

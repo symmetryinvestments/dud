@@ -28,10 +28,11 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 
 	PackageDescription ret;
 
-	foreach(it; tags(t)) {
-		writefln("%s", it.identifer());
+	foreach(Tag it; tags(t)) {
+		string key = it.identifier();
+		writefln("%s", key);
 		try {
-			/*sw: switch(it.name) {
+			sw: switch(key) {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
 					enum Mem = KeysToSDLCases!(PreprocessKey!(mem));
 					case Mem: {
@@ -65,12 +66,12 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 					}
 				}}
 				default:
-					enforce(false, format("key '%s' unknown", it.name));
+					enforce(false, format("key '%s' unknown", key));
 					assert(false);
-			}*/
+			}
 		} catch(Exception e) {
 			string s = format("While parsing key '%s' an exception occured",
-					it.identifer());
+					it.identifier());
 			throw new Exception(s, e);
 		}
 
@@ -78,94 +79,98 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 	return ret;
 }
 
-string[] extractStrings(ValueAccessor v) {
+string[] extractStrings(ValueRange v) @safe pure {
 	return v.map!(it => extractString(it)).array;
 }
 
-string extractString(ValueAccessor v) {
+string extractString(ValueRange v) @safe pure {
 	enforce(v.empty, "Can not get element of empty range");
 	return extractString(v.front);
 }
 
-string extractString(Token v) {
-	enforce(v.value.type == ValueType.str, format(
-		"Expected a string not a '%s'", v.value.type));
-	return v.value.get!string();
+string extractString(Value v) @safe pure {
+	enforce(v.type == ValueType.str, format(
+		"Expected a string not a '%s'", v.type));
+	return v.get!string();
 }
 
-__EOF__
-
-bool extractBool(ValueAccessor v) {
+bool extractBool(ValueRange v) @safe pure {
 	enforce(v.empty, "Can not get element of empty range");
 	return extractBool(v.front);
 }
 
-bool extractBool(Value v) {
-	enforce(v.type == ValueType.boolean, format("Expected a bool not a '%s'",
-				v.type));
+bool extractBool(Value v) @safe pure {
+	enforce(v.type == ValueType.boolean,
+		format("Expected a bool not a '%s'", v.type));
 	return v.get!bool();
 }
 
-Path[] extractPaths(ValueAccessor v) {
+Path[] extractPaths(Values v) @safe pure {
+	return extractPaths(v.values());
+}
+
+Path[] extractPaths(ValueRange v) @safe pure {
 	return v.map!(it => extractPath(it)).array;
 }
 
-SemVer extractSemVer(ValueAccessor v) {
+Path extractPath(ValueRange v) @safe pure {
+	enforce(v.empty, "Can not get element of empty range");
+	return Path(extractString(v.front));
+}
+
+Path extractPath(Value v) @safe pure {
+	return Path(extractString(v));
+}
+
+SemVer extractSemVer(ValueRange v) @safe pure {
 	enforce(v.empty, "Can not get element of empty range");
 	return extractSemVer(v.front);
 }
 
-SemVer extractSemVer(Value v) {
+SemVer extractSemVer(Value v) @safe pure {
 	return SemVer(extractString(v));
 }
 
-Path extractPath(ValueAccessor v) {
-	enforce(v.empty, "Can not get element of empty range");
-	return extractPath(v.front);
-}
-
-Path extractPath(Value v) {
-	return Path(extractString(v));
-}
-
-TargetType extractTargetType(ValueAccessor v) {
+TargetType extractTargetType(ValueRange v) @safe pure {
 	enforce(v.empty, "Can not get element of empty range");
 	return extractTargetType(v.front);
 }
 
-TargetType extractTargetType(Value v) {
+TargetType extractTargetType(Value v) @safe pure {
 	return to!TargetType(extractString(v));
 }
 
-Dependency extractDependency(Tag t) {
+Dependency extractDependency(Tag t) @safe pure {
 	import std.array : front;
 	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
 	Dependency ret;
-	enforce(v.empty, "Can not get element of empty range");
-	ret.name = extractString(t.values.front);
+	enforce(!t.values().empty, "Can not get element of empty range");
+	ret.name = extractString(t.values());
 	foreach(Attribute it; t.attributes()) {
-		switch(it.key.identifier()) {
+		switch(it.identifier()) {
 			case "version":
 				ret.version_ = it
-						.values()
-						.front
+						.value
+						.value
 						.extractString
 						.parseVersionSpecifier;
 				break;
 			case "path":
-				ret.path = it.values().front.extractPath;
+				ret.path = it.value.value.extractPath;
 				break;
 			case "optional":
 				ret.optional = it
-					.values()
-					.front
+					.value
+					.value
+					.extractBool
 					.nullable;
 				break;
 			case "default":
 				ret.default_ = it
-					.values()
-					.front
+					.value
+					.value
+					.extractBool
 					.nullable;
 				break;
 			default:
