@@ -1,9 +1,11 @@
 module dud.pkgdescription.sdltests;
 
 import std.conv;
+import std.typecons : nullable;
 
 import dud.path : Path;
-import dud.pkgdescription : PackageDescription, TargetType;
+import dud.pkgdescription : PackageDescription, TargetType, Dependency;
+import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 
 unittest {
@@ -14,9 +16,11 @@ name "pkgdescription"
 dependency "semver" path="../semver"
 dependency "path" path="../path"
 dependency "sdlang" path="../sdlang"
-dependency "graphql" version=">=1.0.0" default=true optional=false
+dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
 importPaths "source" "source1" "source2"
+license "LGPL3"
+version "1.0.0"
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
@@ -25,4 +29,21 @@ importPaths "source" "source1" "source2"
 	assert(pkg.importPaths ==
 			[ Path("source") , Path("source1"), Path("source2") ],
 			to!string(pkg.importPaths));
+	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
+	assert(pkg.license == "LGPL3", pkg.license);
+	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
+
+	auto dep =
+		[ "semver" : Dependency("semver")
+		, "sdlang" : Dependency("sdlang")
+		, "graphql" : Dependency("graphql")
+		, "path" : Dependency("path")
+		];
+	dep["path"].path = Path("../path");
+	dep["sdlang"].path = Path("../sdlang");
+	dep["graphqld"].version_ = parseVersionSpecifier(">=1.0.0");
+	dep["graphqld"].default_ = nullable(true);
+	dep["graphqld"].optional = nullable(false);
+
+	assert(pkg.dependencies == dep, to!string(pkg.dependencies));
 }
