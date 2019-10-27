@@ -15,23 +15,21 @@ import dud.path : Path;
 import dud.sdlang2;
 
 PackageDescription sdlToPackageDescription(string sdl) @safe {
-	Tag jv = parseSource(sdl);
+	auto lex = Lexer(sdl);
+	auto parser = Parser(lex);
+	Root jv = parser.parseRoot();
 	return sdlToPackageDescription(jv);
 }
 
-PackageDescription sdlToPackageDescription(Tag t) @safe pure {
+PackageDescription sdlToPackageDescription(Root t) @safe {
 	import dud.pkgdescription.helper : PreprocessKey, KeysToSDLCases;
 
 	import std.stdio;
 
 	PackageDescription ret;
 
-	foreach(it; t.attributes()) {
-		writeln(it);
-	}
-
 	foreach(it; tags(t)) {
-		writefln("%s %s", it.name, it.values);
+		writefln("%s", it.identifer());
 		try {
 			/*sw: switch(it.name) {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
@@ -72,7 +70,7 @@ PackageDescription sdlToPackageDescription(Tag t) @safe pure {
 			}*/
 		} catch(Exception e) {
 			string s = format("While parsing key '%s' an exception occured",
-					it.name);
+					it.identifer());
 			throw new Exception(s, e);
 		}
 
@@ -80,23 +78,25 @@ PackageDescription sdlToPackageDescription(Tag t) @safe pure {
 	return ret;
 }
 
-string[] extractStrings(Value[] v) {
+string[] extractStrings(ValueAccessor v) {
 	return v.map!(it => extractString(it)).array;
 }
 
-string extractString(Value[] v) {
-	enforce(v.length == 1, format("Expected a length of 1 not '%u'", v.length));
+string extractString(ValueAccessor v) {
+	enforce(v.empty, "Can not get element of empty range");
 	return extractString(v.front);
 }
 
-string extractString(Value v) {
-	enforce(v.type == ValueType.str, format("Expected a string not a '%s'",
-				v.type));
-	return v.get!string();
+string extractString(Token v) {
+	enforce(v.value.type == ValueType.str, format(
+		"Expected a string not a '%s'", v.value.type));
+	return v.value.get!string();
 }
 
-bool extractBool(Value[] v) {
-	enforce(v.length == 1, format("Expected a length of 1 not '%u'", v.length));
+__EOF__
+
+bool extractBool(ValueAccessor v) {
+	enforce(v.empty, "Can not get element of empty range");
 	return extractBool(v.front);
 }
 
@@ -106,12 +106,12 @@ bool extractBool(Value v) {
 	return v.get!bool();
 }
 
-Path[] extractPaths(Value[] v) {
+Path[] extractPaths(ValueAccessor v) {
 	return v.map!(it => extractPath(it)).array;
 }
 
-SemVer extractSemVer(Value[] v) {
-	enforce(v.length == 1, format("Expected a length of 1 not '%u'", v.length));
+SemVer extractSemVer(ValueAccessor v) {
+	enforce(v.empty, "Can not get element of empty range");
 	return extractSemVer(v.front);
 }
 
@@ -119,8 +119,8 @@ SemVer extractSemVer(Value v) {
 	return SemVer(extractString(v));
 }
 
-Path extractPath(Value[] v) {
-	enforce(v.length == 1, format("Expected a length of 1 not '%u'", v.length));
+Path extractPath(ValueAccessor v) {
+	enforce(v.empty, "Can not get element of empty range");
 	return extractPath(v.front);
 }
 
@@ -128,8 +128,8 @@ Path extractPath(Value v) {
 	return Path(extractString(v));
 }
 
-TargetType extractTargetType(Value[] v) {
-	enforce(v.length == 1, format("Expected a length of 1 not '%u'", v.length));
+TargetType extractTargetType(ValueAccessor v) {
+	enforce(v.empty, "Can not get element of empty range");
 	return extractTargetType(v.front);
 }
 
@@ -142,8 +142,7 @@ Dependency extractDependency(Tag t) {
 	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
 	Dependency ret;
-	enforce(t.values.length == 1, format("Expected length 1 not '%u'",
-			t.values.length));
+	enforce(v.empty, "Can not get element of empty range");
 	ret.name = extractString(t.values.front);
 	foreach(Attribute it; t.attributes()) {
 		switch(it.key.identifier()) {

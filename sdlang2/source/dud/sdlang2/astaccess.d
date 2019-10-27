@@ -48,7 +48,7 @@ IDAccessor key(Tag tag) {
 }
 
 AttributeAccessor attributes(Tag tag) {
-	return IDAccessor(tag.attrs);
+	return AttributeAccessor(tag.attrs);
 }
 
 string identifer(Tag tag) {
