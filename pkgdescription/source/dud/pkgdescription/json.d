@@ -25,14 +25,13 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 	PackageDescription ret;
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
-		try {
 		sw: switch(key) {
+			try {
 			static foreach(mem; __traits(allMembers, PackageDescription)) {{
 				enum Mem = PreprocessKey!(mem);
 				case Mem: {
 					alias MemType = typeof(
 							__traits(getMember, PackageDescription, mem));
-
 					static if(is(MemType == string)) {
 						__traits(getMember, ret, mem) = extractString(value);
 					} else static if(is(MemType == SemVer)) {
@@ -58,10 +57,10 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 			default:
 				enforce(false, format("key '%s' unknown", key));
 				assert(false);
-		}
 		} catch(Exception e) {
 			string s = format("While parsing key '%s' an exception occured", key);
 			throw new Exception(s, e);
+		}
 		}
 	}
 	return ret;
