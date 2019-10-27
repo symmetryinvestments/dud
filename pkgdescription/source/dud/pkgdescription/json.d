@@ -84,7 +84,7 @@ bool extractBool(ref JSONValue jv) {
 	return jv.boolean();
 }
 
-private evoid insert(ref Dependency[string] ret, Dependency nd) {
+private void insert(ref Dependency[string] ret, Dependency nd) {
 	ret[nd.name] = nd;
 }
 
@@ -96,7 +96,6 @@ private Dependency depFromJSON(T)(ref T it) {
 
 Dependency[string] extractDependencies(ref JSONValue jv) {
 	import std.stdio;
-	//debug writeln(jv.toPrettyString());
 	enforce(jv.type == JSONType.object,
 			format("Expected an object not a %s while extracting dependencies",
 				jv.type));
@@ -113,11 +112,9 @@ Dependency extractDependency(ref JSONValue jv) {
 	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
 			format("Expected an object or a string not a %s while extracting "
 				~ "a dependency", jv.type));
-	if(jv.type == JSONType.object) {
-		return extractDependencyObj(jv);
-	} else {
-		return extractDependencyStr(jv);
-	}
+	return jv.type == JSONType.object
+		? extractDependencyObj(jv)
+		: extractDependencyStr(jv);
 }
 
 Dependency extractDependencyStr(ref JSONValue jv) {
