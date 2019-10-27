@@ -33,6 +33,7 @@ struct AstAccessor(T,E) {
 alias TagAccessor = AstAccessor!(Tags, Tag);
 alias IDAccessor = AstAccessor!(IDFull, Token);
 alias ValueAccessor = AstAccessor!(Values, Token);
+alias AttributeAccessor = AstAccessor!(Attributes, Attribute);
 
 TagAccessor tags(Root root) {
 	return TagAccessor(root.tags);
@@ -44,6 +45,10 @@ TagAccessor tags(OptChild child) {
 
 IDAccessor key(Tag tag) {
 	return IDAccessor(tag.id);
+}
+
+AttributeAccessor attributes(Tag tag) {
+	return IDAccessor(tag.attrs);
 }
 
 string identifer(Tag tag) {

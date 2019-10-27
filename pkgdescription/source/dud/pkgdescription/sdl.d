@@ -12,14 +12,14 @@ import dud.pkgdescription : Dependency, PackageDescription, TargetType;
 import dud.semver : SemVer;
 import dud.path : Path;
 
-import dud.sdlang;
+import dud.sdlang2;
 
-PackageDescription sdlToPackageDescription(string sdl) @trusted {
+PackageDescription sdlToPackageDescription(string sdl) @safe {
 	Tag jv = parseSource(sdl);
 	return sdlToPackageDescription(jv);
 }
 
-PackageDescription sdlToPackageDescription(Tag t) {
+PackageDescription sdlToPackageDescription(Tag t) @safe pure {
 	import dud.pkgdescription.helper : PreprocessKey, KeysToSDLCases;
 
 	import std.stdio;
@@ -30,10 +30,10 @@ PackageDescription sdlToPackageDescription(Tag t) {
 		writeln(it);
 	}
 
-	foreach(Tag it; t.tags()) {
+	foreach(it; tags(t)) {
 		writefln("%s %s", it.name, it.values);
 		try {
-			sw: switch(it.name) {
+			/*sw: switch(it.name) {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
 					enum Mem = KeysToSDLCases!(PreprocessKey!(mem));
 					case Mem: {
@@ -69,7 +69,7 @@ PackageDescription sdlToPackageDescription(Tag t) {
 				default:
 					enforce(false, format("key '%s' unknown", it.name));
 					assert(false);
-			}
+			}*/
 		} catch(Exception e) {
 			string s = format("While parsing key '%s' an exception occured",
 					it.name);
@@ -90,8 +90,8 @@ string extractString(Value[] v) {
 }
 
 string extractString(Value v) {
-	enforce(v.type == typeid(string), format("Expected a string not a '%s'",
-				v.type.stringof));
+	enforce(v.type == ValueType.str, format("Expected a string not a '%s'",
+				v.type));
 	return v.get!string();
 }
 
@@ -101,8 +101,8 @@ bool extractBool(Value[] v) {
 }
 
 bool extractBool(Value v) {
-	enforce(v.type == typeid(bool), format("Expected a bool not a '%s'",
-				v.type.stringof));
+	enforce(v.type == ValueType.boolean, format("Expected a bool not a '%s'",
+				v.type));
 	return v.get!bool();
 }
 
@@ -145,24 +145,34 @@ Dependency extractDependency(Tag t) {
 	enforce(t.values.length == 1, format("Expected length 1 not '%u'",
 			t.values.length));
 	ret.name = extractString(t.values.front);
-	foreach(Attribute it; t.attributes) {
-		switch(it.name) {
+	foreach(Attribute it; t.attributes()) {
+		switch(it.key.identifier()) {
 			case "version":
-				ret.version_ = parseVersionSpecifier(extractString(it.value));
+				ret.version_ = it
+						.values()
+						.front
+						.extractString
+						.parseVersionSpecifier;
 				break;
 			case "path":
-				ret.path = extractPath(it.value);
+				ret.path = it.values().front.extractPath;
 				break;
 			case "optional":
-				ret.optional = nullable(extractBool(it.value));
+				ret.optional = it
+					.values()
+					.front
+					.nullable;
 				break;
 			case "default":
-				ret.default_ = nullable(extractBool(it.value));
+				ret.default_ = it
+					.values()
+					.front
+					.nullable;
 				break;
 			default:
 				throw new Exception(format(
 						"Key '%s' is not part of a Dependency declaration",
-						it.name));
+						it.identifier()));
 		}
 	}
 	return ret;
