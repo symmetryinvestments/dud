@@ -63,7 +63,7 @@ struct PackageDescription {
 struct Dependency {
 	import std.typecons : Nullable;
 	string name;
-	VersionSpecifier version_;
+	Nullable!VersionSpecifier version_;
 	Nullable!Path path;
 	Nullable!bool optional;
 	Nullable!bool default_;

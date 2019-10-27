@@ -2,6 +2,7 @@ module dud.pkgdescription.sdltests;
 
 import std.conv;
 import std.typecons : nullable;
+import std.format : format;
 
 import dud.path : Path;
 import dud.pkgdescription : PackageDescription, TargetType, Dependency;
@@ -36,14 +37,16 @@ version "1.0.0"
 	auto dep =
 		[ "semver" : Dependency("semver")
 		, "sdlang" : Dependency("sdlang")
-		, "graphql" : Dependency("graphql")
+		, "graphqld" : Dependency("graphqld")
 		, "path" : Dependency("path")
 		];
+	dep["semver"].path = Path("../semver");
 	dep["path"].path = Path("../path");
 	dep["sdlang"].path = Path("../sdlang");
 	dep["graphqld"].version_ = parseVersionSpecifier(">=1.0.0");
 	dep["graphqld"].default_ = nullable(true);
 	dep["graphqld"].optional = nullable(false);
 
-	assert(pkg.dependencies == dep, to!string(pkg.dependencies));
+	assert(pkg.dependencies == dep, format("\ngot:\n%s\nexp:\n%s",
+		pkg.dependencies, dep));
 }

@@ -15,7 +15,9 @@
 */
 module dud.semver.operations;
 
+import std.exception : enforce;
 import std.range;
+import std.format : format;
 import std.string;
 import std.algorithm : max;
 import std.conv;
@@ -25,8 +27,7 @@ import std.conv;
 /**
 	Validates a version string according to the SemVer specification.
 */
-bool isValidVersion(string ver)
-pure @nogc {
+bool isValidVersion(string ver) pure @nogc {
 	// NOTE: this is not by spec, but to ensure sane input
 	if (ver.length > 256) return false;
 
@@ -69,7 +70,7 @@ pure @nogc {
 }
 
 ///
-unittest {
+@safe pure unittest {
 	assert(isValidVersion("1.9.0"));
 	assert(isValidVersion("0.10.0"));
 	assert(!isValidVersion("01.9.0"));
@@ -116,7 +117,7 @@ body {
 }
 
 ///
-unittest {
+@safe pure unittest {
 	assert(isPreReleaseVersion("1.0.0-alpha"));
 	assert(isPreReleaseVersion("1.0.0-alpha+b1"));
 	assert(isPreReleaseVersion("0.9.0-beta.1"));
@@ -132,11 +133,10 @@ unittest {
 	being ignored when comparing version numbers.
 
 	Returns:
-		Returns a negative number if `a` is a lower version than `b`, `0` if they are
-		equal, and a positive number otherwise.
+		Returns a negative number if `a` is a lower version than `b`, `0` if
+		they are equal, and a positive number otherwise.
 */
-int compareVersions(string a, string b)
-pure @nogc {
+int compareVersions(string a, string b) pure @safe {
 	// compare a.b.c numerically
 	if (auto ret = compareNumber(a, b)) return ret;
 	assert(a[0] == '.' && b[0] == '.');
@@ -169,7 +169,7 @@ pure @nogc {
 }
 
 ///
-unittest {
+@safe pure unittest {
 	assert(compareVersions("1.0.0", "1.0.0") == 0);
 	assert(compareVersions("1.0.0+b1", "1.0.0+b2") == 0);
 	assert(compareVersions("1.0.0", "2.0.0") < 0);
@@ -177,7 +177,7 @@ unittest {
 	assert(compareVersions("1.0.1", "1.0.0") > 0);
 }
 
-unittest {
+@safe pure unittest {
 	void assertLess(string a, string b) {
 		assert(compareVersions(a, b) < 0, "Failed for "~a~" < "~b);
 		assert(compareVersions(b, a) > 0);
@@ -345,10 +345,13 @@ pure @nogc {
 	}
 }
 
-private int compareNumber(ref string a, ref string b)
-pure @nogc {
+private int compareNumber(ref string a, ref string b) pure {
+	string at = a;
+	string bt = b;
 	int res = 0;
 	while (true) {
+		enforce(!a.empty, format("a was empty, was '%s' original", at));
+		enforce(!b.empty, format("b was empty, was '%s' original", bt));
 		if (a[0] != b[0] && res == 0) res = a[0] - b[0];
 		a = a[1 .. $]; b = b[1 .. $];
 		auto aempty = !a.length || (a[0] < '0' || a[0] > '9');
