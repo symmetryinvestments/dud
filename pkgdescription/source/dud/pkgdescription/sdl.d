@@ -84,7 +84,7 @@ string[] extractStrings(ValueRange v) @safe pure {
 }
 
 string extractString(ValueRange v) @safe pure {
-	enforce(v.empty, "Can not get element of empty range");
+	enforce(!v.empty, "Can not get element of empty range");
 	return extractString(v.front);
 }
 
@@ -95,7 +95,7 @@ string extractString(Value v) @safe pure {
 }
 
 bool extractBool(ValueRange v) @safe pure {
-	enforce(v.empty, "Can not get element of empty range");
+	enforce(!v.empty, "Can not get element of empty range");
 	return extractBool(v.front);
 }
 
@@ -114,7 +114,7 @@ Path[] extractPaths(ValueRange v) @safe pure {
 }
 
 Path extractPath(ValueRange v) @safe pure {
-	enforce(v.empty, "Can not get element of empty range");
+	enforce(!v.empty, "Can not get element of empty range");
 	return Path(extractString(v.front));
 }
 
@@ -123,7 +123,7 @@ Path extractPath(Value v) @safe pure {
 }
 
 SemVer extractSemVer(ValueRange v) @safe pure {
-	enforce(v.empty, "Can not get element of empty range");
+	enforce(!v.empty, "Can not get element of empty range");
 	return extractSemVer(v.front);
 }
 
@@ -132,7 +132,7 @@ SemVer extractSemVer(Value v) @safe pure {
 }
 
 TargetType extractTargetType(ValueRange v) @safe pure {
-	enforce(v.empty, "Can not get element of empty range");
+	enforce(!v.empty, "Can not get element of empty range");
 	return extractTargetType(v.front);
 }
 
