@@ -22,13 +22,17 @@ PackageDescription sdlToPackageDescription(string sdl) @safe {
 }
 
 PackageDescription sdlToPackageDescription(Root t) @safe {
+	return sdlToPackageDescription(t.tags);
+}
+
+PackageDescription sdlToPackageDescription(Tags input) @safe {
 	import dud.pkgdescription.helper : PreprocessKey, KeysToSDLCases;
 
 	import std.stdio;
 
 	PackageDescription ret;
 
-	foreach(Tag it; tags(t)) {
+	foreach(Tag it; tags(input)) {
 		string key = it.identifier();
 		//writefln("%s", key);
 		try {
@@ -40,9 +44,9 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 						static if(is(MemType == string)) {
 							__traits(getMember, ret, mem) =
 									extractString(it.values);
-						} else static if(is(MemType == SemVer)) {
+						} else static if(is(MemType == Nullable!SemVer)) {
 							__traits(getMember, ret, mem) =
-								extractSemVer(it.values);
+								nullable(extractSemVer(it.values));
 						} else static if(is(MemType == Path)) {
 							__traits(getMember, ret, mem) =
 								extractPath(it.values);
@@ -64,8 +68,15 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 						} else static if(is(MemType == AbsoluteNativePath)) {
 							// this is ignored
 						} else static if(is(MemType == PackageDescription[])) {
-							// this is handled differently in comparison to
-							// json
+							string name = extractString(it.values);
+							enforce(it.oc !is null,
+									"Configuration must have children");
+							enforce(it.oc.tags !is null,
+									"Configuration child must have tags");
+							PackageDescription t =
+								sdlToPackageDescription(it.oc.tags);
+							t.name = name;
+							__traits(getMember, ret, mem) ~= t;
 						} else {
 							static assert(false, MemType.stringof);
 						}

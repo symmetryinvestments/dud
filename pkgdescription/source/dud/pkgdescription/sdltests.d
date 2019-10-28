@@ -3,11 +3,13 @@ module dud.pkgdescription.sdltests;
 import std.conv;
 import std.typecons : nullable;
 import std.format : format;
+import std.stdio;
 
 import dud.path : Path;
 import dud.pkgdescription : PackageDescription, TargetType, Dependency;
 import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
+import dud.pkgdescription.output;
 
 unittest {
 	import dud.semver : SemVer;
@@ -19,9 +21,14 @@ dependency "path" path="../path"
 dependency "sdlang" path="../sdlang"
 dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
+targetPath "outDir"
 importPaths "source" "source1" "source2"
 license "LGPL3"
 version "1.0.0"
+configuration "test" {
+	platforms "NotWindows"
+	libs "libc"
+}
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
@@ -49,4 +56,6 @@ version "1.0.0"
 
 	assert(pkg.dependencies == dep, format("\ngot:\n%s\nexp:\n%s",
 		pkg.dependencies, dep));
+
+	writeln(toSDLString(pkg));
 }

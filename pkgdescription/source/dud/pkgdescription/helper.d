@@ -12,6 +12,8 @@ template PreprocessKey(string key) {
 template KeysToSDLCases(string key) {
 	static if(key == "dependencies") {
 		enum KeysToSDLCases = "dependency";
+	} else static if(key == "configurations") {
+		enum KeysToSDLCases = "configuration";
 	} else {
 		enum KeysToSDLCases = key;
 	}

@@ -34,8 +34,9 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 							__traits(getMember, PackageDescription, mem));
 					static if(is(MemType == string)) {
 						__traits(getMember, ret, mem) = extractString(value);
-					} else static if(is(MemType == SemVer)) {
-						__traits(getMember, ret, mem) = extractSemVer(value);
+					} else static if(is(MemType == Nullable!SemVer)) {
+						__traits(getMember, ret, mem) =
+							nullable(extractSemVer(value));
 					} else static if(is(MemType == Path)) {
 						__traits(getMember, ret, mem) = extractPath(value);
 					} else static if(is(MemType == Path[])) {

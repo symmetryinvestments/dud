@@ -39,6 +39,10 @@ TagAccessor tags(Root root) {
 	return TagAccessor(root.tags);
 }
 
+TagAccessor tags(Tags t) {
+	return TagAccessor(t);
+}
+
 TagAccessor tags(OptChild child) {
 	return TagAccessor(child.tags);
 }

@@ -31,7 +31,7 @@ struct PackageDescription {
 	AbsoluteNativePath comesFrom;
 	Path path; /// Path to the package
 	string name; /// Qualified name of the package
-	SemVer version_; /// Version of the package
+	Nullable!SemVer version_; /// Version of the package
 	string description;
 	string homepage;
 	string[] authors;
@@ -61,6 +61,7 @@ struct PackageDescription {
 	string[] preRunCommands; /// Commands to execute prior to every run
 	string[] postRunCommands; /// Commands to execute after every run
 	PackageDescription[] configurations;
+	string[] platforms;
 }
 
 struct Dependency {

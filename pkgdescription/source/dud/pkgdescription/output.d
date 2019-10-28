@@ -4,9 +4,10 @@ import std.algorithm.iteration : filter, map;
 import std.array : appender, array, back, empty, front;
 import std.conv : to;
 import std.exception : enforce;
-import std.format : formattedWrite;
+import std.format : format, formattedWrite;
 import std.json;
 import std.typecons : Nullable;
+import std.stdio;
 
 import dud.path;
 import dud.semver;
@@ -18,14 +19,14 @@ import dud.pkgdescription.helper;
 
 void indent(Out)(auto ref Out o, const size_t indent) {
 	foreach(i; 0 .. indent) {
-		format(o, "\t");
+		formattedWrite(o, "\t");
 	}
 }
 
-void formatIndent(Out, Args...)(auto ref Out o, const size_t indent, string str,
+void formatIndent(Out, Args...)(auto ref Out o, const size_t i, string str,
 		Args args)
 {
-	indent(o, indent);
+	indent(o, i);
 	formattedWrite(o, str, args);
 }
 
@@ -92,10 +93,10 @@ JSONValue toJSON(PackageDescription pkg) {
 			if(!tt.isNull()) {
 				ret[Mem] = to!string(tt.get());
 			}
-		}} else static if(is(MemType == SemVer)) {{
-			string v = __traits(getMember, pkg, mem).toString();
-			if(!v.empty) {
-				ret[Mem] = v;
+		}} else static if(is(MemType == Nullable!(SemVer))) {{
+			Nullable!SemVer v = __traits(getMember, pkg, mem);
+			if(!v.isNull()) {
+				ret[Mem] = v.get().toString();
 			}
 		}} else static if(is(MemType == AbsoluteNativePath)) {{
 			// does not need to be written as it is only used for internal use
@@ -150,9 +151,82 @@ private bool isShortFrom(const Dependency d) {
 
 string toSDLString(PackageDescription pkg) {
 	auto app = appender!string();
-	toSDLString(app, pkg);
+	toSDLString(app, pkg, 0);
 	return app.data;
 }
 
-void toSDLString(Out)(auto ref Out o, PackageDescription pkg) {
+void toSDLString(Out)(auto ref Out o, PackageDescription pkg,
+		const size_t indent)
+{
+	static foreach(mem; __traits(allMembers, PackageDescription)) {{
+		enum Mem = PreprocessKey!(mem);
+		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
+
+		static if(is(MemType == string)) {{
+			string s = __traits(getMember, pkg, mem);
+			if(!s.empty) {
+				formatIndent(o, indent, "%s \"%s\"\n", Mem, s);
+			}
+		}} else static if(is(MemType == Nullable!SemVer)) {{
+			Nullable!SemVer v = __traits(getMember, pkg, mem);
+			if(!v.isNull()) {
+				formatIndent(o, indent,  "%s \"%s\"\n", Mem, v.toString());
+			}
+		}} else static if(is(MemType == AbsoluteNativePath)) {{
+			// internal use only
+		}} else static if(is(MemType == Path)) {{
+			Path ss = __traits(getMember, pkg, mem);
+			if(!ss.path.empty) {
+				formatIndent(o, indent, "%s \"%s\"\n", Mem, ss.path);
+			}
+		}} else static if(is(MemType == Path[])) {{
+			Path[] ss = __traits(getMember, pkg, mem);
+			if(!ss.empty) {
+				formatIndent(o, indent, "%s %(%s %)\n", Mem,
+					ss.map!(it => it.path).filter!(it => !it.empty));
+			}
+		}} else static if(is(MemType == Nullable!TargetType)) {{
+			Nullable!TargetType tt = __traits(getMember, pkg, mem);
+			if(!tt.isNull()) {
+				formatIndent(o, indent, "targetType \"%s\"\n", tt.get());
+			}
+		}} else static if(is(MemType == string[])) {{
+			string[] ss = __traits(getMember, pkg, mem);
+			if(!ss.empty) {
+				formatIndent(o, indent, "%s %(%s %)\n", Mem,
+					ss.filter!(it => !it.empty));
+			}
+		}} else static if(is(MemType == PackageDescription[])) {{
+			PackageDescription[] confs = __traits(getMember, pkg, mem);
+			foreach(it; confs) {
+				formatIndent(o, indent, "configuration \"%s\" {\n", it.name);
+				toSDLString(o, it, indent + 1);
+				formatIndent(o, indent, "}\n", it.name);
+			}
+		}} else static if(is(MemType == Dependency[string])) {{
+			Dependency[string] deps = __traits(getMember, pkg, mem);
+			foreach(it; deps.byKeyValue()) {
+				formatIndent(o, indent, "dependency \"%s\"", it.key);
+				if(!it.value.version_.isNull()) {
+					formattedWrite(o, " version=\"%s\"",
+							it.value.version_.get().orig);
+				}
+				if(!it.value.path.isNull()) {
+					formattedWrite(o, " path=\"%s\"",
+							it.value.path.get().path);
+				}
+				if(!it.value.default_.isNull()) {
+					formattedWrite(o, " default=%s",
+							it.value.default_.get());
+				}
+				if(!it.value.optional.isNull()) {
+					formattedWrite(o, " optional=%s",
+							it.value.optional.get());
+				}
+				formattedWrite(o, "\n");
+			}
+		}} else {
+			static assert(false, "Unhandeld case " ~ MemType.stringof);
+		}
+	}}
 }
