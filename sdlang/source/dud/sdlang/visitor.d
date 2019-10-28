@@ -1,7 +1,7 @@
-module dud.sdlang2.visitor;
+module dud.sdlang.visitor;
 
-import dud.sdlang2.ast;
-import dud.sdlang2.tokenmodule;
+import dud.sdlang.ast;
+import dud.sdlang.tokenmodule;
 
 class Visitor : ConstVisitor {
 @safe pure:

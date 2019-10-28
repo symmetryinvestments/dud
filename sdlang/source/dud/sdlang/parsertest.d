@@ -1,12 +1,12 @@
-module dud.sdlang2.parsertest;
+module dud.sdlang.parsertest;
 
 import std.range : walkLength;
 
-import dud.sdlang2.lexer;
-import dud.sdlang2.parser;
-import dud.sdlang2.ast;
-import dud.sdlang2.astaccess;
-import dud.sdlang2.value;
+import dud.sdlang.lexer;
+import dud.sdlang.parser;
+import dud.sdlang.ast;
+import dud.sdlang.astaccess;
+import dud.sdlang.value;
 
 @safe pure:
 
@@ -16,7 +16,7 @@ unittest {
 	Root r = p.parseRoot();
 
 	foreach(tag; tags(r)) {
-		assert(tag.identifer() == "key", tag.identifer());
+		assert(tag.identifier() == "key", tag.identifier());
 		auto vals = tag.values();
 		assert(!vals.empty);
 		assert(vals.front.type == ValueType.str);
@@ -33,7 +33,7 @@ unittest {
 
 	assert(!vals.empty);
 	auto f = vals.front;
-	assert(f.identifer() == "key", f.identifer());
+	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.str);
@@ -41,7 +41,7 @@ unittest {
 
 	assert(!vals.empty);
 	f = vals.front;
-	assert(f.identifer() == "key2", f.identifer());
+	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.int32);
@@ -61,7 +61,7 @@ unittest {
 
 	assert(!vals.empty);
 	auto f = vals.front;
-	assert(f.identifer() == "key", f.identifer());
+	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.str);
@@ -69,7 +69,7 @@ unittest {
 
 	assert(!vals.empty);
 	f = vals.front;
-	assert(f.identifer() == "key2", f.identifer());
+	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.int32);
@@ -91,7 +91,7 @@ unittest {
 
 	assert(!vals.empty);
 	auto f = vals.front;
-	assert(f.identifer() == "key", f.identifer());
+	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.str);
@@ -99,7 +99,7 @@ unittest {
 
 	assert(!vals.empty);
 	f = vals.front;
-	assert(f.identifer() == "key2", f.identifer());
+	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
 	assert(val.front.type == ValueType.int32);

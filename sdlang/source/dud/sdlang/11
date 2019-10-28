@@ -1,4 +1,4 @@
-module dud.sdlang2.util;
+module dud.sdlang.util;
 
 import std.traits : isFloatingPoint, isFunctionPointer, isDelegate,
 	   functionAttributes, FunctionAttribute, SetFunctionAttributes,

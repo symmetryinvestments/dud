@@ -1,4 +1,4 @@
-module dud.sdlang2.value;
+module dud.sdlang.value;
 
 import std.datetime : DateTime, Duration, Date;
 

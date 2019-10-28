@@ -1,8 +1,8 @@
-module dud.sdlang2.astaccess;
+module dud.sdlang.astaccess;
 
-import dud.sdlang2.ast;
-import dud.sdlang2.value;
-import dud.sdlang2.tokenmodule;
+import dud.sdlang.ast;
+import dud.sdlang.value;
+import dud.sdlang.tokenmodule;
 
 @safe pure:
 

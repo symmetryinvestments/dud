@@ -1,42 +1,34 @@
-// SDLang-D
-// Written in the D programming language.
-
 module dud.sdlang.exception;
 
-import std.exception;
-import std.string;
 
-import dud.sdlang.util;
-
+class ParseException : Exception {
 @safe pure:
 
-abstract class SDLangException : Exception
-{
-	this(string msg) pure @safe { super(msg); }
-}
+	int line;
+	string[] subRules;
+	string[] follows;
 
-class SDLangParseException : SDLangException
-{
-	Location location;
-	bool hasLocation;
-
-	this(string msg) pure @safe {
-		hasLocation = false;
+	this(string msg) {
 		super(msg);
 	}
 
-	this(Location location, string msg) pure @safe {
-		hasLocation = true;
-		super("%s: %s".format(location.toString(), msg));
+	this(string msg, string f, int l, string[] subRules, string[] follows) {
+		import std.format : format;
+		super(format(
+			"%s [%(%s,%)]: While in subRules [%(%s, %)] at %s:%s",
+			msg, follows, subRules, f, l), f, l
+		);
+		this.line = l;
+		this.subRules = subRules;
+		this.follows = follows;
 	}
-}
 
-class SDLangValidationException : SDLangException
-{
-	this(string msg) pure @safe { super(msg); }
-}
+	this(string msg, ParseException other) {
+		super(msg, other);
+	}
 
-class SDLangRangeException : SDLangException
-{
-	this(string msg) pure @safe { super(msg); }
+	this(string msg, ParseException other, string f, int l) {
+		super(msg, f, l, other);
+		this.line = l;
+	}
 }

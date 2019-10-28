@@ -4,8 +4,8 @@
 			"path": "../path",
 			"version": ">=0.0.0"
 		},
-		"sdlang2": {
-			"path": "../sdlang2",
+		"sdlang": {
+			"path": "../sdlang",
 			"version": ">=0.0.0"
 		},
 		"semver": {

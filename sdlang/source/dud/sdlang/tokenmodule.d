@@ -1,7 +1,7 @@
-module dud.sdlang2.tokenmodule;
+module dud.sdlang.tokenmodule;
 
-import dud.sdlang2.visitor;
-import dud.sdlang2.value;
+import dud.sdlang.visitor;
+import dud.sdlang.value;
 
 enum TokenType {
 	undefined,

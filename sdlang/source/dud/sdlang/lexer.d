@@ -1,2072 +1,500 @@
-// SDLang-D
-// Written in the D programming language.
-
 module dud.sdlang.lexer;
 
-import std.algorithm;
-import std.array;
+import std.ascii;
+import std.array : appender, empty, front, popFront, popBack;
+import std.algorithm.searching : startsWith;
 import std.base64;
-import std.bigint;
-import std.conv;
-import std.datetime;
-import std.file;
-import std.traits;
-import std.typecons;
-import std.uni;
-import std.utf;
-import std.variant;
+import std.exception : enforce;
+import std.conv : to;
+import std.experimental.logger;
+import std.format : format;
+import std.typecons : Flag;
+import std.stdio;
 
-import dud.sdlang.exception;
-import dud.sdlang.symbol;
-import dud.sdlang.token;
-import dud.sdlang.util;
+import dud.sdlang.tokenmodule;
+import dud.sdlang.value;
 
-alias dud.sdlang.util.startsWith startsWith;
+struct Lexer {
+	string input;
 
-Token[] lexFile(string filename)
-{
-	auto source = cast(string)read(filename);
-	return lexSource(source, filename);
-}
+	size_t line;
+	size_t column;
 
-Token[] lexSource(string source, string filename=null)
-{
-	auto lexer = scoped!Lexer(source, filename);
+	Token cur;
 
-	// Can't use 'std.array.array(Range)' because 'lexer' is scoped
-	// and therefore cannot have its reference copied.
-	Appender!(Token[]) tokens;
-	foreach(tok; lexer)
-		tokens.put(tok);
+	this(string input) @safe pure {
+		this.input = input;
+		this.line = 1;
+		this.column = 1;
+		this.buildToken();
+	}
 
-	return tokens.data;
-}
-
-// Kind of a poor-man's yield, but fast.
-// Only to be used inside Lexer.popFront (and Lexer.this).
-private template accept(string symbolName)
-{
-	static assert(symbolName != "Value", "Value symbols must also take a value.");
-	enum accept = acceptImpl!(symbolName, "null");
-}
-private template accept(string symbolName, string value)
-{
-	static assert(symbolName == "Value", "Only a Value symbol can take a value.");
-	enum accept = acceptImpl!(symbolName, value);
-}
-private template accept(string symbolName, string value, string startLocation, string endLocation)
-{
-	static assert(symbolName == "Value", "Only a Value symbol can take a value.");
-	enum accept = ("
+	private bool eatComment() @safe pure {
+		if(this.input.startsWith("#") || this.input.startsWith("--")
+				|| this.input.startsWith("//"))
 		{
-			_front = makeToken!"~symbolName.stringof~";
-			() @trusted { _front.value = "~value~"; }();
-			_front.location = "~(startLocation==""? "tokenStart" : startLocation)~";
-			_front.data = source[
-				"~(startLocation==""? "tokenStart.index" : startLocation)~"
-				..
-				"~(endLocation==""? "location.index" : endLocation)~"
-			];
-			return;
-		}
-	").replace("\n", "");
-}
-private template acceptImpl(string symbolName, string value)
-{
-	enum acceptImpl = ("
-		{
-			_front = makeToken!"~symbolName.stringof~";
-			() @trusted { _front.value = "~value~"; }();
-			return;
-		}
-	").replace("\n", "");
-}
-
-class Lexer
-{
-	string source;
-	string filename;
-	Location location; /// Location of current character in source
-
-	private dchar  ch;         // Current character
-	private dchar  nextCh;     // Lookahead character
-	private size_t nextPos;    // Position of lookahead character (an index into source)
-	private bool   hasNextCh;  // If false, then there's no more lookahead, just EOF
-	private size_t posAfterLookahead; // Position after lookahead character (an index into source)
-
-	private Location tokenStart;    // The starting location of the token being lexed
-
-	// Length so far of the token being lexed, not including current char
-	private size_t tokenLength;   // Length in UTF-8 code units
-	private size_t tokenLength32; // Length in UTF-32 code units
-
-	// Slight kludge:
-	// If a numeric fragment is found after a Date (separated by arbitrary
-	// whitespace), it could be the "hours" part of a DateTime, or it could
-	// be a separate numeric literal that simply follows a plain Date. If the
-	// latter, then the Date must be emitted, but numeric fragment that was
-	// found after it needs to be saved for the the lexer's next iteration.
-	//
-	// It's a slight kludge, and could instead be implemented as a slightly
-	// kludgey parser hack, but it's the only situation where SDL's lexing
-	// needs to lookahead more than one character, so this is good enough.
-	private struct LookaheadTokenInfo
-	{
-		bool     exists          = false;
-		string   numericFragment = "";
-		bool     isNegative      = false;
-		Location tokenStart;
-	}
-	private LookaheadTokenInfo lookaheadTokenInfo;
-
-	this(string source=null, string filename=null)
-	{
-		this.filename = filename;
-		this.source = source;
-
-		_front = Token(symbol!"Error", Location());
-		lookaheadTokenInfo = LookaheadTokenInfo.init;
-
-		if( source.startsWith( ByteOrderMarks[BOM.UTF8] ) )
-		{
-			source = source[ ByteOrderMarks[BOM.UTF8].length .. $ ];
-			this.source = source;
-		}
-
-		foreach(bom; ByteOrderMarks)
-		if( source.startsWith(bom) )
-			error(Location(filename,0,0,0), "SDL spec only supports UTF-8, not UTF-16 or UTF-32");
-
-		if(source == "")
-			mixin(accept!"EOF");
-
-		// Prime everything
-		hasNextCh = true;
-		nextCh = source.decode(posAfterLookahead);
-		advanceChar(ErrorOnEOF.Yes);
-		location = Location(filename, 0, 0, 0);
-		popFront();
-	}
-
-	@property bool empty() pure @safe
-	{
-		return _front.symbol == symbol!"EOF";
-	}
-
-	Token _front;
-	@property Token front() pure @safe
-	{
-		return _front;
-	}
-
-	@property bool isEOF() pure @safe
-	{
-		return location.index == source.length && !lookaheadTokenInfo.exists;
-	}
-
-	private void error(string msg) pure @safe
-	{
-		error(location, msg);
-	}
-
-	private void error(Location loc, string msg) pure @safe
-	{
-		throw new SDLangParseException(loc, "Error: "~msg);
-	}
-
-	private Token makeToken(string symbolName)() pure @safe
-	{
-		auto tok = Token(symbol!symbolName, tokenStart);
-		tok.data = tokenData;
-		return tok;
-	}
-
-	private @property string tokenData() pure @safe
-	{
-		return source[ tokenStart.index .. location.index ];
-	}
-
-	/// Check the lookahead character
-	private bool lookahead(dchar ch) pure @safe
-	{
-		return hasNextCh && nextCh == ch;
-	}
-
-	private bool lookahead(bool function(dchar) pure @safe condition) pure @safe
-	{
-		return hasNextCh && condition(nextCh);
-	}
-
-	private static bool isNewline(dchar ch) pure @safe
-	{
-		return ch == '\n' || ch == '\r' || ch == lineSep || ch == paraSep;
-	}
-
-	/// Returns the length of the newline sequence, or zero if the current
-	/// character is not a newline
-	///
-	/// Note that there are only single character sequences and the two
-	/// character sequence `\r\n` as used on Windows.
-	private size_t isAtNewline() @safe pure
-	{
-		if(ch == '\n' || ch == lineSep || ch == paraSep) return 1;
-		else if(ch == '\r') return lookahead('\n') ? 2 : 1;
-		else return 0;
-	}
-
-	/// Is 'ch' a valid base 64 character?
-	private bool isBase64(dchar ch) @safe pure
-	{
-		if(ch >= 'A' && ch <= 'Z')
-			return true;
-
-		if(ch >= 'a' && ch <= 'z')
-			return true;
-
-		if(ch >= '0' && ch <= '9')
-			return true;
-
-		return ch == '+' || ch == '/' || ch == '=';
-	}
-
-	/// Is the current character one that's allowed
-	/// immediately *after* an int/float literal?
-	private bool isEndOfNumber() @safe pure
-	{
-		if(isEOF)
-			return true;
-
-		return !isDigit(ch) && ch != ':' && ch != '_' && !isAlpha(ch);
-	}
-
-	/// Is current character the last one in an ident?
-	private bool isEndOfIdentCached = false;
-	private bool _isEndOfIdent;
-	private bool isEndOfIdent() @safe pure
-	{
-		if(!isEndOfIdentCached)
-		{
-			if(!hasNextCh)
-				_isEndOfIdent = true;
-			else
-				_isEndOfIdent = !isIdentChar(nextCh);
-
-			isEndOfIdentCached = true;
-		}
-
-		return _isEndOfIdent;
-	}
-
-	/// Is 'ch' a character that's allowed *somewhere* in an identifier?
-	private bool isIdentChar(dchar ch) @safe pure
-	{
-		if(isAlpha(ch))
-			return true;
-
-		else if(isNumber(ch))
-			return true;
-
-		else
-			return
-				ch == '-' ||
-				ch == '_' ||
-				ch == '.' ||
-				ch == '$';
-	}
-
-	private bool isDigit(dchar ch) @safe pure
-	{
-		return ch >= '0' && ch <= '9';
-	}
-
-	private enum KeywordResult
-	{
-		Accept,   // Keyword is matched
-		Continue, // Keyword is not matched *yet*
-		Failed,   // Keyword doesn't match
-	}
-	private KeywordResult checkKeyword(dstring keyword32) @safe pure
-	{
-		// Still within length of keyword
-		if(tokenLength32 < keyword32.length)
-		{
-			if(ch == keyword32[tokenLength32])
-				return KeywordResult.Continue;
-			else
-				return KeywordResult.Failed;
-		}
-
-		// At position after keyword
-		else if(tokenLength32 == keyword32.length)
-		{
-			if(isEOF || !isIdentChar(ch))
-			{
-				debug assert(tokenData == to!string(keyword32));
-				return KeywordResult.Accept;
+			while(!this.input.startsWith('\n')) {
+				++this.column;
+				this.input.popFront();
 			}
-			else
-				return KeywordResult.Failed;
+			++this.line;
+			this.column = 1;
+			return true;
+		} else if(this.input.startsWith("/*")) {
+			while(!this.input.empty && !this.input.startsWith("*/")) {
+				if(this.input.startsWith('\n')) {
+					++this.line;
+					this.column = 1;
+				} else {
+					++this.column;
+				}
+				this.input.popFront();
+			}
+			enforce(!this.input.empty,
+				"No more input while parsing a C comment");
+			this.input = this.input[2 .. $];
+			return true;
 		}
-
-		assert(0, "Fell off end of keyword to check");
+		return false;
 	}
 
-	enum ErrorOnEOF { No, Yes }
-
-	/// Advance one code point.
-	private void advanceChar(ErrorOnEOF errorOnEOF) @safe pure
-	{
-		if(auto cnt = isAtNewline())
-		{
-			if (cnt == 1)
-				location.line++;
-			location.col = 0;
+	private void eatWhitespace() @safe pure {
+		while(!this.input.empty) {
+			if(this.eatComment()) {
+				continue;
+			} else if(this.input.front == ' ') {
+				++this.column;
+			} else if(this.input.front == '\t') {
+				++this.column;
+			} else {
+				break;
+			}
+			this.input.popFront();
 		}
-		else
-			location.col++;
+	}
 
-		location.index = nextPos;
+	private void singleCharToken(TokenType tt) @safe pure {
+		this.cur = Token(tt, this.line, this.column);
+		++this.column;
+		this.input.popFront();
+	}
 
-		nextPos = posAfterLookahead;
-		ch      = nextCh;
+	private void buildToken() @safe pure {
+		this.eatWhitespace();
 
-		if(!hasNextCh)
-		{
-			if(errorOnEOF == ErrorOnEOF.Yes)
-				error("Unexpected end of file");
-
+		if(this.input.empty) {
+			this.cur = this.cur.type == TokenType.eof
+				? Token(TokenType.undefined)
+				: Token(TokenType.eof);
 			return;
 		}
 
-		tokenLength32++;
-		tokenLength = location.index - tokenStart.index;
-
-		if(nextPos == source.length)
-		{
-			nextCh = dchar.init;
-			hasNextCh = false;
+		if(this.input.front == '{') {
+			this.singleCharToken(TokenType.lcurly);
 			return;
-		}
-
-		nextCh = source.decode(posAfterLookahead);
-		isEndOfIdentCached = false;
-	}
-
-	/// Advances the specified amount of characters
-	private void advanceChar(size_t count, ErrorOnEOF errorOnEOF) @safe pure
-	{
-		while(count-- > 0)
-			advanceChar(errorOnEOF);
-	}
-
-	void popFront()
-	{
-		// -- Main Lexer -------------
-
-		eatWhite();
-
-		if(isEOF)
-			mixin(accept!"EOF");
-
-		tokenStart    = location;
-		tokenLength   = 0;
-		tokenLength32 = 0;
-		isEndOfIdentCached = false;
-
-		if(lookaheadTokenInfo.exists)
-		{
-			tokenStart = lookaheadTokenInfo.tokenStart;
-
-			auto prevLATokenInfo = lookaheadTokenInfo;
-			lookaheadTokenInfo = LookaheadTokenInfo.init;
-			lexNumeric(prevLATokenInfo);
+		} else if(this.input.front == '}') {
+			this.singleCharToken(TokenType.rcurly);
 			return;
-		}
+		} else if(this.input.front == '\n') {
+			this.singleCharToken(TokenType.eol);
+			return;
+		} else if(this.input.front == '=') {
+			this.singleCharToken(TokenType.assign);
+			return;
+		} else if(this.input.front == ':') {
+			this.singleCharToken(TokenType.colon);
+			return;
+		} else if(this.input.front == '\\') {
+			++this.column;
+			this.input.popFront();
+			while(this.input.front != '\n') {
+				this.input.popFront();
+				++this.column;
+			}
+			this.column = 1;
+			++this.line;
+			this.input.popFront();
+			this.buildToken();
+			return;
+		} else if(this.input.front == ';') {
+			this.singleCharToken(TokenType.semicolon);
+			return;
+		} else if(this.input.front == '[') {
+			size_t l = this.line;
+			size_t c = this.column;
+			++this.column;
+			this.input.popFront();
 
-		if(ch == '=')
-		{
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!"=");
-		}
+			size_t rbrack;
+			while(rbrack < this.input.length && this.input[rbrack] != ']') {
+				++rbrack;
+				++this.column;
+			}
 
-		else if(ch == '{')
-		{
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!"{");
-		}
+			++this.column;
 
-		else if(ch == '}')
-		{
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!"}");
-		}
+			string theData = this.input[0 .. rbrack];
+			ubyte[] data = Base64.decode(theData);
+			this.input = this.input[rbrack + 1 .. $];
+			this.cur = Token(TokenType.value, Value(data), theData, l, c);
+			return;
+		} else if(this.input.startsWith("`")) {
+			size_t l = this.line;
+			size_t c = this.column;
+			++this.column;
+			this.input.popFront();
 
-		else if(ch == ':')
-		{
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!":");
-		}
+			auto app = appender!string();
 
-		else if(ch == ';')
-		{
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!"EOL");
-		}
+			while(this.input.front != '`') {
+				app.put(this.input.front);
+				if(this.input.front == '\n') {
+					++this.line;
+					this.column = 1;
+				} else {
+					++this.column;
+				}
+				this.input.popFront();
+			}
 
-		else if(auto cnt = isAtNewline())
-		{
-			advanceChar(cnt, ErrorOnEOF.No);
-			mixin(accept!"EOL");
-		}
+			assert(this.input.front == '`', this.input);
+			this.input.popFront();
+			this.cur = Token(TokenType.value, Value(app.data), app.data, l, c);
+			return;
+		} else if(this.input.front == '"') {
+			size_t l = this.line;
+			size_t c = this.column;
+			++this.column;
+			this.input.popFront();
 
-		else if(isAlpha(ch) || ch == '_')
-			lexIdentKeyword();
+			auto app = appender!string();
 
-		else if(ch == '"')
-			lexRegularString();
+			while(!this.input.startsWith('"')) {
+				if(this.input.startsWith("\\\"")) {
+					app.put('"');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.startsWith("\\t")) {
+					app.put('\t');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.startsWith("\\n")) {
+					app.put('\n');
+					this.input = this.input[2 .. $];
+					this.column += 2;
+				} else if(this.input.length > 1 && this.input.front == '\\') {
+					this.input.popFront();
+					while(this.input.front.isWhite()) {
+						if(this.input.front == ' ') {
+							++this.column;
+						} else if(this.input.front == '\t') {
+							++this.column;
+						} else if(this.input.front == '\n') {
+							++this.line;
+							this.column = 1;
+						}
+						this.input.popFront();
+					}
+				} else {
+					app.put(this.input.front);
+					++this.column;
+					this.input.popFront();
+				}
+			}
+			assert(this.input.front == '"', this.input);
+			this.input.popFront();
+			++this.column;
 
-		else if(ch == '`')
-			lexRawString();
+			this.cur = Token(TokenType.value, Value(app.data), app.data, l, c);
+			return;
+		} else if(this.input.front == '-' || isDigit(this.input.front)) {
+			size_t l = this.line;
+			size_t c = this.column;
 
-		else if(ch == '\'')
-			lexCharacter();
+			size_t idx;
+			if(this.input.front == '-') {
+				++idx;
+			}
 
-		else if(ch == '[')
-			lexBinary();
+			while(idx < this.input.length && isDigit(this.input[idx])) {
+				++idx;
+				++this.column;
+			}
 
-		else if(ch == '-' || ch == '.' || isDigit(ch))
-			lexNumeric();
+			string tmp = this.input[idx .. $];
 
-		else
-		{
-			advanceChar(ErrorOnEOF.No);
-			error("Syntax error");
-		}
-	}
-
-	/// Lex Ident or Keyword
-	private void lexIdentKeyword()
-	{
-		assert(isAlpha(ch) || ch == '_');
-
-		// Keyword
-		struct Key
-		{
-			dstring name;
-			Value value;
-			bool failed = false;
-		}
-		static Key[5] keywords;
-		static keywordsInited = false;
-		if(!keywordsInited)
-		{
-			// Value (as a std.variant-based type) can't be statically inited
-			keywords[0] = Key("true",  Value(true ));
-			keywords[1] = Key("false", Value(false));
-			keywords[2] = Key("on",    Value(true ));
-			keywords[3] = Key("off",   Value(false));
-			keywords[4] = Key("null",  Value(null ));
-			keywordsInited = true;
-		}
-
-		foreach(ref key; keywords)
-			key.failed = false;
-
-		auto numKeys = keywords.length;
-
-		do
-		{
-			foreach(ref key; keywords)
-			if(!key.failed)
+			if(tmp.empty || isWhite(tmp.front) || tmp.front == '.'
+					|| tmp.front == 'l' || tmp.front == 'L'
+					|| tmp.front == 'f' || tmp.front == 'F')
 			{
-				final switch(checkKeyword(key.name))
-				{
-				case KeywordResult.Accept:
-					mixin(accept!("Value", "key.value"));
-
-				case KeywordResult.Continue:
+				parseNumber(idx, l, c);
+				return;
+			} else if(tmp.front == 'd' || tmp.front == 'D'
+					|| tmp.front == ':')
+			{
+				parseDuration(idx, l, c);
+				return;
+			} else if(tmp.front == '/') {
+				parseDate(idx, l, c);
+				return;
+			} else {
+				assert(false, this.input);
+			}
+		} else if(isAlpha(this.input.front)) {
+			size_t e;
+			while(e < this.input.length &&
+					( isAlphaNum(this.input[e]) || this.input[e] == '_'
+					|| this.input[e] == '-' || this.input[e] == '.'
+					|| this.input[e] == '$'
+					)
+				)
+			{
+				++e;
+			}
+			string str = this.input[0 .. e];
+			switch(str) {
+				case "null":
+					this.cur = Token(TokenType.value, Value.init,
+							str, this.line, this.column);
 					break;
-
-				case KeywordResult.Failed:
-					key.failed = true;
-					numKeys--;
+				case "on":
+					goto case;
+				case "true":
+					this.cur = Token(TokenType.value, Value(true),
+							str, this.line, this.column);
 					break;
-				}
+				case "off":
+					goto case;
+				case "false":
+					this.cur = Token(TokenType.value, Value(false),
+							str, this.line, this.column);
+					break;
+				default:
+					this.cur = Token(TokenType.ident, Value(str), str,
+							this.line, this.column);
+					break;
 			}
-
-			if(numKeys == 0)
-			{
-				lexIdent();
-				return;
-			}
-
-			advanceChar(ErrorOnEOF.No);
-
-		} while(!isEOF);
-
-		foreach(ref key; keywords)
-		if(!key.failed)
-		if(key.name.length == tokenLength32+1)
-			mixin(accept!("Value", "key.value"));
-
-		mixin(accept!"Ident");
-	}
-
-	/// Lex Ident
-	private void lexIdent() pure @safe
-	{
-		if(tokenLength == 0)
-			assert(isAlpha(ch) || ch == '_');
-
-		while(!isEOF && isIdentChar(ch))
-			advanceChar(ErrorOnEOF.No);
-
-		mixin(accept!"Ident");
-	}
-
-	/// Lex regular string
-	private void lexRegularString() pure @safe
-	{
-		assert(ch == '"');
-
-		Appender!string buf;
-		size_t spanStart = nextPos;
-
-		// Doesn't include current character
-		void updateBuf()
-		{
-			if(location.index == spanStart)
-				return;
-
-			buf.put( source[spanStart..location.index] );
-		}
-
-		advanceChar(ErrorOnEOF.Yes);
-		while(ch != '"')
-		{
-			if(ch == '\\')
-			{
-				updateBuf();
-
-				bool wasEscSequence = true;
-				if(hasNextCh)
-				{
-					switch(nextCh)
-					{
-					case 'n':  buf.put('\n'); break;
-					case 'r':  buf.put('\r'); break;
-					case 't':  buf.put('\t'); break;
-					case '"':  buf.put('\"'); break;
-					case '\\': buf.put('\\'); break;
-					default: wasEscSequence = false; break;
-					}
-				}
-
-				if(wasEscSequence)
-				{
-					advanceChar(ErrorOnEOF.Yes);
-					spanStart = nextPos;
-				}
-				else
-				{
-					eatWhite(false);
-					spanStart = location.index;
-				}
-			}
-
-			else if(isNewline(ch))
-				error("Unescaped newlines are only allowed in raw strings, not regular strings.");
-
-			advanceChar(ErrorOnEOF.Yes);
-		}
-
-		updateBuf();
-		advanceChar(ErrorOnEOF.No); // Skip closing double-quote
-		mixin(accept!("Value", "buf.data"));
-	}
-
-	/// Lex raw string
-	private void lexRawString() pure @safe
-	{
-		assert(ch == '`');
-
-		do
-			advanceChar(ErrorOnEOF.Yes);
-		while(ch != '`');
-
-		advanceChar(ErrorOnEOF.No); // Skip closing back-tick
-		mixin(accept!("Value", "tokenData[1..$-1]"));
-	}
-
-	/// Lex character literal
-	private void lexCharacter() pure @safe
-	{
-		assert(ch == '\'');
-		advanceChar(ErrorOnEOF.Yes); // Skip opening single-quote
-
-		dchar value;
-		if(ch == '\\')
-		{
-			advanceChar(ErrorOnEOF.Yes); // Skip escape backslash
-			switch(ch)
-			{
-			case 'n':  value = '\n'; break;
-			case 'r':  value = '\r'; break;
-			case 't':  value = '\t'; break;
-			case '\'': value = '\''; break;
-			case '\\': value = '\\'; break;
-			default: error("Invalid escape sequence.");
-			}
-		}
-		else if(isNewline(ch))
-			error("Newline not alowed in character literal.");
-		else
-			value = ch;
-		advanceChar(ErrorOnEOF.Yes); // Skip the character itself
-
-		if(ch == '\'')
-			advanceChar(ErrorOnEOF.No); // Skip closing single-quote
-		else
-			error("Expected closing single-quote.");
-
-		mixin(accept!("Value", "value"));
-	}
-
-	/// Lex base64 binary literal
-	private void lexBinary() pure @safe
-	{
-		assert(ch == '[');
-		advanceChar(ErrorOnEOF.Yes);
-
-		void eatBase64Whitespace()
-		{
-			while(!isEOF && isWhite(ch))
-			{
-				if(isNewline(ch))
-					advanceChar(ErrorOnEOF.Yes);
-
-				if(!isEOF && isWhite(ch))
-					eatWhite();
-			}
-		}
-
-		eatBase64Whitespace();
-
-		// Iterates all valid base64 characters, ending at ']'.
-		// Skips all whitespace. Throws on invalid chars.
-		struct Base64InputRange
-		{
-			Lexer lexer;
-			private bool isInited = false;
-			private int numInputCharsMod4 = 0;
-
-			@property bool empty()
-			{
-				if(lexer.ch == ']')
-				{
-					if(numInputCharsMod4 != 0)
-						lexer.error("Length of Base64 encoding must be a multiple of 4. ("~to!string(numInputCharsMod4)~")");
-
-					return true;
-				}
-
-				return false;
-			}
-
-			@property dchar front()
-			{
-				return lexer.ch;
-			}
-
-			void popFront()
-			{
-				auto lex = lexer;
-
-				if(!isInited)
-				{
-					if(lexer.isBase64(lexer.ch))
-					{
-						numInputCharsMod4++;
-						numInputCharsMod4 %= 4;
-					}
-
-					isInited = true;
-				}
-
-				lex.advanceChar(lex.ErrorOnEOF.Yes);
-
-				eatBase64Whitespace();
-
-				if(lex.isEOF)
-					lex.error("Unexpected end of file.");
-
-				if(lex.ch != ']')
-				{
-					if(!lex.isBase64(lex.ch))
-						lex.error("Invalid character in base64 binary literal.");
-
-					numInputCharsMod4++;
-					numInputCharsMod4 %= 4;
-				}
-			}
-		}
-
-		// This is a slow ugly hack. It's necessary because Base64.decode
-		// currently requires the source to have known length.
-		//TODO: Remove this when DMD issue #9543 is fixed.
-		dchar[] tmpBuf = array(Base64InputRange(this));
-
-		Appender!(ubyte[]) outputBuf;
-		// Ugly workaround for DMD issue #9102
-		//TODO: Remove this when DMD #9102 is fixed
-		struct OutputBuf
-		{
-			void put(ubyte ch) pure @safe
-			{
-				outputBuf.put(ch);
-			}
-		}
-
-		try {
-			//Base64.decode(Base64InputRange(this), OutputBuf());
-			() @trusted { Base64.decode(tmpBuf, OutputBuf()); }();
-
-		//TODO: Starting with dmd 2.062, this should be a Base64Exception
-		} catch(Exception e) {
-			error("Invalid character in base64 binary literal.");
-		}
-
-		advanceChar(ErrorOnEOF.No); // Skip ']'
-		mixin(accept!("Value", "outputBuf.data"));
-	}
-
-	private BigInt toBigInt(bool isNegative, string absValue) pure @safe
-	{
-		auto num = BigInt(absValue);
-		assert(num >= 0);
-
-		if(isNegative)
-			num = -num;
-
-		return num;
-	}
-
-	/// Lex [0-9]+, but without emitting a token.
-	/// This is used by the other numeric parsing functions.
-	private string lexNumericFragment() pure @safe
-	{
-		if(!isDigit(ch))
-			error("Expected a digit 0-9.");
-
-		auto spanStart = location.index;
-
-		do
-		{
-			advanceChar(ErrorOnEOF.No);
-		} while(!isEOF && isDigit(ch));
-
-		return source[spanStart..location.index];
-	}
-
-	string pureBItoStr(BigInt bi) @trusted {
-		return to!string(bi);
-	}
-
-	/// Lex anything that starts with 0-9 or '-'. Ints, floats, dates, etc.
-	private void lexNumeric(LookaheadTokenInfo laTokenInfo = LookaheadTokenInfo.init)
-	{
-		auto bigIntToString = assumePure(&pureBItoStr);
-
-		bool isNegative;
-		string firstFragment;
-		if(laTokenInfo.exists)
-		{
-			firstFragment = laTokenInfo.numericFragment;
-			isNegative    = laTokenInfo.isNegative;
-		}
-		else
-		{
-			assert(ch == '-' || ch == '.' || isDigit(ch));
-
-			// Check for negative
-			isNegative = ch == '-';
-			if(isNegative)
-				advanceChar(ErrorOnEOF.Yes);
-
-			// Some floating point with omitted leading zero?
-			if(ch == '.')
-			{
-				lexFloatingPoint("");
-				return;
-			}
-
-			firstFragment = lexNumericFragment();
-		}
-
-		// Long integer (64-bit signed)?
-		if(ch == 'L' || ch == 'l')
-		{
-			advanceChar(ErrorOnEOF.No);
-
-			// BigInt(long.min) is a workaround for DMD issue #9548
-			auto num = toBigInt(isNegative, firstFragment);
-			if(num < BigInt(long.min) || num > long.max) {
-				string ns = bigIntToString(num);
-				error(tokenStart,
-					"Value doesn't fit in 64-bit signed long integer: " ~ ns);
-			}
-
-			mixin(accept!("Value", "num.toLong()"));
-		}
-
-		// Float (32-bit signed)?
-		else if(ch == 'F' || ch == 'f')
-		{
-			auto value = to!float(tokenData);
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!("Value", "value"));
-		}
-
-		// Double float (64-bit signed) with suffix?
-		else if((ch == 'D' || ch == 'd') && !lookahead(':')
-		)
-		{
-			auto value = to!double(tokenData);
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!("Value", "value"));
-		}
-
-		// Decimal (128+ bits signed)?
-		else if(
-			(ch == 'B' || ch == 'b') &&
-			(lookahead('D') || lookahead('d'))
-		)
-		{
-			auto value = to!real(tokenData);
-			advanceChar(ErrorOnEOF.No);
-			advanceChar(ErrorOnEOF.No);
-			mixin(accept!("Value", "value"));
-		}
-
-		// Some floating point?
-		else if(ch == '.')
-			lexFloatingPoint(firstFragment);
-
-		// Some date?
-		else if(ch == '/' && hasNextCh && isDigit(nextCh))
-			lexDate(isNegative, firstFragment);
-
-		// Some time span?
-		else if(ch == ':' || ch == 'd')
-			lexTimeSpan(isNegative, firstFragment);
-
-		// Integer (32-bit signed)?
-		else if(isEndOfNumber())
-		{
-			auto num = toBigInt(isNegative, firstFragment);
-			if(num < int.min || num > int.max) {
-				string ns = bigIntToString(num);
-				error(tokenStart,
-					"Value doesn't fit in 32-bit signed integer: " ~ ns);
-			}
-
-			mixin(accept!("Value", "num.toInt()"));
-		}
-
-		// Invalid suffix
-		else
-			error("Invalid integer suffix.");
-	}
-
-	/// Lex any floating-point literal (after the initial numeric fragment was lexed)
-	private void lexFloatingPoint(string firstPart) pure @safe
-	{
-		assert(ch == '.');
-		advanceChar(ErrorOnEOF.No);
-
-		auto secondPart = lexNumericFragment();
-
-		try
-		{
-			// Double float (64-bit signed) with suffix?
-			if(ch == 'D' || ch == 'd')
-			{
-				auto value = to!double(tokenData);
-				advanceChar(ErrorOnEOF.No);
-				mixin(accept!("Value", "value"));
-			}
-
-			// Float (32-bit signed)?
-			else if(ch == 'F' || ch == 'f')
-			{
-				auto value = to!float(tokenData);
-				advanceChar(ErrorOnEOF.No);
-				mixin(accept!("Value", "value"));
-			}
-
-			// Decimal (128+ bits signed)?
-			else if(ch == 'B' || ch == 'b')
-			{
-				auto value = to!real(tokenData);
-				advanceChar(ErrorOnEOF.Yes);
-
-				if(!isEOF && (ch == 'D' || ch == 'd'))
-				{
-					advanceChar(ErrorOnEOF.No);
-					if(isEndOfNumber())
-						mixin(accept!("Value", "value"));
-				}
-
-				error("Invalid floating point suffix.");
-			}
-
-			// Double float (64-bit signed) without suffix?
-			else if(isEOF || !isIdentChar(ch))
-			{
-				auto value = to!double(tokenData);
-				mixin(accept!("Value", "value"));
-			}
-
-			// Invalid suffix
-			else
-				error("Invalid floating point suffix.");
-		}
-		catch(ConvException e)
-			error("Invalid floating point literal.");
-	}
-
-	private Date makeDate(bool isNegative, string yearStr, string monthStr, string dayStr)
-			pure @safe
-	{
-		BigInt biTmp;
-
-		biTmp = BigInt(yearStr);
-		if(isNegative)
-			biTmp = -biTmp;
-		if(biTmp < int.min || biTmp > int.max)
-			error(tokenStart, "Date's year is out of range. (Must fit within a 32-bit signed int.)");
-		auto year = biTmp.toInt();
-
-		biTmp = BigInt(monthStr);
-		if(biTmp < 1 || biTmp > 12)
-			error(tokenStart, "Date's month is out of range.");
-		auto month = biTmp.toInt();
-
-		biTmp = BigInt(dayStr);
-		if(biTmp < 1 || biTmp > 31)
-			error(tokenStart, "Date's month is out of range.");
-		auto day = biTmp.toInt();
-
-		return Date(year, month, day);
-	}
-
-	private DateTimeFrac makeDateTimeFrac(
-		bool isNegative, Date date, string hourStr, string minuteStr,
-		string secondStr, string millisecondStr
-	) pure @safe
-	{
-		BigInt biTmp;
-
-		biTmp = BigInt(hourStr);
-		if(biTmp < int.min || biTmp > int.max)
-			error(tokenStart, "Datetime's hour is out of range.");
-		auto numHours = biTmp.toInt();
-
-		biTmp = BigInt(minuteStr);
-		if(biTmp < 0 || biTmp > int.max)
-			error(tokenStart, "Datetime's minute is out of range.");
-		auto numMinutes = biTmp.toInt();
-
-		int numSeconds = 0;
-		if(secondStr != "")
-		{
-			biTmp = BigInt(secondStr);
-			if(biTmp < 0 || biTmp > int.max)
-				error(tokenStart, "Datetime's second is out of range.");
-			numSeconds = biTmp.toInt();
-		}
-
-		int millisecond = 0;
-		if(millisecondStr != "")
-		{
-			biTmp = BigInt(millisecondStr);
-			if(biTmp < 0 || biTmp > int.max)
-				error(tokenStart, "Datetime's millisecond is out of range.");
-			millisecond = biTmp.toInt();
-
-			if(millisecondStr.length == 1)
-				millisecond *= 100;
-			else if(millisecondStr.length == 2)
-				millisecond *= 10;
-		}
-
-		Duration fracSecs = millisecond.msecs;
-
-		auto offset = hours(numHours) + minutes(numMinutes) + seconds(numSeconds);
-
-		if(isNegative)
-		{
-			offset   = -offset;
-			fracSecs = -fracSecs;
-		}
-
-		return DateTimeFrac(DateTime(date) + offset, fracSecs);
-	}
-
-	private Duration makeDuration(
-		bool isNegative, string dayStr,
-		string hourStr, string minuteStr, string secondStr,
-		string millisecondStr
-	) pure @safe
-	{
-		BigInt biTmp;
-
-		long day = 0;
-		if(dayStr != "")
-		{
-			biTmp = BigInt(dayStr);
-			if(biTmp < long.min || biTmp > long.max)
-				error(tokenStart, "Time span's day is out of range.");
-			day = biTmp.toLong();
-		}
-
-		biTmp = BigInt(hourStr);
-		if(biTmp < long.min || biTmp > long.max)
-			error(tokenStart, "Time span's hour is out of range.");
-		auto hour = biTmp.toLong();
-
-		biTmp = BigInt(minuteStr);
-		if(biTmp < long.min || biTmp > long.max)
-			error(tokenStart, "Time span's minute is out of range.");
-		auto minute = biTmp.toLong();
-
-		biTmp = BigInt(secondStr);
-		if(biTmp < long.min || biTmp > long.max)
-			error(tokenStart, "Time span's second is out of range.");
-		auto second = biTmp.toLong();
-
-		long millisecond = 0;
-		if(millisecondStr != "")
-		{
-			biTmp = BigInt(millisecondStr);
-			if(biTmp < long.min || biTmp > long.max)
-				error(tokenStart, "Time span's millisecond is out of range.");
-			millisecond = biTmp.toLong();
-
-			if(millisecondStr.length == 1)
-				millisecond *= 100;
-			else if(millisecondStr.length == 2)
-				millisecond *= 10;
-		}
-
-		auto duration =
-			dur!"days"   (day)    +
-			dur!"hours"  (hour)   +
-			dur!"minutes"(minute) +
-			dur!"seconds"(second) +
-			dur!"msecs"  (millisecond);
-
-		if(isNegative)
-			duration = -duration;
-
-		return duration;
-	}
-
-	// This has to reproduce some weird corner case behaviors from the
-	// original Java version of SDL. So some of this may seem weird.
-	private Nullable!Duration getTimeZoneOffset(string str) pure @safe
-	{
-		if(str.length < 2)
-			return Nullable!Duration(); // Unknown timezone
-
-		if(str[0] != '+' && str[0] != '-')
-			return Nullable!Duration(); // Unknown timezone
-
-		auto isNegative = str[0] == '-';
-
-		string numHoursStr;
-		string numMinutesStr;
-		if(str[1] == ':')
-		{
-			numMinutesStr = str[1..$];
-			numHoursStr = "";
-		}
-		else
-		{
-			numMinutesStr = str.find(':');
-			numHoursStr = str[1 .. $-numMinutesStr.length];
-		}
-
-		long numHours = 0;
-		long numMinutes = 0;
-		bool isUnknown = false;
-		try
-		{
-			switch(numHoursStr.length)
-			{
-			case 0:
-				if(numMinutesStr.length == 3)
-				{
-					numHours   = 0;
-					numMinutes = to!long(numMinutesStr[1..$]);
-				}
-				else
-					isUnknown = true;
-				break;
-
-			case 1:
-			case 2:
-				if(numMinutesStr.length == 0)
-				{
-					numHours   = to!long(numHoursStr);
-					numMinutes = 0;
-				}
-				else if(numMinutesStr.length == 3)
-				{
-					numHours   = to!long(numHoursStr);
-					numMinutes = to!long(numMinutesStr[1..$]);
-				}
-				else
-					isUnknown = true;
-				break;
-
-			default:
-				if(numMinutesStr.length == 0)
-				{
-					// Yes, this is correct
-					numHours   = 0;
-					numMinutes = to!long(numHoursStr[1..$]);
-				}
-				else
-					isUnknown = true;
-				break;
-			}
-		}
-		catch(ConvException e)
-			isUnknown = true;
-
-		if(isUnknown)
-			return Nullable!Duration(); // Unknown timezone
-
-		auto timeZoneOffset = hours(numHours) + minutes(numMinutes);
-		if(isNegative)
-			timeZoneOffset = -timeZoneOffset;
-
-		// Timezone valid
-		return Nullable!Duration(timeZoneOffset);
-	}
-
-	/// Lex date or datetime (after the initial numeric fragment was lexed)
-	private void lexDate(bool isDateNegative, string yearStr) @safe
-	{
-		assert(ch == '/');
-
-		// Lex months
-		advanceChar(ErrorOnEOF.Yes); // Skip '/'
-		auto monthStr = lexNumericFragment();
-
-		// Lex days
-		if(ch != '/')
-			error("Invalid date format: Missing days.");
-		advanceChar(ErrorOnEOF.Yes); // Skip '/'
-		auto dayStr = lexNumericFragment();
-
-		auto date = makeDate(isDateNegative, yearStr, monthStr, dayStr);
-
-		if(!isEndOfNumber() && ch != '/')
-			error("Dates cannot have suffixes.");
-
-		// Date?
-		if(isEOF)
-			mixin(accept!("Value", "date"));
-
-		auto endOfDate = location;
-
-		while(
-			!isEOF &&
-			( ch == '\\' || ch == '/' || (isWhite(ch) && !isNewline(ch)) )
-		)
-		{
-			if(ch == '\\' && hasNextCh && isNewline(nextCh))
-			{
-				advanceChar(ErrorOnEOF.Yes);
-				if(isAtNewline())
-					advanceChar(ErrorOnEOF.Yes);
-				advanceChar(ErrorOnEOF.No);
-			}
-
-			eatWhite();
-		}
-
-		// Date?
-		if(isEOF || (!isDigit(ch) && ch != '-'))
-			mixin(accept!("Value", "date", "", "endOfDate.index"));
-
-		auto startOfTime = location;
-
-		// Is time negative?
-		bool isTimeNegative = ch == '-';
-		if(isTimeNegative)
-			advanceChar(ErrorOnEOF.Yes);
-
-		// Lex hours
-		auto hourStr = ch == '.'? "" : lexNumericFragment();
-
-		// Lex minutes
-		if(ch != ':')
-		{
-			// No minutes found. Therefore we had a plain Date followed
-			// by a numeric literal, not a DateTime.
-			lookaheadTokenInfo.exists          = true;
-			lookaheadTokenInfo.numericFragment = hourStr;
-			lookaheadTokenInfo.isNegative      = isTimeNegative;
-			lookaheadTokenInfo.tokenStart      = startOfTime;
-			mixin(accept!("Value", "date", "", "endOfDate.index"));
-		}
-		advanceChar(ErrorOnEOF.Yes); // Skip ':'
-		auto minuteStr = lexNumericFragment();
-
-		// Lex seconds, if exists
-		string secondStr;
-		if(ch == ':')
-		{
-			advanceChar(ErrorOnEOF.Yes); // Skip ':'
-			secondStr = lexNumericFragment();
-		}
-
-		// Lex milliseconds, if exists
-		string millisecondStr;
-		if(ch == '.')
-		{
-			advanceChar(ErrorOnEOF.Yes); // Skip '.'
-			millisecondStr = lexNumericFragment();
-		}
-
-		auto dateTimeFrac = makeDateTimeFrac(isTimeNegative, date, hourStr, minuteStr, secondStr, millisecondStr);
-
-		// Lex zone, if exists
-		if(ch == '-')
-		{
-			advanceChar(ErrorOnEOF.Yes); // Skip '-'
-			auto timezoneStart = location;
-
-			if(!isAlpha(ch))
-				error("Invalid timezone format.");
-
-			while(!isEOF && !isWhite(ch))
-				advanceChar(ErrorOnEOF.No);
-
-			auto timezoneStr = source[timezoneStart.index..location.index];
-			if(timezoneStr.startsWith("GMT"))
-			{
-				auto isoPart = timezoneStr["GMT".length..$];
-				auto offset = getTimeZoneOffset(isoPart);
-
-				if(offset.isNull())
-				{
-					// Unknown time zone
-					mixin(accept!("Value", "DateTimeFracUnknownZone(dateTimeFrac.dateTime, dateTimeFrac.fracSecs, timezoneStr)"));
-				}
-				else
-				{
-					auto timezone = new immutable SimpleTimeZone(offset.get());
-					auto fsecs = dateTimeFrac.fracSecs;
-					mixin(accept!("Value", "SysTime(dateTimeFrac.dateTime, fsecs, timezone)"));
-				}
-			}
-
-			try
-			{
-				auto timezone = PosixTimeZone.getTimeZone(timezoneStr);
-				if (timezone) {
-					auto fsecs = dateTimeFrac.fracSecs;
-					mixin(accept!("Value", "SysTime(dateTimeFrac.dateTime, fsecs, timezone)"));
-				}
-			}
-			catch(TimeException e)
-			{
-				// Time zone not found. So just move along to "Unknown time zone" below.
-			}
-
-			// Unknown time zone
-			mixin(accept!("Value", "DateTimeFracUnknownZone(dateTimeFrac.dateTime, dateTimeFrac.fracSecs, timezoneStr)"));
-		}
-
-		if(!isEndOfNumber())
-			error("Date-Times cannot have suffixes.");
-
-		mixin(accept!("Value", "dateTimeFrac"));
-	}
-
-	/// Lex time span (after the initial numeric fragment was lexed)
-	private void lexTimeSpan(bool isNegative, string firstPart) pure @safe
-	{
-		assert(ch == ':' || ch == 'd');
-
-		string dayStr = "";
-		string hourStr;
-
-		// Lexed days?
-		bool hasDays = ch == 'd';
-		if(hasDays)
-		{
-			dayStr = firstPart;
-			advanceChar(ErrorOnEOF.Yes); // Skip 'd'
-
-			// Lex hours
-			if(ch != ':')
-				error("Invalid time span format: Missing hours.");
-			advanceChar(ErrorOnEOF.Yes); // Skip ':'
-			hourStr = lexNumericFragment();
-		}
-		else
-			hourStr = firstPart;
-
-		// Lex minutes
-		if(ch != ':')
-			error("Invalid time span format: Missing minutes.");
-		advanceChar(ErrorOnEOF.Yes); // Skip ':'
-		auto minuteStr = lexNumericFragment();
-
-		// Lex seconds
-		if(ch != ':')
-			error("Invalid time span format: Missing seconds.");
-		advanceChar(ErrorOnEOF.Yes); // Skip ':'
-		auto secondStr = lexNumericFragment();
-
-		// Lex milliseconds, if exists
-		string millisecondStr = "";
-		if(ch == '.')
-		{
-			advanceChar(ErrorOnEOF.Yes); // Skip '.'
-			millisecondStr = lexNumericFragment();
-		}
-
-		if(!isEndOfNumber())
-			error("Time spans cannot have suffixes.");
-
-		auto duration = makeDuration(isNegative, dayStr, hourStr, minuteStr, secondStr, millisecondStr);
-		mixin(accept!("Value", "duration"));
-	}
-
-	/// Advances past whitespace and comments
-	private void eatWhite(bool allowComments=true) pure @safe
-	{
-		// -- Comment/Whitepace Lexer -------------
-
-		enum State
-		{
-			normal,
-			lineComment,  // Got "#" or "//" or "--", Eating everything until newline
-			blockComment, // Got "/*", Eating everything until "*/"
-		}
-
-		if(isEOF)
+			this.column += e;
+			this.input = this.input[e .. $];
 			return;
-
-		Location commentStart;
-		State state = State.normal;
-		bool consumeNewlines = false;
-		bool hasConsumedNewline = false;
-		while(true)
-		{
-			final switch(state)
-			{
-			case State.normal:
-
-				if(ch == '\\')
-				{
-					commentStart = location;
-					consumeNewlines = true;
-					hasConsumedNewline = false;
-				}
-
-				else if(ch == '#')
-				{
-					if(!allowComments)
-						return;
-
-					commentStart = location;
-					state = State.lineComment;
-					continue;
-				}
-
-				else if(ch == '/' || ch == '-')
-				{
-					commentStart = location;
-					if(lookahead(ch))
-					{
-						if(!allowComments)
-							return;
-
-						advanceChar(ErrorOnEOF.No);
-						state = State.lineComment;
-						continue;
-					}
-					else if(ch == '/' && lookahead('*'))
-					{
-						if(!allowComments)
-							return;
-
-						advanceChar(ErrorOnEOF.No);
-						state = State.blockComment;
-						continue;
-					}
-					else
-						return; // Done
-				}
-				else if(isAtNewline())
-				{
-					if(consumeNewlines)
-						hasConsumedNewline = true;
-					else
-						return; // Done
-				}
-				else if(!isWhite(ch))
-				{
-					if(consumeNewlines)
-					{
-						if(hasConsumedNewline)
-							return; // Done
-						else
-							error("Only whitespace can come between a line-continuation backslash and the following newline.");
-					}
-					else
-						return; // Done
-				}
-
-				break;
-
-			case State.lineComment:
-				if(lookahead(&isNewline))
-					state = State.normal;
-				break;
-
-			case State.blockComment:
-				if(ch == '*' && lookahead('/'))
-				{
-					advanceChar(ErrorOnEOF.No);
-					state = State.normal;
-				}
-				break;
-			}
-
-			advanceChar(ErrorOnEOF.No);
-			if(isEOF)
-			{
-				// Reached EOF
-
-				if(consumeNewlines && !hasConsumedNewline)
-					error("Missing newline after line-continuation backslash.");
-
-				else if(state == State.blockComment)
-					error(commentStart, "Unterminated block comment.");
-
-				else
-					return; // Done, reached EOF
-			}
 		}
+		assert(false, this.input);
+	}
+
+	void parseNumber(size_t idx, size_t l, size_t c) @safe pure {
+		string prefix = this.input[0 .. idx];
+		string tmp = this.input[idx .. $];
+		if(tmp.empty) {
+			this.cur = Token(TokenType.value, Value(to!int(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+		} else if(tmp.startsWith('L')
+				|| tmp.startsWith('l'))
+		{
+			this.cur = Token(TokenType.value, Value(to!long(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith('F')
+				|| tmp.startsWith('f'))
+		{
+			this.cur = Token(TokenType.value, Value(to!float(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith('D') || tmp.startsWith('d'))
+		{
+			this.cur = Token(TokenType.value, Value(to!double(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			++this.column;
+		} else if(tmp.startsWith("bd")
+				|| tmp.startsWith("BD")
+				|| tmp.startsWith("bD")
+				|| tmp.startsWith("Bd"))
+		{
+			this.cur = Token(TokenType.value, Value(to!real(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+			this.input.popFront();
+			this.input.popFront();
+			this.column += 2;
+		} else if(tmp.startsWith('.')) {
+			tmp.popFront();
+			++this.column;
+			while(!tmp.empty && isDigit(tmp.front)) {
+				++idx;
+				++this.column;
+				tmp.popFront();
+			}
+			++idx;
+			string theNum = this.input[0 .. idx];
+			this.input = this.input[idx .. $];
+			if(this.input.empty) {
+				this.cur = Token(TokenType.value, Value(to!double(theNum)),
+					theNum, l, c);
+			} else if(this.input.startsWith('F')
+					|| this.input.startsWith('f'))
+			{
+				this.input.popFront();
+				this.cur = Token(TokenType.value, Value(to!float(theNum)),
+					theNum, l, c);
+			} else if(this.input.startsWith("BD")
+					|| this.input.startsWith("bd")
+					|| this.input.startsWith("Bd")
+					|| this.input.startsWith("bD"))
+			{
+				this.input.popFront();
+				this.input.popFront();
+				this.cur = Token(TokenType.value, Value(to!real(theNum)),
+					theNum, l, c);
+			} else {
+				this.cur = Token(TokenType.value, Value(to!double(prefix)),
+					prefix, l, c);
+				this.input = tmp;
+			}
+		} else {
+			this.cur = Token(TokenType.value, Value(to!int(prefix)), prefix,
+				l, c);
+			this.input = tmp;
+		}
+	}
+
+	void parseDuration(size_t idx, size_t l, size_t c) @safe pure {
+	}
+
+	void parseDate(size_t idx, size_t l, size_t c) @safe pure {
+	}
+
+	@property bool empty() const @safe pure {
+		return this.input.empty
+			&& this.cur.type == TokenType.undefined;
+	}
+
+	Token front() @property @safe pure {
+		return this.cur;
+	}
+
+	@property Token front() const @safe @nogc pure {
+		return this.cur;
+	}
+
+	void popFront() @safe pure {
+		this.buildToken();
+	}
+
+	string getRestOfInput() const @safe pure {
+		return this.input;
 	}
 }
 
-package {
-	import std.stdio;
+@safe pure:
 
-	private auto loc  = Location("filename", 0, 0, 0);
-	private auto loc2 = Location("a", 1, 1, 1);
+void test(ref Lexer lex, TokenType tt) {
+	assert(!lex.empty);
+	assert(lex.front.type == tt,
+		format("\nexp: %s\ngot: %s", tt, lex.front.type));
+	lex.popFront();
+}
 
-	unittest
-	{
-		assert([Token(symbol!"EOL",loc)             ] == [Token(symbol!"EOL",loc)              ] );
-		assert([Token(symbol!"EOL",loc,Value(7),"A")] == [Token(symbol!"EOL",loc2,Value(7),"B")] );
+void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
+	import std.traits : isFloatingPoint;
+	import std.math : approxEqual;
+
+	import dud.sdlang.util : floatToStringPure;
+	assert(!lex.empty);
+	assert(lex.front.type == tt,
+		format("\nexp: %s\ngot: %s", tt, lex.front.type));
+	assert(lex.front.value.type == vt,
+		format("\nexp: %s\ngot: %s", vt, lex.front.value.type));
+
+	T tValue = lex.front.value.get!T();
+	static if(isFloatingPoint!T) {
+		assert(approxEqual(value, tValue),
+			format("\nexp: %s\ngot: %s", floatToStringPure(value),
+				floatToStringPure(tValue)));
+	} else {
+		assert(value == tValue,
+			format("\nexp: %s\ngot: %s", value, tValue));
 	}
 
-	private int numErrors = 0;
-	private void testLex(string source, Token[] expected,
-			bool test_locations = false, string file=__FILE__,
-			size_t line=__LINE__)
-	{
-		Token[] actual;
-		try
-			actual = lexSource(source, "filename");
-		catch(SDLangParseException e)
-		{
-			numErrors++;
-			stderr.writeln(file, "(", line, "): testLex failed on: ", source);
-			stderr.writeln("    Expected:");
-			stderr.writeln("        ", expected);
-			stderr.writeln("    Actual: SDLangParseException thrown:");
-			stderr.writeln("        ", e.msg);
-			return;
-		}
-
-		bool is_same = actual == expected;
-		if (is_same && test_locations) {
-			is_same = actual.map!(t => t.location).equal(expected.map!(t => t.location));
-		}
-
-		if(!is_same)
-		{
-			numErrors++;
-			stderr.writeln(file, "(", line, "): testLex failed on: ", source);
-			stderr.writeln("    Expected:");
-			stderr.writeln("        ", expected);
-			stderr.writeln("    Actual:");
-			stderr.writeln("        ", actual);
-
-			if(expected.length > 1 || actual.length > 1)
-			{
-				stderr.writeln("    expected.length: ", expected.length);
-				stderr.writeln("    actual.length:   ", actual.length);
-
-				if(actual.length == expected.length)
-				foreach(i; 0..actual.length)
-				if(actual[i] != expected[i])
-				{
-					stderr.writeln("    Unequal at index #", i, ":");
-					stderr.writeln("        Expected:");
-					stderr.writeln("            ", expected[i]);
-					stderr.writeln("        Actual:");
-					stderr.writeln("            ", actual[i]);
-				}
-			}
-		}
-	}
-
-	private void testLexThrows(string file=__FILE__, size_t line=__LINE__)(string source)
-	{
-		bool hadException = false;
-		Token[] actual;
-		try
-			actual = lexSource(source, "filename");
-		catch(SDLangParseException e)
-			hadException = true;
-
-		if(!hadException)
-		{
-			numErrors++;
-			stderr.writeln(file, "(", line, "): testLex failed on: ", source);
-			stderr.writeln("    Expected SDLangParseException");
-			stderr.writeln("    Actual:");
-			stderr.writeln("        ", actual);
-		}
-	}
+	// TODO do value comparison
+	lex.popFront();
 }
 
 unittest {
-	stdout.flush();
-
-	testLex("",        []);
-	testLex(" ",       []);
-	testLex("\\\n",    []);
-	testLex("/*foo*/", []);
-	testLex("/* multiline \n comment */", []);
-	testLex("/* * */", []);
-	testLexThrows("/* ");
-
-	testLex(":",  [ Token(symbol!":",  loc) ]);
-	testLex("=",  [ Token(symbol!"=",  loc) ]);
-	testLex("{",  [ Token(symbol!"{",  loc) ]);
-	testLex("}",  [ Token(symbol!"}",  loc) ]);
-	testLex(";",  [ Token(symbol!"EOL",loc) ]);
-	testLex("\n", [ Token(symbol!"EOL",loc) ]);
-
-	testLex("foo",     [ Token(symbol!"Ident",loc,Value(null),"foo")     ]);
-	testLex("_foo",    [ Token(symbol!"Ident",loc,Value(null),"_foo")    ]);
-	testLex("foo.bar", [ Token(symbol!"Ident",loc,Value(null),"foo.bar") ]);
-	testLex("foo-bar", [ Token(symbol!"Ident",loc,Value(null),"foo-bar") ]);
-	testLex("foo.",    [ Token(symbol!"Ident",loc,Value(null),"foo.")    ]);
-	testLex("foo-",    [ Token(symbol!"Ident",loc,Value(null),"foo-")    ]);
-	testLexThrows(".foo");
-
-	testLex("foo bar", [
-		Token(symbol!"Ident",loc,Value(null),"foo"),
-		Token(symbol!"Ident",loc,Value(null),"bar"),
-	]);
-	testLex("foo \\  \n  \n  bar", [
-		Token(symbol!"Ident",loc,Value(null),"foo"),
-		Token(symbol!"Ident",loc,Value(null),"bar"),
-	]);
-	testLex("foo \\  \n \\ \n  bar", [
-		Token(symbol!"Ident",loc,Value(null),"foo"),
-		Token(symbol!"Ident",loc,Value(null),"bar"),
-	]);
-	testLexThrows("foo \\ ");
-	testLexThrows("foo \\ bar");
-	testLexThrows("foo \\  \n  \\ ");
-	testLexThrows("foo \\  \n  \\ bar");
-
-	testLex("foo : = { } ; \n bar \n", [
-		Token(symbol!"Ident",loc,Value(null),"foo"),
-		Token(symbol!":",loc),
-		Token(symbol!"=",loc),
-		Token(symbol!"{",loc),
-		Token(symbol!"}",loc),
-		Token(symbol!"EOL",loc),
-		Token(symbol!"EOL",loc),
-		Token(symbol!"Ident",loc,Value(null),"bar"),
-		Token(symbol!"EOL",loc),
-	]);
-
-	testLexThrows("<");
-	testLexThrows("*");
-	testLexThrows(`\`);
-
-	// Integers
-	testLex(  "7", [ Token(symbol!"Value",loc,Value(cast( int) 7)) ]);
-	testLex( "-7", [ Token(symbol!"Value",loc,Value(cast( int)-7)) ]);
-	testLex( "7L", [ Token(symbol!"Value",loc,Value(cast(long) 7)) ]);
-	testLex( "7l", [ Token(symbol!"Value",loc,Value(cast(long) 7)) ]);
-	testLex("-7L", [ Token(symbol!"Value",loc,Value(cast(long)-7)) ]);
-	testLex(  "0", [ Token(symbol!"Value",loc,Value(cast( int) 0)) ]);
-	testLex( "-0", [ Token(symbol!"Value",loc,Value(cast( int) 0)) ]);
-
-	testLex("7/**/", [ Token(symbol!"Value",loc,Value(cast( int) 7)) ]);
-	testLex("7#",    [ Token(symbol!"Value",loc,Value(cast( int) 7)) ]);
-
-	testLex("7 A", [
-		Token(symbol!"Value",loc,Value(cast(int)7)),
-		Token(symbol!"Ident",loc,Value(      null),"A"),
-	]);
-	testLexThrows("7A");
-	testLexThrows("-A");
-	testLexThrows(`-""`);
-
-	testLex("7;", [
-		Token(symbol!"Value",loc,Value(cast(int)7)),
-		Token(symbol!"EOL",loc),
-	]);
-
-	// Floats
-	testLex("1.2F" , [ Token(symbol!"Value",loc,Value(cast( float)1.2)) ]);
-	testLex("1.2f" , [ Token(symbol!"Value",loc,Value(cast( float)1.2)) ]);
-	testLex("1.2"  , [ Token(symbol!"Value",loc,Value(cast(double)1.2)) ]);
-	testLex("1.2D" , [ Token(symbol!"Value",loc,Value(cast(double)1.2)) ]);
-	testLex("1.2d" , [ Token(symbol!"Value",loc,Value(cast(double)1.2)) ]);
-	testLex("1.2BD", [ Token(symbol!"Value",loc,Value(cast(  real)1.2)) ]);
-	testLex("1.2bd", [ Token(symbol!"Value",loc,Value(cast(  real)1.2)) ]);
-	testLex("1.2Bd", [ Token(symbol!"Value",loc,Value(cast(  real)1.2)) ]);
-	testLex("1.2bD", [ Token(symbol!"Value",loc,Value(cast(  real)1.2)) ]);
-
-	testLex(".2F" , [ Token(symbol!"Value",loc,Value(cast( float)0.2)) ]);
-	testLex(".2"  , [ Token(symbol!"Value",loc,Value(cast(double)0.2)) ]);
-	testLex(".2D" , [ Token(symbol!"Value",loc,Value(cast(double)0.2)) ]);
-	testLex(".2BD", [ Token(symbol!"Value",loc,Value(cast(  real)0.2)) ]);
-
-	testLex("-1.2F" , [ Token(symbol!"Value",loc,Value(cast( float)-1.2)) ]);
-	testLex("-1.2"  , [ Token(symbol!"Value",loc,Value(cast(double)-1.2)) ]);
-	testLex("-1.2D" , [ Token(symbol!"Value",loc,Value(cast(double)-1.2)) ]);
-	testLex("-1.2BD", [ Token(symbol!"Value",loc,Value(cast(  real)-1.2)) ]);
-
-	testLex("-.2F" , [ Token(symbol!"Value",loc,Value(cast( float)-0.2)) ]);
-	testLex("-.2"  , [ Token(symbol!"Value",loc,Value(cast(double)-0.2)) ]);
-	testLex("-.2D" , [ Token(symbol!"Value",loc,Value(cast(double)-0.2)) ]);
-	testLex("-.2BD", [ Token(symbol!"Value",loc,Value(cast(  real)-0.2)) ]);
-
-	testLex( "0.0"  , [ Token(symbol!"Value",loc,Value(cast(double)0.0)) ]);
-	testLex( "0.0F" , [ Token(symbol!"Value",loc,Value(cast( float)0.0)) ]);
-	testLex( "0.0BD", [ Token(symbol!"Value",loc,Value(cast(  real)0.0)) ]);
-	testLex("-0.0"  , [ Token(symbol!"Value",loc,Value(cast(double)0.0)) ]);
-	testLex("-0.0F" , [ Token(symbol!"Value",loc,Value(cast( float)0.0)) ]);
-	testLex("-0.0BD", [ Token(symbol!"Value",loc,Value(cast(  real)0.0)) ]);
-	testLex( "7F"   , [ Token(symbol!"Value",loc,Value(cast( float)7.0)) ]);
-	testLex( "7D"   , [ Token(symbol!"Value",loc,Value(cast(double)7.0)) ]);
-	testLex( "7BD"  , [ Token(symbol!"Value",loc,Value(cast(  real)7.0)) ]);
-	testLex( "0F"   , [ Token(symbol!"Value",loc,Value(cast( float)0.0)) ]);
-	testLex( "0D"   , [ Token(symbol!"Value",loc,Value(cast(double)0.0)) ]);
-	testLex( "0BD"  , [ Token(symbol!"Value",loc,Value(cast(  real)0.0)) ]);
-	testLex("-0F"   , [ Token(symbol!"Value",loc,Value(cast( float)0.0)) ]);
-	testLex("-0D"   , [ Token(symbol!"Value",loc,Value(cast(double)0.0)) ]);
-	testLex("-0BD"  , [ Token(symbol!"Value",loc,Value(cast(  real)0.0)) ]);
-
-	testLex("1.2 F", [
-		Token(symbol!"Value",loc,Value(cast(double)1.2)),
-		Token(symbol!"Ident",loc,Value(           null),"F"),
-	]);
-	testLexThrows("1.2A");
-	testLexThrows("1.2B");
-	testLexThrows("1.2BDF");
-
-	testLex("1.2;", [
-		Token(symbol!"Value",loc,Value(cast(double)1.2)),
-		Token(symbol!"EOL",loc),
-	]);
-
-	testLex("1.2F;", [
-		Token(symbol!"Value",loc,Value(cast(float)1.2)),
-		Token(symbol!"EOL",loc),
-	]);
-
-	testLex("1.2BD;", [
-		Token(symbol!"Value",loc,Value(cast(real)1.2)),
-		Token(symbol!"EOL",loc),
-	]);
-
-	// Booleans and null
-	testLex("true",   [ Token(symbol!"Value",loc,Value( true)) ]);
-	testLex("false",  [ Token(symbol!"Value",loc,Value(false)) ]);
-	testLex("on",     [ Token(symbol!"Value",loc,Value( true)) ]);
-	testLex("off",    [ Token(symbol!"Value",loc,Value(false)) ]);
-	testLex("null",   [ Token(symbol!"Value",loc,Value( null)) ]);
-
-	testLex("TRUE",   [ Token(symbol!"Ident",loc,Value(null),"TRUE")  ]);
-	testLex("true ",  [ Token(symbol!"Value",loc,Value(true)) ]);
-	testLex("true  ", [ Token(symbol!"Value",loc,Value(true)) ]);
-	testLex("tru",    [ Token(symbol!"Ident",loc,Value(null),"tru")   ]);
-	testLex("truX",   [ Token(symbol!"Ident",loc,Value(null),"truX")  ]);
-	testLex("trueX",  [ Token(symbol!"Ident",loc,Value(null),"trueX") ]);
-
-	// Raw Backtick Strings
-	testLex("`hello world`",      [ Token(symbol!"Value",loc,Value(`hello world`   )) ]);
-	testLex("` hello world `",    [ Token(symbol!"Value",loc,Value(` hello world ` )) ]);
-	testLex("`hello \\t world`",  [ Token(symbol!"Value",loc,Value(`hello \t world`)) ]);
-	testLex("`hello \\n world`",  [ Token(symbol!"Value",loc,Value(`hello \n world`)) ]);
-	testLex("`hello \n world`",   [ Token(symbol!"Value",loc,Value("hello \n world")) ]);
-	testLex("`hello \r\n world`", [ Token(symbol!"Value",loc,Value("hello \r\n world")) ]);
-	testLex("`hello \"world\"`",  [ Token(symbol!"Value",loc,Value(`hello "world"` )) ]);
-
-	testLexThrows("`foo");
-	testLexThrows("`");
-
-	// Double-Quote Strings
-	testLex(`"hello world"`,            [ Token(symbol!"Value",loc,Value("hello world"   )) ]);
-	testLex(`" hello world "`,          [ Token(symbol!"Value",loc,Value(" hello world " )) ]);
-	testLex(`"hello \t world"`,         [ Token(symbol!"Value",loc,Value("hello \t world")) ]);
-	testLex(`"hello \n world"`,         [ Token(symbol!"Value",loc,Value("hello \n world")) ]);
-	testLex("\"hello \\\n world\"",     [ Token(symbol!"Value",loc,Value("hello world"   )) ]);
-	testLex("\"hello \\  \n world\"",   [ Token(symbol!"Value",loc,Value("hello world"   )) ]);
-	testLex("\"hello \\  \n\n world\"", [ Token(symbol!"Value",loc,Value("hello world"   )) ]);
-	testLex(`"\"hello world\""`,        [ Token(symbol!"Value",loc,Value(`"hello world"` )) ]);
-
-	testLexThrows("\"hello \n world\"");
-	testLexThrows(`"foo`);
-	testLexThrows(`"`);
-
-	// Characters
-	testLex("'a'",   [ Token(symbol!"Value",loc,Value(cast(dchar) 'a')) ]);
-	testLex("'\\n'", [ Token(symbol!"Value",loc,Value(cast(dchar)'\n')) ]);
-	testLex("'\\t'", [ Token(symbol!"Value",loc,Value(cast(dchar)'\t')) ]);
-	testLex("'\t'",  [ Token(symbol!"Value",loc,Value(cast(dchar)'\t')) ]);
-	testLex("'\\''", [ Token(symbol!"Value",loc,Value(cast(dchar)'\'')) ]);
-	testLex(`'\\'`,  [ Token(symbol!"Value",loc,Value(cast(dchar)'\\')) ]);
-
-	testLexThrows("'a");
-	testLexThrows("'aa'");
-	testLexThrows("''");
-	testLexThrows("'\\\n'");
-	testLexThrows("'\n'");
-	testLexThrows(`'\`);
-	testLexThrows(`'\'`);
-	testLexThrows("'");
-
-	// Unicode
-	testLex("日本語",         [ Token(symbol!"Ident",loc,Value(null), "日本語") ]);
-	testLex("`おはよう、日本。`", [ Token(symbol!"Value",loc,Value(`おはよう、日本。`)) ]);
-	testLex(`"おはよう、日本。"`, [ Token(symbol!"Value",loc,Value(`おはよう、日本。`)) ]);
-	testLex("'月'",           [ Token(symbol!"Value",loc,Value("月"d.dup[0]))   ]);
-
-	// Base64 Binary
-	testLex("[aGVsbG8gd29ybGQ=]",              [ Token(symbol!"Value",loc,Value(cast(ubyte[])"hello world".dup))]);
-	testLex("[ aGVsbG8gd29ybGQ= ]",            [ Token(symbol!"Value",loc,Value(cast(ubyte[])"hello world".dup))]);
-	testLex("[\n aGVsbG8g \n \n d29ybGQ= \n]", [ Token(symbol!"Value",loc,Value(cast(ubyte[])"hello world".dup))]);
-
-	testLexThrows("[aGVsbG8gd29ybGQ]"); // Ie: Not multiple of 4
-	testLexThrows("[ aGVsbG8gd29ybGQ ]");
-
-	// Date
-	testLex( "1999/12/5", [ Token(symbol!"Value",loc,Value(Date( 1999, 12, 5))) ]);
-	testLex( "2013/2/22", [ Token(symbol!"Value",loc,Value(Date( 2013, 2, 22))) ]);
-	testLex("-2013/2/22", [ Token(symbol!"Value",loc,Value(Date(-2013, 2, 22))) ]);
-
-	testLexThrows("7/");
-	testLexThrows("2013/2/22a");
-	testLexThrows("2013/2/22f");
-
-	testLex("1999/12/5\n", [
-		Token(symbol!"Value",loc,Value(Date(1999, 12, 5))),
-		Token(symbol!"EOL",loc),
-	]);
-
-	// DateTime, no timezone
-	testLex( "2013/2/22 07:53",        [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22 \t 07:53",     [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22/*foo*/07:53",  [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22 /*foo*/ \\\n  /*bar*/ 07:53", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22 /*foo*/ \\\n\n  \n  /*bar*/ 07:53", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22 /*foo*/ \\\n\\\n  \\\n  /*bar*/ 07:53", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22/*foo*/\\\n/*bar*/07:53",      [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0)))) ]);
-	testLex("-2013/2/22 07:53",        [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime(-2013, 2, 22, 7, 53,  0)))) ]);
-	testLex( "2013/2/22 -07:53",       [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53)))) ]);
-	testLex("-2013/2/22 -07:53",       [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime(-2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53)))) ]);
-	testLex( "2013/2/22 07:53:34",     [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53, 34)))) ]);
-	testLex( "2013/2/22 07:53:34.123", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53, 34), 123.msecs))) ]);
-	testLex( "2013/2/22 07:53:34.12",  [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53, 34), 120.msecs))) ]);
-	testLex( "2013/2/22 07:53:34.1",   [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53, 34), 100.msecs))) ]);
-	testLex( "2013/2/22 07:53.123",    [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 7, 53,  0), 123.msecs))) ]);
-
-	testLex( "2013/2/22 34:65",        [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) + hours(34) + minutes(65) + seconds( 0)))) ]);
-	testLex( "2013/2/22 34:65:77.123", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) + hours(34) + minutes(65) + seconds(77), 123.msecs))) ]);
-	testLex( "2013/2/22 34:65.123",    [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) + hours(34) + minutes(65) + seconds( 0), 123.msecs))) ]);
-
-	testLex( "2013/2/22 -34:65",        [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) - hours(34) - minutes(65) - seconds( 0)))) ]);
-	testLex( "2013/2/22 -34:65:77.123", [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) - hours(34) - minutes(65) - seconds(77), -123.msecs))) ]);
-	testLex( "2013/2/22 -34:65.123",    [ Token(symbol!"Value",loc,Value(DateTimeFrac(DateTime( 2013, 2, 22, 0, 0, 0) - hours(34) - minutes(65) - seconds( 0), -123.msecs))) ]);
-
-	testLexThrows("2013/2/22 07:53a");
-	testLexThrows("2013/2/22 07:53f");
-	testLexThrows("2013/2/22 07:53:34.123a");
-	testLexThrows("2013/2/22 07:53:34.123f");
-	testLexThrows("2013/2/22a 07:53");
-
-	testLex(`2013/2/22 "foo"`, [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value("foo")),
-	]);
-
-	testLex("2013/2/22 07", [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value(cast(int)7)),
-	]);
-
-	testLex("2013/2/22 1.2F", [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value(cast(float)1.2)),
-	]);
-
-	testLex("2013/2/22 .2F", [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value(cast(float)0.2)),
-	]);
-
-	testLex("2013/2/22 -1.2F", [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value(cast(float)-1.2)),
-	]);
-
-	testLex("2013/2/22 -.2F", [
-		Token(symbol!"Value",loc,Value(Date(2013, 2, 22))),
-		Token(symbol!"Value",loc,Value(cast(float)-0.2)),
-	]);
-
-	// DateTime, with known timezone
-	testLex( "2013/2/22 07:53-GMT+00:00",        [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex("-2013/2/22 07:53-GMT+00:00",        [ Token(symbol!"Value",loc,Value(SysTime(DateTime(-2013, 2, 22, 7, 53,  0), new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex( "2013/2/22 -07:53-GMT+00:00",       [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53), new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex("-2013/2/22 -07:53-GMT+00:00",       [ Token(symbol!"Value",loc,Value(SysTime(DateTime(-2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53), new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex( "2013/2/22 07:53-GMT+02:10",        [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), new immutable SimpleTimeZone( hours(2)+minutes(10))))) ]);
-	testLex( "2013/2/22 07:53-GMT-05:30",        [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), new immutable SimpleTimeZone(-hours(5)-minutes(30))))) ]);
-	testLex( "2013/2/22 07:53:34-GMT+00:00",     [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex( "2013/2/22 07:53:34-GMT+02:10",     [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), new immutable SimpleTimeZone( hours(2)+minutes(10))))) ]);
-	testLex( "2013/2/22 07:53:34-GMT-05:30",     [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), new immutable SimpleTimeZone(-hours(5)-minutes(30))))) ]);
-	testLex( "2013/2/22 07:53:34.123-GMT+00:00", [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), 123.msecs, new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex( "2013/2/22 07:53:34.123-GMT+02:10", [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), 123.msecs, new immutable SimpleTimeZone( hours(2)+minutes(10))))) ]);
-	testLex( "2013/2/22 07:53:34.123-GMT-05:30", [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53, 34), 123.msecs, new immutable SimpleTimeZone(-hours(5)-minutes(30))))) ]);
-	testLex( "2013/2/22 07:53.123-GMT+00:00",    [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), 123.msecs, new immutable SimpleTimeZone( hours(0)            )))) ]);
-	testLex( "2013/2/22 07:53.123-GMT+02:10",    [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), 123.msecs, new immutable SimpleTimeZone( hours(2)+minutes(10))))) ]);
-	testLex( "2013/2/22 07:53.123-GMT-05:30",    [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 7, 53,  0), 123.msecs, new immutable SimpleTimeZone(-hours(5)-minutes(30))))) ]);
-
-	testLex( "2013/2/22 -34:65-GMT-05:30",       [ Token(symbol!"Value",loc,Value(SysTime(DateTime( 2013, 2, 22, 0,  0,  0) - hours(34) - minutes(65) - seconds( 0), new immutable SimpleTimeZone(-hours(5)-minutes(30))))) ]);
-
-	// DateTime, with Java SDL's occasionally weird interpretation of some
-	// "not quite ISO" variations of the "GMT with offset" timezone strings.
-	Token testTokenSimpleTimeZone(Duration d)
-	{
-		auto dateTime = DateTime(2013, 2, 22, 7, 53, 0);
-		auto tz = new immutable SimpleTimeZone(d);
-		return Token( symbol!"Value", loc, Value(SysTime(dateTime,tz)) );
-	}
-	Token testTokenUnknownTimeZone(string tzName)
-	{
-		auto dateTime = DateTime(2013, 2, 22, 7, 53, 0);
-		auto frac = 0.msecs;
-		return Token( symbol!"Value", loc, Value(DateTimeFracUnknownZone(dateTime,frac,tzName)) );
-	}
-	testLex("2013/2/22 07:53-GMT+",          [ testTokenUnknownTimeZone("GMT+")     ]);
-	testLex("2013/2/22 07:53-GMT+:",         [ testTokenUnknownTimeZone("GMT+:")    ]);
-	testLex("2013/2/22 07:53-GMT+:3",        [ testTokenUnknownTimeZone("GMT+:3")   ]);
-	testLex("2013/2/22 07:53-GMT+:03",       [ testTokenSimpleTimeZone(minutes(3))  ]);
-	testLex("2013/2/22 07:53-GMT+:003",      [ testTokenUnknownTimeZone("GMT+:003") ]);
-
-	testLex("2013/2/22 07:53-GMT+4",         [ testTokenSimpleTimeZone(hours(4))            ]);
-	testLex("2013/2/22 07:53-GMT+4:",        [ testTokenUnknownTimeZone("GMT+4:")           ]);
-	testLex("2013/2/22 07:53-GMT+4:3",       [ testTokenUnknownTimeZone("GMT+4:3")          ]);
-	testLex("2013/2/22 07:53-GMT+4:03",      [ testTokenSimpleTimeZone(hours(4)+minutes(3)) ]);
-	testLex("2013/2/22 07:53-GMT+4:003",     [ testTokenUnknownTimeZone("GMT+4:003")        ]);
-
-	testLex("2013/2/22 07:53-GMT+04",        [ testTokenSimpleTimeZone(hours(4))            ]);
-	testLex("2013/2/22 07:53-GMT+04:",       [ testTokenUnknownTimeZone("GMT+04:")          ]);
-	testLex("2013/2/22 07:53-GMT+04:3",      [ testTokenUnknownTimeZone("GMT+04:3")         ]);
-	testLex("2013/2/22 07:53-GMT+04:03",     [ testTokenSimpleTimeZone(hours(4)+minutes(3)) ]);
-	testLex("2013/2/22 07:53-GMT+04:03abc",  [ testTokenUnknownTimeZone("GMT+04:03abc")     ]);
-	testLex("2013/2/22 07:53-GMT+04:003",    [ testTokenUnknownTimeZone("GMT+04:003")       ]);
-
-	testLex("2013/2/22 07:53-GMT+004",       [ testTokenSimpleTimeZone(minutes(4))     ]);
-	testLex("2013/2/22 07:53-GMT+004:",      [ testTokenUnknownTimeZone("GMT+004:")    ]);
-	testLex("2013/2/22 07:53-GMT+004:3",     [ testTokenUnknownTimeZone("GMT+004:3")   ]);
-	testLex("2013/2/22 07:53-GMT+004:03",    [ testTokenUnknownTimeZone("GMT+004:03")  ]);
-	testLex("2013/2/22 07:53-GMT+004:003",   [ testTokenUnknownTimeZone("GMT+004:003") ]);
-
-	testLex("2013/2/22 07:53-GMT+0004",      [ testTokenSimpleTimeZone(minutes(4))      ]);
-	testLex("2013/2/22 07:53-GMT+0004:",     [ testTokenUnknownTimeZone("GMT+0004:")    ]);
-	testLex("2013/2/22 07:53-GMT+0004:3",    [ testTokenUnknownTimeZone("GMT+0004:3")   ]);
-	testLex("2013/2/22 07:53-GMT+0004:03",   [ testTokenUnknownTimeZone("GMT+0004:03")  ]);
-	testLex("2013/2/22 07:53-GMT+0004:003",  [ testTokenUnknownTimeZone("GMT+0004:003") ]);
-
-	testLex("2013/2/22 07:53-GMT+00004",     [ testTokenSimpleTimeZone(minutes(4))       ]);
-	testLex("2013/2/22 07:53-GMT+00004:",    [ testTokenUnknownTimeZone("GMT+00004:")    ]);
-	testLex("2013/2/22 07:53-GMT+00004:3",   [ testTokenUnknownTimeZone("GMT+00004:3")   ]);
-	testLex("2013/2/22 07:53-GMT+00004:03",  [ testTokenUnknownTimeZone("GMT+00004:03")  ]);
-	testLex("2013/2/22 07:53-GMT+00004:003", [ testTokenUnknownTimeZone("GMT+00004:003") ]);
-
-	// DateTime, with unknown timezone
-	testLex( "2013/2/22 07:53-Bogus/Foo",        [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime( 2013, 2, 22, 7, 53,  0), 0.msecs, "Bogus/Foo")), "2013/2/22 07:53-Bogus/Foo") ]);
-	testLex("-2013/2/22 07:53-Bogus/Foo",        [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime(-2013, 2, 22, 7, 53,  0), 0.msecs, "Bogus/Foo"))) ]);
-	testLex( "2013/2/22 -07:53-Bogus/Foo",       [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime( 2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53), 0.msecs, "Bogus/Foo"))) ]);
-	testLex("-2013/2/22 -07:53-Bogus/Foo",       [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime(-2013, 2, 22, 0,  0,  0) - hours(7) - minutes(53), 0.msecs, "Bogus/Foo"))) ]);
-	testLex( "2013/2/22 07:53:34-Bogus/Foo",     [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime( 2013, 2, 22, 7, 53, 34), 0.msecs, "Bogus/Foo"))) ]);
-	testLex( "2013/2/22 07:53:34.123-Bogus/Foo", [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime( 2013, 2, 22, 7, 53, 34), 123.msecs, "Bogus/Foo"))) ]);
-	testLex( "2013/2/22 07:53.123-Bogus/Foo",    [ Token(symbol!"Value",loc,Value(DateTimeFracUnknownZone(DateTime( 2013, 2, 22, 7, 53,  0), 123.msecs, "Bogus/Foo"))) ]);
-
-	// Time Span
-	testLex( "12:14:42",         [ Token(symbol!"Value",loc,Value( days( 0)+hours(12)+minutes(14)+seconds(42)+msecs(  0))) ]);
-	testLex("-12:14:42",         [ Token(symbol!"Value",loc,Value(-days( 0)-hours(12)-minutes(14)-seconds(42)-msecs(  0))) ]);
-	testLex( "00:09:12",         [ Token(symbol!"Value",loc,Value( days( 0)+hours( 0)+minutes( 9)+seconds(12)+msecs(  0))) ]);
-	testLex( "00:00:01.023",     [ Token(symbol!"Value",loc,Value( days( 0)+hours( 0)+minutes( 0)+seconds( 1)+msecs( 23))) ]);
-	testLex( "23d:05:21:23.532", [ Token(symbol!"Value",loc,Value( days(23)+hours( 5)+minutes(21)+seconds(23)+msecs(532))) ]);
-	testLex( "23d:05:21:23.53",  [ Token(symbol!"Value",loc,Value( days(23)+hours( 5)+minutes(21)+seconds(23)+msecs(530))) ]);
-	testLex( "23d:05:21:23.5",   [ Token(symbol!"Value",loc,Value( days(23)+hours( 5)+minutes(21)+seconds(23)+msecs(500))) ]);
-	testLex("-23d:05:21:23.532", [ Token(symbol!"Value",loc,Value(-days(23)-hours( 5)-minutes(21)-seconds(23)-msecs(532))) ]);
-	testLex("-23d:05:21:23.5",   [ Token(symbol!"Value",loc,Value(-days(23)-hours( 5)-minutes(21)-seconds(23)-msecs(500))) ]);
-	testLex( "23d:05:21:23",     [ Token(symbol!"Value",loc,Value( days(23)+hours( 5)+minutes(21)+seconds(23)+msecs(  0))) ]);
-
-	testLexThrows("12:14:42a");
-	testLexThrows("23d:05:21:23.532a");
-	testLexThrows("23d:05:21:23.532f");
-
-	// Combination
-	testLex("foo. 7", [
-		Token(symbol!"Ident",loc,Value(      null),"foo."),
-		Token(symbol!"Value",loc,Value(cast(int)7))
-	]);
-
-	testLex(`
-		namespace:person "foo" "bar" 1 23L name.first="ひとみ" name.last="Smith" {
-			namespace:age 37; namespace:favorite_color "blue" // comment
-			somedate 2013/2/22  07:53 -- comment
-
-			inventory /* comment */ {
-				socks
-			}
-		}
-	`,
-	[
-		Token(symbol!"EOL",loc,Value(null),"\n"),
-
-		Token(symbol!"Ident", loc, Value(         null ), "namespace"),
-		Token(symbol!":",     loc, Value(         null ), ":"),
-		Token(symbol!"Ident", loc, Value(         null ), "person"),
-		Token(symbol!"Value", loc, Value(        "foo" ), `"foo"`),
-		Token(symbol!"Value", loc, Value(        "bar" ), `"bar"`),
-		Token(symbol!"Value", loc, Value( cast( int) 1 ), "1"),
-		Token(symbol!"Value", loc, Value( cast(long)23 ), "23L"),
-		Token(symbol!"Ident", loc, Value(         null ), "name.first"),
-		Token(symbol!"=",     loc, Value(         null ), "="),
-		Token(symbol!"Value", loc, Value(       "ひとみ" ), `"ひとみ"`),
-		Token(symbol!"Ident", loc, Value(         null ), "name.last"),
-		Token(symbol!"=",     loc, Value(         null ), "="),
-		Token(symbol!"Value", loc, Value(      "Smith" ), `"Smith"`),
-		Token(symbol!"{",     loc, Value(         null ), "{"),
-		Token(symbol!"EOL",   loc, Value(         null ), "\n"),
-
-		Token(symbol!"Ident", loc, Value(        null ), "namespace"),
-		Token(symbol!":",     loc, Value(        null ), ":"),
-		Token(symbol!"Ident", loc, Value(        null ), "age"),
-		Token(symbol!"Value", loc, Value( cast(int)37 ), "37"),
-		Token(symbol!"EOL",   loc, Value(        null ), ";"),
-		Token(symbol!"Ident", loc, Value(        null ), "namespace"),
-		Token(symbol!":",     loc, Value(        null ), ":"),
-		Token(symbol!"Ident", loc, Value(        null ), "favorite_color"),
-		Token(symbol!"Value", loc, Value(      "blue" ), `"blue"`),
-		Token(symbol!"EOL",   loc, Value(        null ), "\n"),
-
-		Token(symbol!"Ident", loc, Value( null ), "somedate"),
-		Token(symbol!"Value", loc, Value( DateTimeFrac(DateTime(2013, 2, 22, 7, 53, 0)) ), "2013/2/22  07:53"),
-		Token(symbol!"EOL",   loc, Value( null ), "\n"),
-		Token(symbol!"EOL",   loc, Value( null ), "\n"),
-
-		Token(symbol!"Ident", loc, Value(null), "inventory"),
-		Token(symbol!"{",     loc, Value(null), "{"),
-		Token(symbol!"EOL",   loc, Value(null), "\n"),
-
-		Token(symbol!"Ident", loc, Value(null), "socks"),
-		Token(symbol!"EOL",   loc, Value(null), "\n"),
-
-		Token(symbol!"}",     loc, Value(null), "}"),
-		Token(symbol!"EOL",   loc, Value(null), "\n"),
-
-		Token(symbol!"}",     loc, Value(null), "}"),
-		Token(symbol!"EOL",   loc, Value(null), "\n"),
-	]);
-
-	if(numErrors > 0)
-		stderr.writeln(numErrors, " failed test(s)");
-}
-
-unittest
-{
-	stdout.flush();
-
-	testLex(`"\n \n"`, [ Token(symbol!"Value",loc,Value("\n \n"),`"\n \n"`) ]);
-	testLex(`"\t\t"`, [ Token(symbol!"Value",loc,Value("\t\t"),`"\t\t"`) ]);
-	testLex(`"\n\n"`, [ Token(symbol!"Value",loc,Value("\n\n"),`"\n\n"`) ]);
-}
-
-unittest
-{
-	stdout.flush();
-
-	void test(string input)
-	{
-		testLex(
-			input,
-			[
-				Token(symbol!"EOL", loc, Value(null), "\n"),
-				Token(symbol!"Ident",loc,Value(null), "a")
-			]
-		);
-	}
-
-	test("//X\na");
-	test("//\na");
-	test("--\na");
-	test("#\na");
+	auto l = Lexer("1337");
+	test(l, TokenType.value, ValueType.int32, 1337);
+	test(l, TokenType.eof);
+	assert(l.empty);
 }
 
 unittest {
-	enum offset = 1; // workaround for an of-by-one error for line numbers
-	testLex("test", [
-		Token(symbol!"Ident", Location("filename", 0, 0, 0), Value(null), "test")
-	], true);
-	testLex("\ntest", [
-		Token(symbol!"EOL", Location("filename", 0, 0, 0), Value(null), "\n"),
-		Token(symbol!"Ident", Location("filename", 1, 0, 1), Value(null), "test")
-	], true);
-	testLex("\rtest", [
-		Token(symbol!"EOL", Location("filename", 0, 0, 0), Value(null), "\r"),
-		Token(symbol!"Ident", Location("filename", 1, 0, 1), Value(null), "test")
-	], true);
-	testLex("\r\ntest", [
-		Token(symbol!"EOL", Location("filename", 0, 0, 0), Value(null), "\r\n"),
-		Token(symbol!"Ident", Location("filename", 1, 0, 2), Value(null), "test")
-	], true);
-	testLex("\r\n\ntest", [
-		Token(symbol!"EOL", Location("filename", 0, 0, 0), Value(null), "\r\n"),
-		Token(symbol!"EOL", Location("filename", 1, 0, 2), Value(null), "\n"),
-		Token(symbol!"Ident", Location("filename", 2, 0, 3), Value(null), "test")
-	], true);
-	testLex("\r\r\ntest", [
-		Token(symbol!"EOL", Location("filename", 0, 0, 0), Value(null), "\r"),
-		Token(symbol!"EOL", Location("filename", 1, 0, 1), Value(null), "\r\n"),
-		Token(symbol!"Ident", Location("filename", 2, 0, 3), Value(null), "test")
-	], true);
+	auto l = Lexer("1337l");
+	test(l, TokenType.value, ValueType.int64, 1337);
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0");
+	test(l, TokenType.value, ValueType.float64, 1337.0);
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0BD");
+	test(l, TokenType.value, ValueType.float128, 1337.0);
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer("1337.0f");
+	test(l, TokenType.value, ValueType.float32, 1337.0f);
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`"Hello World"`);
+	test(l, TokenType.value, ValueType.str, "Hello World");
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(q{`Hello
+ World`});
+	test(l, TokenType.value, ValueType.str, "Hello\n World");
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`Hello "World"`);
+	test(l, TokenType.ident, ValueType.str, "Hello");
+	test(l, TokenType.value, ValueType.str, "World");
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`Hello "World"1337`);
+	test(l, TokenType.ident, ValueType.str, "Hello");
+	test(l, TokenType.value, ValueType.str, "World");
+	test(l, TokenType.value, ValueType.int32, 1337);
+	test(l, TokenType.eof);
+	assert(l.empty);
+}
+
+unittest {
+	auto l = Lexer(`H`);
+	test(l, TokenType.ident, ValueType.str, "H");
+	test(l, TokenType.eof);
+	assert(l.empty);
 }

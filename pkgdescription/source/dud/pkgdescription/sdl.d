@@ -12,7 +12,7 @@ import dud.pkgdescription : Dependency, PackageDescription, TargetType;
 import dud.semver : SemVer;
 import dud.path : Path;
 
-import dud.sdlang2;
+import dud.sdlang;
 
 PackageDescription sdlToPackageDescription(string sdl) @safe {
 	auto lex = Lexer(sdl);
