@@ -421,7 +421,6 @@ void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
 			format("\nexp: %s\ngot: %s", value, tValue));
 	}
 
-	// TODO do value comparison
 	lex.popFront();
 }
 
