@@ -16,11 +16,6 @@ import dud.pkgdescription.helper;
 
 @safe pure:
 
-string toJSONString(PackageDescription pkg) {
-	auto app = appender!string();
-	return app.data;
-}
-
 void indent(Out)(auto ref Out o, const size_t indent) {
 	foreach(i; 0 .. indent) {
 		format(o, "\t");
@@ -32,6 +27,18 @@ void formatIndent(Out, Args...)(auto ref Out o, const size_t indent, string str,
 {
 	indent(o, indent);
 	formattedWrite(o, str, args);
+}
+
+string toJSONString(PackageDescription pkg) {
+	auto app = appender!string();
+	toJSONString(app, pkg);
+	return app.data;
+}
+
+void toJSONString(Out)(auto ref Out o, PackageDescription pkg) {
+	JSONValue jv = pkg.toJSON();
+	formattedWrite(o, jv.toPrettyString());
+	return app.data;
 }
 
 JSONValue toJSON(PackageDescription pkg) {
@@ -133,9 +140,18 @@ JSONValue dependecyToJson(Dependency dep) {
 	return ret;
 }
 
-bool isShortFrom(const Dependency d) {
+private bool isShortFrom(const Dependency d) {
 	return !d.version_.isNull()
 		&& d.path.isNull()
 		&& d.optional.isNull()
 		&& d.default_.isNull();
+}
+
+string toSDLString(PackageDescription pkg) {
+	auto app = appender!string();
+	toSDLString(app, pkg);
+	return app.data;
+}
+
+void toSDLString(Out)(auto ref Out o, PackageDescription pkg) {
 }
