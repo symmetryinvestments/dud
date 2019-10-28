@@ -1,0 +1,12 @@
+{
+	"authors": [
+		"Robert burner Schadek"
+	],
+	"copyright": "Copyright © 2019, Symmetry Investments",
+	"dependencies": {
+		"dubproxy": "~>1.0.3"
+	},
+	"description": "Fetch all packages descriptions from code.dlang.org and build testdata",
+	"license": "GPL3",
+	"name": "testdatafetcher"
+}
