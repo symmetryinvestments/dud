@@ -36,9 +36,10 @@ string toJSONString(PackageDescription pkg) {
 }
 
 void toJSONString(Out)(auto ref Out o, PackageDescription pkg) {
+	import dud.utils : assumePure;
 	JSONValue jv = pkg.toJSON();
-	formattedWrite(o, jv.toPrettyString());
-	return app.data;
+	auto dl = assumePure(&jv.toPrettyString);
+	formattedWrite(o, dl(JSONOptions.init));
 }
 
 JSONValue toJSON(PackageDescription pkg) {

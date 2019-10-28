@@ -404,7 +404,7 @@ void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
 	import std.traits : isFloatingPoint;
 	import std.math : approxEqual;
 
-	import dud.sdlang.util : floatToStringPure;
+	import dud.utils : floatToStringPure;
 	assert(!lex.empty);
 	assert(lex.front.type == tt,
 		format("\nexp: %s\ngot: %s", tt, lex.front.type));

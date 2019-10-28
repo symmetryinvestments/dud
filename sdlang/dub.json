@@ -1,4 +1,9 @@
 {
 	"name": "sdlang",
-	"targetType": "library"
+	"targetType": "library",
+	"dependencies" : {
+		"utils" : {
+			"path" : "../utils"
+		}
+	}
 }

@@ -11,6 +11,10 @@
 		"semver": {
 			"path": "../semver",
 			"version": ">=0.0.0"
+		},
+		"utils" : {
+			"path": "../utils",
+			"version": ">=0.0.0"
 		}
 	},
 	"name": "pkgdescription",
