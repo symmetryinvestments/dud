@@ -8,6 +8,7 @@ import dud.semver.operations;
 @safe pure:
 
 struct VersionSpecifier {
+	string orig;
 	bool inclusiveA;
 	bool inclusiveB;
 	SemVer versionA;
@@ -43,8 +44,9 @@ VersionSpecifier parseVersionSpecifier(string ves) {
 	string orig = ves;
 
 	VersionSpecifier ret;
+	ret.orig = orig;
 
-	ves = ves == "*" 
+	ves = ves == "*"
 		// Any version is good.
 		? ves = ">=0.0.0"
 		: ves;
@@ -116,8 +118,8 @@ VersionSpecifier parseVersionSpecifier(string ves) {
 private string skipComp(ref string c) {
 	import std.ascii : isDigit;
 	size_t idx = 0;
-	while (idx < c.length && !isDigit(c[idx]) 
-			&& c[idx] != SemVer.branchPrefix) 
+	while (idx < c.length && !isDigit(c[idx])
+			&& c[idx] != SemVer.branchPrefix)
 	{
 		idx++;
 	}
@@ -126,8 +128,8 @@ private string skipComp(ref string c) {
 	c = c[idx..$];
 
 	switch(cmp) {
-		default: 
-			enforce(false, "No/Unknown comparison specified: '"~cmp~"'"); 
+		default:
+			enforce(false, "No/Unknown comparison specified: '"~cmp~"'");
 			return ">=";
 		case ">=": goto case; case ">": goto case;
 		case "<=": goto case; case "<": goto case;

@@ -5,12 +5,12 @@ import std.algorithm.iteration : map;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format;
-import std.typecons : nullable;
+import std.typecons : nullable, Nullable;
 import std.stdio;
 
 import dud.pkgdescription : Dependency, PackageDescription, TargetType;
 import dud.semver : SemVer;
-import dud.path : Path;
+import dud.path : Path, AbsoluteNativePath;
 
 import dud.sdlang;
 
@@ -52,15 +52,22 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 						} else static if(is(MemType == string[])) {
 							__traits(getMember, ret, mem) =
 									extractStrings(it.values);
-						} else static if(is(MemType == TargetType)) {
+						} else static if(is(MemType == Nullable!TargetType)) {
 							__traits(getMember, ret, mem) =
-									extractTargetType(it.values);
+									nullable(extractTargetType(it.values));
 						} else static if(is(MemType == Dependency[string])) {
 							string name = extractString(it.values);
 							enforce(name !in __traits(getMember, ret, mem),
 								format("Dependency '%s' already exist", name));
 							__traits(getMember, ret, mem)[name] =
 									extractDependency(it);
+						} else static if(is(MemType == AbsoluteNativePath)) {
+							// this is ignored
+						} else static if(is(MemType == PackageDescription[])) {
+							// this is handled differently in comparison to
+							// json
+						} else {
+							static assert(false, MemType.stringof);
 						}
 						break sw;
 					}

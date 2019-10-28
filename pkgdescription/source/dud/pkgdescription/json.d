@@ -5,11 +5,11 @@ import std.algorithm.iteration : map, each;
 import std.json;
 import std.format : format;
 import std.exception : enforce;
-import std.typecons : nullable;
+import std.typecons : nullable, Nullable;
 
 import dud.pkgdescription : Dependency, PackageDescription, TargetType;
 import dud.semver : SemVer;
-import dud.path : Path;
+import dud.path : Path, AbsoluteNativePath;
 
 @safe pure:
 
@@ -46,8 +46,11 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 						__traits(getMember, ret, mem) = extractDependencies(value);
 					} else static if(is(MemType == PackageDescription[])) {
 						__traits(getMember, ret, mem) = extractPackageDescriptions(value);
-					} else static if(is(MemType == TargetType)) {
-						__traits(getMember, ret, mem) = extractTargetType(value);
+					} else static if(is(MemType == Nullable!TargetType)) {
+						__traits(getMember, ret, mem) =
+							nullable(extractTargetType(value));
+					} else static if(is(MemType == AbsoluteNativePath)) {
+						// this is ignored
 					} else {
 						static assert(false, MemType.stringof);
 					}

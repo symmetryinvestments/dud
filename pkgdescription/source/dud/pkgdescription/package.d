@@ -1,5 +1,7 @@
 module dud.pkgdescription;
 
+import std.typecons : Nullable;
+
 import dud.path;
 import dud.semver;
 import dud.pkgdescription.versionspecifier;
@@ -26,6 +28,7 @@ enum TargetType {
 	writing a build-tool.
 */
 struct PackageDescription {
+	AbsoluteNativePath comesFrom;
 	Path path; /// Path to the package
 	string name; /// Qualified name of the package
 	SemVer version_; /// Version of the package
@@ -36,7 +39,7 @@ struct PackageDescription {
 	string license;
 	Dependency[string] dependencies;
 
-	TargetType targetType;
+	Nullable!TargetType targetType;
 	Path targetPath;
 	string targetName;
 	string targetFileName;

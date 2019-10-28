@@ -1,8 +1,12 @@
 module dud.pkgdescription.jsontests;
 
 import std.conv : to;
+import std.json;
+import std.stdio;
+import std.format : format;
 
 import dud.pkgdescription.json;
+import dud.pkgdescription.output;
 import dud.pkgdescription : PackageDescription, TargetType;
 
 unittest {
@@ -19,9 +23,9 @@ unittest {
 	"targetType": "library",
 	"name": "dud",
 	"dependencies" : {
-		"semver": { "path" : "semver", "optional": false, "version" : ">=0.0.1" },
-		"path": { "path" : "path", "default": true },
-		"pkgdescription": { "path" : "pkgdescription" },
+		"semver": { "path" : "../semver", "optional": false, "version" : ">=0.0.1" },
+		"path": { "path" : "../path", "default": true },
+		"pkgdescription": { "path" : "../../pkgdescription" },
 		"dmd": ">=2.80.0"
 	},
 	"configurations": [
@@ -43,4 +47,9 @@ unittest {
 	assert("path" in pkg.dependencies);
 	assert("pkgdescription" in pkg.dependencies);
 	assert("dmd" in pkg.dependencies);
+
+	JSONValue n = pkg.toJSON();
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
 }
