@@ -26,7 +26,7 @@ PackageDescription sdlToPackageDescription(Root t) @safe {
 	return sdlToPackageDescription(t.tags);
 }
 
-PackageDescription sdlToPackageDescription(Tags input) @safe {
+PackageDescription sdlToPackageDescription(Tags input) @safe pure {
 	import dud.pkgdescription.helper : PreprocessKey, KeysToSDLCases;
 
 	import std.stdio;
@@ -56,7 +56,7 @@ PackageDescription sdlToPackageDescription(Tags input) @safe {
 								extractPaths(it.values);
 						} else static if(is(MemType == SubPackage[])) {
 							__traits(getMember, ret, mem) ~=
-								extractSubPackage(it.values);
+								extractSubPackage(it);
 						} else static if(is(MemType == string[])) {
 							__traits(getMember, ret, mem) =
 									extractStrings(it.values);
@@ -162,17 +162,15 @@ TargetType extractTargetType(Value v) @safe pure {
 	return to!TargetType(extractString(v));
 }
 
-SubPackage extractSubPackage(ValueRange v) @safe pure {
+SubPackage extractSubPackage(Tag t) @safe pure {
 	SubPackage pkg;
-	if(!v.empty) {
-		pkg.path = nullable(Path(v.front.get!string()));
+	ValueRange vr = t.values;
+	if(!vr.empty) {
+		pkg.path = nullable(Path(vr.front.get!string()));
 	} else {
-		pkg.inlinePkg =	sdlToPackageDescription(v.front.oc.tags);
+		pkg.inlinePkg =	sdlToPackageDescription(t.oc.tags);
 	}
 	return pkg;
-}
-
-SubPackage extractSubPackage(Value v) @safe pure {
 }
 
 Dependency extractDependency(Tag t) @safe pure {
