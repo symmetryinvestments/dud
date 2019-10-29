@@ -5,5 +5,12 @@
 		"utils" : {
 			"path" : "../utils"
 		}
-	}
+	},
+	"configurations" : [
+		{ "name" : "ExcessiveTests"
+		, "versions" : ["ExcessivTests"]
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
+		}
+	]
 }
