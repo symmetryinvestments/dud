@@ -33,16 +33,17 @@ struct Lexer {
 		if(this.input.startsWith("#") || this.input.startsWith("--")
 				|| this.input.startsWith("//"))
 		{
-			while(!this.input.startsWith('\n')) {
+			while(!this.input.empty
+					&& (!this.input.startsWith('\n')
+						&& !this.input.startsWith('\r')))
+			{
 				++this.column;
 				this.input.popFront();
 			}
-			++this.line;
-			this.column = 1;
 			return true;
 		} else if(this.input.startsWith("/*")) {
 			while(!this.input.empty && !this.input.startsWith("*/")) {
-				if(this.input.startsWith('\n')) {
+				if(this.input.startsWith('\n') || this.input.startsWith('\r')) {
 					++this.line;
 					this.column = 1;
 				} else {
@@ -84,8 +85,8 @@ struct Lexer {
 
 		if(this.input.empty) {
 			this.cur = this.cur.type == TokenType.eof
-				? Token(TokenType.undefined)
-				: Token(TokenType.eof);
+				? Token(TokenType.undefined, this.line, this.column)
+				: Token(TokenType.eof, this.line, this.column);
 			return;
 		}
 
@@ -95,8 +96,15 @@ struct Lexer {
 		} else if(this.input.front == '}') {
 			this.singleCharToken(TokenType.rcurly);
 			return;
+		} else if(this.input.front == '\r') {
+			this.singleCharToken(TokenType.eol);
+			++this.line;
+			this.column = 1;
+			return;
 		} else if(this.input.front == '\n') {
 			this.singleCharToken(TokenType.eol);
+			++this.line;
+			this.column = 1;
 			return;
 		} else if(this.input.front == '=') {
 			this.singleCharToken(TokenType.assign);
@@ -278,7 +286,7 @@ struct Lexer {
 			this.input = this.input[e .. $];
 			return;
 		}
-		assert(false, this.input);
+		assert(false, format("'%s' %d", this.input, this.input[0]));
 	}
 
 	void parseNumber(size_t idx, size_t l, size_t c) @safe pure {

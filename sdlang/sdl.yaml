@@ -51,7 +51,9 @@ Attribute:
     A: [IDFull#id, assign, value#value]
 
 OptChild:
-    C: [lcurly, eol, Tags#tags, rcurly]
+    T: [lcurly, TagTerminator, Tags#tags, rcurly]
+    E: [lcurly, TagTerminator, rcurly]
+    E2: [lcurly, rcurly]
 
 TagTerminator:
     E: [eol]

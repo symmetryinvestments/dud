@@ -1,6 +1,7 @@
 module dud.sdlang.parsertest;
 
 import std.range : walkLength;
+import std.stdio;
 
 import dud.sdlang.lexer;
 import dud.sdlang.parser;
@@ -390,6 +391,43 @@ line "he said \"hello there\""
 whitespace "item1\titem2\nitem3\titem4"
 continued "this is a long line \
     of text"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+configuration "win32_mscoff" {
+}
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+configuration "win32_mscoff" {
+	// this configuration works around the problem that x88_mscoff
+	// will also match the libevent configuration, even if no
+	// libevent binaries exist as MSCOFF - see also dub/#228
+	platforms "windows-x88_mscoff-dmd"
+	targetType "library"
+	libs "wsock32" "ws2_32" "advapi32" "user32" platform="windows"
+	versions "VibeWin32Driver"
+}
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
+
+unittest {
+	auto l = Lexer(`
+libs "xlcall32"  # must have the Excel SDK xlcall32.lib in the path
+postBuildCommands "copy myxll32.dll myxll32.xll"
 	`);
 
 	auto p = Parser(l);

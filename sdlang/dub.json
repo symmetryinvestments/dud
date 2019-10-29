@@ -12,5 +12,9 @@
 		, "targetType" : "executable"
 		, "dflags" : ["-unittest", "-main"]
 		}
+		, { "name" : "test"
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
+		}
 	]
 }

@@ -377,7 +377,9 @@ class Attribute : Node {
 }
 
 enum OptChildEnum {
-	C,
+	T,
+	E,
+	E2,
 }
 
 class OptChild : Node {
@@ -389,6 +391,10 @@ class OptChild : Node {
 	this(OptChildEnum ruleSelection, Tags tags) {
 		this.ruleSelection = ruleSelection;
 		this.tags = tags;
+	}
+
+	this(OptChildEnum ruleSelection) {
+		this.ruleSelection = ruleSelection;
 	}
 
 	void visit(Visitor vis) {

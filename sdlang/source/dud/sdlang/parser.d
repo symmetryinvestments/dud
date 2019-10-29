@@ -641,20 +641,20 @@ struct Parser {
 
 	OptChild parseOptChildImpl() {
 		string[] subRules;
-		subRules = ["C"];
+		subRules = ["E", "E2", "T"];
 		if(this.lex.front.type == TokenType.lcurly) {
 			this.lex.popFront();
-			subRules = ["C"];
-			if(this.lex.front.type == TokenType.eol) {
-				this.lex.popFront();
-				subRules = ["C"];
+			subRules = ["E", "T"];
+			if(this.firstTagTerminator()) {
+				this.parseTagTerminator();
+				subRules = ["T"];
 				if(this.firstTags()) {
 					Tags tags = this.parseTags();
-					subRules = ["C"];
+					subRules = ["T"];
 					if(this.lex.front.type == TokenType.rcurly) {
 						this.lex.popFront();
 
-						return new OptChild(OptChildEnum.C
+						return new OptChild(OptChildEnum.T
 							, tags
 						);
 					}
@@ -669,6 +669,11 @@ struct Parser {
 						["rcurly"]
 					);
 
+				} else if(this.lex.front.type == TokenType.rcurly) {
+					this.lex.popFront();
+
+					return new OptChild(OptChildEnum.E
+					);
 				}
 				auto app = appender!string();
 				formattedWrite(app, 
@@ -678,9 +683,14 @@ struct Parser {
 				throw new ParseException(app.data,
 					__FILE__, __LINE__,
 					subRules,
-					["ident -> Tag","lcurly -> Tag","value -> Tag"]
+					["ident -> Tag","lcurly -> Tag","value -> Tag","rcurly"]
 				);
 
+			} else if(this.lex.front.type == TokenType.rcurly) {
+				this.lex.popFront();
+
+				return new OptChild(OptChildEnum.E2
+				);
 			}
 			auto app = appender!string();
 			formattedWrite(app, 
@@ -690,7 +700,7 @@ struct Parser {
 			throw new ParseException(app.data,
 				__FILE__, __LINE__,
 				subRules,
-				["eol"]
+				["eol","semicolon","rcurly"]
 			);
 
 		}

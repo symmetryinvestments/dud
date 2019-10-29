@@ -239,8 +239,12 @@ class Visitor : ConstVisitor {
 	void accept(OptChild obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case OptChildEnum.C:
+			case OptChildEnum.T:
 				obj.tags.visit(this);
+				break;
+			case OptChildEnum.E:
+				break;
+			case OptChildEnum.E2:
 				break;
 		}
 		exit(obj);
@@ -495,8 +499,12 @@ class ConstVisitor {
 	void accept(const(OptChild) obj) {
 		enter(obj);
 		final switch(obj.ruleSelection) {
-			case OptChildEnum.C:
+			case OptChildEnum.T:
 				obj.tags.visit(this);
+				break;
+			case OptChildEnum.E:
+				break;
+			case OptChildEnum.E2:
 				break;
 		}
 		exit(obj);
