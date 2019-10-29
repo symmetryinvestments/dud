@@ -4,6 +4,9 @@
 	"dependencies" : {
 		"utils" : {
 			"path" : "../utils"
+		},
+		"testdata" : {
+			"path" : "../testdata"
 		}
 	},
 	"configurations" : [
