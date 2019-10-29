@@ -1,10 +1,12 @@
 module dud.testdata;
 
 import std.algorithm.iteration : filter, map, each;
-import std.array : array;
+import std.algorithm.searching : canFind;
+import std.array : array, empty;
 import std.format : formattedWrite;
 import std.string : split, indexOf;
 import std.stdio : File;
+import std.file : exists, readText, dirEntries, SpanMode;
 
 enum dubsdlfilename = "dubsdlfilelist.txt";
 
