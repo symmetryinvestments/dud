@@ -8,7 +8,8 @@ import std.format : format;
 import std.typecons : nullable, Nullable;
 import std.stdio;
 
-import dud.pkgdescription : Dependency, PackageDescription, TargetType;
+import dud.pkgdescription : Dependency, PackageDescription, TargetType,
+	   SubPackage;
 import dud.semver : SemVer;
 import dud.path : Path, AbsoluteNativePath;
 
@@ -33,7 +34,7 @@ PackageDescription sdlToPackageDescription(Tags input) @safe {
 	PackageDescription ret;
 
 	foreach(Tag it; tags(input)) {
-		string key = it.identifier();
+		string key = it.fullIdentifier();
 		//writefln("%s", key);
 		try {
 			sw: switch(key) {
@@ -53,6 +54,9 @@ PackageDescription sdlToPackageDescription(Tags input) @safe {
 						} else static if(is(MemType == Path[])) {
 							__traits(getMember, ret, mem) =
 								extractPaths(it.values);
+						} else static if(is(MemType == SubPackage[])) {
+							__traits(getMember, ret, mem) ~=
+								extractSubPackage(it.values);
 						} else static if(is(MemType == string[])) {
 							__traits(getMember, ret, mem) =
 									extractStrings(it.values);
@@ -156,6 +160,19 @@ TargetType extractTargetType(ValueRange v) @safe pure {
 
 TargetType extractTargetType(Value v) @safe pure {
 	return to!TargetType(extractString(v));
+}
+
+SubPackage extractSubPackage(ValueRange v) @safe pure {
+	SubPackage pkg;
+	if(!v.empty) {
+		pkg.path = nullable(Path(v.front.get!string()));
+	} else {
+		pkg.inlinePkg =	sdlToPackageDescription(v.front.oc.tags);
+	}
+	return pkg;
+}
+
+SubPackage extractSubPackage(Value v) @safe pure {
 }
 
 Dependency extractDependency(Tag t) @safe pure {

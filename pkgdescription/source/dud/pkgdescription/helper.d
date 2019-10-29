@@ -15,6 +15,35 @@ template KeysToSDLCases(string key) {
 	} else static if(key == "configurations") {
 		enum KeysToSDLCases = "configuration";
 	} else {
-		enum KeysToSDLCases = key;
+		enum KeysToSDLCases = SDLUdaName!key;
 	}
+}
+
+template SDLUdaName(string key) {
+	import dud.pkgdescription.udas;
+	import dud.pkgdescription : PackageDescription;
+
+	static if(__traits(hasMember, PackageDescription, key)) {
+		enum attr = __traits(getAttributes,
+				__traits(getMember, PackageDescription, key));
+
+		static if(attr.length == 1) {
+			alias First = attr[0];
+			alias FirstType = typeof(First);
+			static if(is(FirstType == SDLName)) {
+				enum SDLUdaName = attr[0].name;
+			} else {
+				enum SDLUdaName = key;
+			}
+		} else {
+			enum SDLUdaName = key;
+		}
+	} else {
+		enum SDLUdaName = key;
+	}
+}
+
+@safe pure unittest {
+	static assert(SDLUdaName!"ddoxFilterArgs" == "x:ddoxFilterArgs",
+			SDLUdaName!"ddoxFilterArgs");
 }

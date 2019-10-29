@@ -5,6 +5,7 @@ import std.typecons : Nullable;
 import dud.path;
 import dud.semver;
 import dud.pkgdescription.versionspecifier;
+import dud.pkgdescription.udas;
 
 @safe pure:
 
@@ -53,6 +54,9 @@ struct PackageDescription {
 	string[] versions; /// D version identifiers to set
 	string[] debugVersions; /// D debug version identifiers to set
 	Path[] importPaths;
+	Path[] sourcePaths;
+	Path[] sourceFiles;
+	Path[] excludedSourceFiles;
 	Path[] stringImportPaths;
 	string[] preGenerateCommands; /// commands executed before creating the description
 	string[] postGenerateCommands; /// commands executed after creating the description
@@ -62,6 +66,20 @@ struct PackageDescription {
 	string[] postRunCommands; /// Commands to execute after every run
 	PackageDescription[] configurations;
 	string[] platforms;
+
+	@SDLName("x:ddoxFilterArgs")
+	string[] ddoxFilterArgs;
+
+	@SDLName("x:ddoxTool")
+	string ddoxTool;
+
+	@SDLName("subPackage")
+	SubPackage[] subPackages;
+}
+
+struct SubPackage {
+	Nullable!Path path;
+	Nullable!PackageDescription inlinePkg;
 }
 
 struct Dependency {

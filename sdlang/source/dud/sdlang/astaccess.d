@@ -60,6 +60,21 @@ string identifier(Attribute attr) {
 	return identifierImpl(a);
 }
 
+string fullIdentifier(Tag tag) {
+	import std.array : appender;
+	import std.algorithm.iteration : map, joiner;
+	import std.algorithm.mutation : copy;
+
+	auto app = appender!string;
+	auto a = IDAccessor(tag.id);
+	a
+		.map!(it => it.value.get!string())
+		.joiner(":")
+		.copy(app);
+	return app.data;
+
+}
+
 string identifier(Tag tag) {
 	auto a = IDAccessor(tag.id);
 	return identifierImpl(a);

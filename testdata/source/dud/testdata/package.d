@@ -8,7 +8,7 @@ import std.string : split, indexOf;
 import std.stdio : File;
 import std.file : exists, readText, dirEntries, SpanMode;
 
-enum dubsdlfilename = "dubsdlfilelist.txt";
+enum dubsdlfilename = "../dubsdlfilelist.txt";
 
 immutable string[] knownBad = [
 	"dtiled-0.3.0/dtiled"

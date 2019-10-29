@@ -4,6 +4,10 @@
 			"path": "../path",
 			"version": ">=0.0.0"
 		},
+		"testdata": {
+			"path": "../testdata",
+			"version": ">=0.0.0"
+		},
 		"sdlang": {
 			"path": "../sdlang",
 			"version": ">=0.0.0"
@@ -18,5 +22,15 @@
 		}
 	},
 	"name": "pkgdescription",
-	"targetType": "library"
+	"targetType": "library",
+	"configurations" : [
+		{ "name" : "ExcessiveTests"
+		, "versions" : ["ExcessivTests"]
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
+		}
+		, { "name" : "unittest"
+		, "dflags" : ["-unittest"]
+		}
+	]
 }

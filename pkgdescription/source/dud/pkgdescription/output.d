@@ -69,6 +69,12 @@ JSONValue toJSON(PackageDescription pkg) {
 			if(!ss.empty) {
 				ret[Mem] = JSONValue(ss);
 			}
+		}} else static if(is(MemType == SubPackage[])) {{
+			SubPackage[] subs = __traits(getMember, pkg, mem);
+			if(!subs.empty) {
+				ret[Mem] = JSONValue(
+					subs.map!(it => subPackageToJson(it)).array);
+			}
 		}} else static if(is(MemType == PackageDescription[])) {{
 			PackageDescription[] confs = __traits(getMember, pkg, mem);
 			if(!confs.empty) {
@@ -155,6 +161,11 @@ string toSDLString(PackageDescription pkg) {
 	return app.data;
 }
 
+JSONValue subPackageToJson(SubPackage sp) {
+	JSONValue ret;
+	return ret;
+}
+
 void toSDLString(Out)(auto ref Out o, PackageDescription pkg,
 		const size_t indent)
 {
@@ -189,6 +200,20 @@ void toSDLString(Out)(auto ref Out o, PackageDescription pkg,
 			Nullable!TargetType tt = __traits(getMember, pkg, mem);
 			if(!tt.isNull()) {
 				formatIndent(o, indent, "targetType \"%s\"\n", tt.get());
+			}
+		}} else static if(is(MemType == SubPackage[])) {{
+			SubPackage[] ss = __traits(getMember, pkg, mem);
+			foreach(sp; ss) {
+				if(!sp.path.isNull()) {
+					formatIndent(o, indent, "subPackage \"%s\"\n",
+						sp.path.get());
+				} else if(!sp.inlinePkg.isNull()) {
+					formatIndent(o, indent, "subPackage \"%s\" {\n");
+					toSDLString(o, sp.inlinePkg.get(), indent + 1);
+					formatIndent(o, indent, "}\n");
+				} else {
+					assert(false, "SubPackage without a path of inlinePkg");
+				}
 			}
 		}} else static if(is(MemType == string[])) {{
 			string[] ss = __traits(getMember, pkg, mem);

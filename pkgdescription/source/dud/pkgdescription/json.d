@@ -7,7 +7,8 @@ import std.format : format;
 import std.exception : enforce;
 import std.typecons : nullable, Nullable;
 
-import dud.pkgdescription : Dependency, PackageDescription, TargetType;
+import dud.pkgdescription : Dependency, PackageDescription, TargetType,
+	   SubPackage;
 import dud.semver : SemVer;
 import dud.path : Path, AbsoluteNativePath;
 
@@ -47,6 +48,8 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 						__traits(getMember, ret, mem) = extractDependencies(value);
 					} else static if(is(MemType == PackageDescription[])) {
 						__traits(getMember, ret, mem) = extractPackageDescriptions(value);
+					} else static if(is(MemType == SubPackage[])) {
+						__traits(getMember, ret, mem) = extractSubpackages(value);
 					} else static if(is(MemType == Nullable!TargetType)) {
 						__traits(getMember, ret, mem) =
 							nullable(extractTargetType(value));
@@ -163,6 +166,33 @@ Dependency extractDependencyObj(ref JSONValue jv) {
 	}
 
 	return ret;
+}
+
+SubPackage extractSubpackageStr(ref JSONValue jv) {
+	SubPackage ret;
+	ret.path = extractPath(jv);
+	return ret;
+}
+
+SubPackage extractSubpackageObj(ref JSONValue jv) {
+	SubPackage ret;
+	ret.inlinePkg = jsonToPackageDescription(jv);
+	return ret;
+}
+
+SubPackage jsonToSubpackage(ref JSONValue jv) {
+	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
+			format("Expected an object or a string not a %s while extracting "
+				~ "a dependency", jv.type));
+	return jv.type == JSONType.object
+		? extractSubpackageObj(jv)
+		: extractSubpackageStr(jv);
+}
+
+SubPackage[] extractSubpackages(ref JSONValue jv) {
+	enforce(jv.type == JSONType.array,
+			format("Expected an array not a %s", jv.type));
+	return jv.arrayNoRef().map!(it => jsonToSubpackage(it)).array;
 }
 
 PackageDescription[] extractPackageDescriptions(ref JSONValue jv) {
