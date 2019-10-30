@@ -35,7 +35,6 @@ void sGetPackageDescription(TagAccessor ts, string key,
 			try {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
 					enum Mem = SDLName!mem;
-					pragma(msg, Mem);
 					alias get = SDLGet!mem;
 					case Mem:
 						get(t, Mem, __traits(getMember, ret, mem));
@@ -298,7 +297,7 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 					.parseVersionSpecifier;
 				break;
 			case "path":
-				ret.path = Path(it.value.value.to!string());
+				ret.path = Path(it.value.value.get!string());
 				break;
 			case "optional":
 				ret.optional = it

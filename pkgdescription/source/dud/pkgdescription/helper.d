@@ -44,8 +44,3 @@ template SDLUdaName(string key) {
 		enum SDLUdaName = key;
 	}
 }
-
-@safe pure unittest {
-	static assert(SDLUdaName!"ddoxFilterArgs" == "x:ddoxFilterArgs",
-			SDLUdaName!"ddoxFilterArgs");
-}
