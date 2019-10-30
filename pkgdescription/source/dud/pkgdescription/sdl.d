@@ -1,7 +1,7 @@
 module dud.pkgdescription.sdl;
 
 import std.array : array, front;
-import std.algorithm.iteration : map;
+import std.algorithm.iteration : map, each;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format;
@@ -21,25 +21,28 @@ PackageDescription sdlToPackageDescription(string sdl) @safe {
 	auto lex = Lexer(sdl);
 	auto parser = Parser(lex);
 	Root jv = parser.parseRoot();
-	return sGetPackageDescription(tags(jv));
+	PackageDescription ret;
+	sGetPackageDescription(tags(jv), "dub.sdl", ret);
+	return ret;
 }
 
-PackageDescription sGetPackageDescription(TagAccessor ts) @safe {
-	PackageDescription ret;
-
+void sGetPackageDescription(TagAccessor ts, string key,
+		ref PackageDescription ret) @safe
+{
 	foreach(Tag t; ts) {
 		string id = t.fullIdentifier();
 		sw: switch(id) {
 			try {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
 					enum Mem = SDLName!mem;
+					pragma(msg, Mem);
 					alias get = SDLGet!mem;
 					case Mem:
 						get(t, Mem, __traits(getMember, ret, mem));
 						break sw;
 				}}
 				default:
-					enforce(false, format("key '%s' unknown", key));
+					enforce(false, format("key '%s' unknown", id));
 					assert(false);
 			} catch(Exception e) {
 				string s = format("While parsing key '%s' an exception occured",
@@ -48,7 +51,11 @@ PackageDescription sGetPackageDescription(TagAccessor ts) @safe {
 			}
 		}
 	}
-	return ret;
+}
+
+void packageDescriptionsToS(Out)(PackageDescription[] pkgs, string key,
+		auto ref Out o)
+{
 }
 
 void packageDescriptionToS(Out)(PackageDescription pkg, string key,
@@ -69,11 +76,6 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 	formattedWrite(o, str, args);
 }
 
-private string getString(Value v) {
-	enforce(f.type == ValueType.str);
-	return v.get!string();
-}
-
 void sGetString(Tag t, string key, ref string ret) {
 	sGetString(t.values(), key, ret);
 }
@@ -83,7 +85,7 @@ void sGetString(ValueRange v, string key, ref string ret) {
 	Value f = v.front;
 	v.popFront();
 	enforce(v.empty, "ValueRange was expected to be empty");
-	ret = getString(v);
+	ret = f.get!string();
 }
 
 void stringToS(Out)(auto ref Out o, string key, string value,
@@ -98,7 +100,7 @@ void sGetStrings(Tag t, string key, ref string[] ret) {
 
 void sGetStrings(ValueRange v, string key, ref string[] ret) {
 	enforce(!v.empty, "Can not get element of empty range");
-	v.each!(it => ret ~= getString(v));
+	v.each!(it => ret ~= it.get!string());
 }
 
 void stringsToS(Out)(auto ref Out o, string key, string[] values,
@@ -115,7 +117,7 @@ void sGetSemVer(Tag t, string key, ref Nullable!SemVer ret) {
 
 void sGetSemVer(ValueRange v, string key, ref Nullable!SemVer ver) @safe pure {
 	string s;
-	sGetString(v, ver);
+	sGetString(v, "SemVer", s);
 	ver = nullable(SemVer(s));
 }
 
@@ -128,13 +130,93 @@ void semVerToS(Out)(auto ref Out o, string key, SemVer sv,
 	}
 }
 
-void sGetPath(Tag t, string key, ref string ret) {
+void sGetTargetType(Tag t, string key, ref TargetType ret) {
+	sGetTargetType(t.values(), key, ret);
+}
+
+void sGetTargetType(ValueRange v, string key, ref TargetType p) {
+	string s;
+	sGetString(v, "TargetType", s);
+	p = to!TargetType(s);
+}
+
+void targetTypeToS(Out)(auto ref Out o, string key, TargetType p,
+		const size_t indent)
+{
+	if(p != TargetType.autodetect) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, p);
+	}
+}
+
+void sGetBuildRequirements(Tag t, string key, ref BuildRequirement[] ret) {
+	sGetBuildRequirements(t.values(), key, ret);
+}
+
+void sGetBuildRequirements(ValueRange v, string key, ref BuildRequirement[] p) {
+	enforce(!v.empty, "Can not get element of empty range");
+	v.map!(it => it.get!string()).each!(s => p ~= to!BuildRequirement(s));
+}
+
+void buildRequirementsToS(Out)(auto ref Out o, string key,
+		BuildRequirement[] ps, const size_t indent)
+{
+	if(!ps.empty) {
+		formatIndent(o, indent, "%s %(\"%s\", %)\n", key,
+			ps.map!(it => to!string(it)));
+	}
+}
+
+void sGetSubConfig(Tag t, string key, ref string[string] ret) {
+	sGetSubConfig(t.values(), key, ret);
+}
+
+void sGetSubConfig(ValueRange v, string key, ref string[string] ret) {
+	enforce(!v.empty, "Can not get a subconfig from an empty range");
+	string[] tmp;
+	sGetStrings(v, key, tmp);
+	enforce(tmp.length == 2, format(
+		"A SubConfiguration requires 2 strings not %s", tmp));
+	enforce(tmp[0] !in ret, format("SubConfiguration for %s is already present",
+		tmp[0]));
+	ret[tmp[0]] = tmp[1];
+}
+
+void subConfigsToS(Out)(auto ref Out o, string key,
+		string[string] scf, const size_t indent)
+{
+	if(!ps.empty) {
+		foreach(key, value; scf) {
+			formatIndent(o, indent, "subConfiguration \"%s\" \"%s\"\n", key,
+				value);
+		}
+	}
+}
+
+void sGetPaths(Tag t, string key, ref Path[] ret) {
+	sGetPaths(t.values(), key, ret);
+}
+
+void sGetPaths(ValueRange v, string key, ref Path[] p) {
+	enforce(!v.empty, "Can not get element of empty range");
+	v.map!(it => it.get!string()).each!(s => p ~= Path(s));
+}
+
+void pathsToS(Out)(auto ref Out o, string key, Path[] ps,
+		const size_t indent)
+{
+	if(!ps.empty) {
+		formatIndent(o, indent, "%s \"%s\"\n", key,
+			ps.map!(it => it.path));
+	}
+}
+
+void sGetPath(Tag t, string key, ref Path ret) {
 	sGetPath(t.values(), key, ret);
 }
 
 void sGetPath(ValueRange v, string key, ref Path p) {
 	string s;
-	sGetString(v, ver);
+	sGetString(v, key, s);
 	p = Path(s);
 }
 
@@ -147,16 +229,63 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 	}
 }
 
-void sGetDependencies(Tag t, string key, ref string ret) {
-	sGetDependencies(t.values(), v.attributes(), key, ret);
+void sGetPackageDescriptions(Tag t, string key,
+		ref PackageDescription[] ret) @safe
+{
+	string n;
+	sGetString(t, "name", n);
+	PackageDescription tmp;
+	tmp.name = n;
+	sGetPackageDescription(tags(t.oc), "configuration", tmp);
+	enforce(tmp.name == n,
+		format("Configuration names must not be changed in OptChild '%s' => '%s'",
+			n, tmp.name));
+	ret ~= tmp;
+}
+
+void sGetSubPackage(Tag t, string key, ref SubPackage[] ret) {
+	ValueRange vr = t.values();
+	SubPackage tmp;
+	if(!vr.empty) {
+		tmp.path = nullable(Path(vr.front.get!string()));
+		vr.popFront();
+		enforce(vr.empty, "Unexpected second SubPackage path");
+	} else {
+		PackageDescription iTmp;
+		sGetPackageDescription(tags(t.oc), key, iTmp);
+		tmp.inlinePkg = nullable(iTmp);
+	}
+	ret ~= tmp;
+}
+
+void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
+		const size_t indent)
+{
+	foreach(sp; sps) {
+		if(!sp.path.isNull()) {
+			formatIndent(o, indent, "subPackage \"%s\"\n",
+				sp.path.get());
+		} else if(!sp.inlinePkg.isNull()) {
+			formatIndent(o, indent, "subPackage \"%s\" {\n");
+			packageDescriptionToS(o, sp.inlinePkg.get(), indent + 1);
+			formatIndent(o, indent, "}\n");
+		} else {
+			assert(false, "SubPackage without a path of inlinePkg");
+		}
+	}
+}
+
+void sGetDependencies(Tag t, string key, ref Dependency[string] ret) {
+	sGetDependencies(t.values(), t.attributes(), key, ret);
 }
 
 void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 		ref Dependency[string] deps)
 {
+	import dud.pkgdescription.versionspecifier;
 	enforce(!v.empty, "Can not get Dependencies of an empty range");
 	string name;
-	sGetString(v);
+	sGetString(v, key, name);
 	Dependency ret;
 	ret.name = name;
 	foreach(Attribute it; ars) {
@@ -165,24 +294,24 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 				ret.version_ = it
 					.value
 					.value
-					.extractString
+					.get!string()
 					.parseVersionSpecifier;
 				break;
 			case "path":
-				ret.path = it.value.value.extractPath;
+				ret.path = Path(it.value.value.to!string());
 				break;
 			case "optional":
 				ret.optional = it
 					.value
 					.value
-					.extractBool
+					.get!bool()
 					.nullable;
 				break;
 			case "default":
 				ret.default_ = it
 					.value
 					.value
-					.extractBool
+					.get!bool()
 					.nullable;
 				break;
 			default:
@@ -218,6 +347,7 @@ void dependenciesToS(Out)(auto ref Out o, string key, Dependency[string] deps,
 		formattedWrite(o, "\n");
 	}
 }
+
 
 __EOF__
 

@@ -11,8 +11,6 @@ import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 
-__EOF__
-
 unittest {
 	import dud.semver : SemVer;
 
@@ -59,5 +57,5 @@ configuration "test" {
 	assert(pkg.dependencies == dep, format("\ngot:\n%s\nexp:\n%s",
 		pkg.dependencies, dep));
 
-	writeln(toSDLString(pkg));
+	writeln(toSDL(pkg));
 }

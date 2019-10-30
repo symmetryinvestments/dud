@@ -306,18 +306,18 @@ JSONValue subPackagesToJ(SubPackage[] sp) {
 	return JSONValue.init;
 }
 
-BuildRequirements jGetBuildRequirement(ref JSONValue jv) {
+BuildRequirement jGetBuildRequirement(ref JSONValue jv) {
 	string s = jGetString(jv);
-	return to!BuildRequirements(s);
+	return to!BuildRequirement(s);
 }
 
-BuildRequirements[] jGetBuildRequirements(ref JSONValue jv) {
+BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
 	enforce(jv.type == JSONType.array,
 			format("Expected an array not a %s", jv.type));
 	return jv.arrayNoRef().map!(it => jGetBuildRequirement(it)).array;
 }
 
-JSONValue buildRequirementsToJ(BuildRequirements[] br) {
+JSONValue buildRequirementsToJ(BuildRequirement[] br) {
 	return JSONValue.init;
 }
 

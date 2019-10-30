@@ -60,13 +60,15 @@ struct PackageDescription {
 	string license;
 
 	@JSON!(jGetDependencies, dependenciesToJ)("")
-	@JSON!(sGetDependencies, dependenciesToS)("dependency")
+	@SDL!(sGetDependencies, dependenciesToS)("dependency")
 	Dependency[string] dependencies;
 
 	@JSON!(jGetTargetType, targetTypeToJ)("")
+	@SDL!(sGetTargetType, targetTypeToS)("")
 	TargetType targetType;
 
 	@JSON!(jGetPath, pathToJ)("")
+	@SDL!(sGetPath, pathToS)("")
 	Path targetPath;
 
 	@JSON!(jGetString, stringToJ)("")
@@ -98,9 +100,11 @@ struct PackageDescription {
 	string[] libs; /// Librariy names to link against (typically using "-l<name>")
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] copyFiles; /// Files to copy to the target directory
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] extraDependencyFiles; /// Files to check for rebuild dub project
 
 	@JSON!(jGetStrings, stringsToJ)("")
@@ -112,18 +116,23 @@ struct PackageDescription {
 	string[] debugVersions; /// D debug version identifiers to set
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] importPaths;
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] sourcePaths;
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] sourceFiles;
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] excludedSourceFiles;
 
 	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("")
 	Path[] stringImportPaths;
 
 	@JSON!(jGetStrings, stringsToJ)("")
@@ -151,6 +160,7 @@ struct PackageDescription {
 	string[] postRunCommands; /// Commands to execute after every run
 
 	@JSON!(jGetPackageDescriptions, packageDescriptionsToJ)("")
+	@SDL!(sGetPackageDescriptions, packageDescriptionsToS)("configuration")
 	PackageDescription[] configurations;
 
 	@JSON!(jGetStrings, stringsToJ)("")
@@ -165,15 +175,17 @@ struct PackageDescription {
 	@SDL!(sGetString, stringToS)("x:ddoxTool")
 	string ddoxTool;
 
-	//@SDLName("subPackage")
 	@JSON!(jGetSubPackages, subPackagesToJ)("")
+	@SDL!(sGetSubPackage, subPackagesToS)("subPackage")
 	SubPackage[] subPackages;
 
 	@JSON!(jGetBuildRequirements, buildRequirementsToJ)("")
-	BuildRequirements[] buildRequirements;
+	@SDL!(sGetBuildRequirements, buildRequirementsToS)("")
+	BuildRequirement[] buildRequirements;
 
 	//@SDLName("subConfiguration")
 	@JSON!(jGetStringAA, stringAAToJ)("")
+	@SDL!(sGetSubConfig, subConfigsToS)("")
 	string[string] subConfigurations;
 
 	@JSON!(jGetString, stringToJ)()
@@ -181,7 +193,7 @@ struct PackageDescription {
 	string versionFilters;
 }
 
-enum BuildRequirements {
+enum BuildRequirement {
 	allowWarnings,
 	silenceWarnings,
 	disallowDeprecations,
