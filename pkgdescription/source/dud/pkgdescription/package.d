@@ -160,7 +160,7 @@ struct PackageDescription {
 	string[] postRunCommands; /// Commands to execute after every run
 
 	@JSON!(jGetPackageDescriptions, packageDescriptionsToJ)("")
-	@SDL!(sGetPackageDescriptions, packageDescriptionsToS)("configuration")
+	@SDL!(sGetPackageDescriptions, configurationsToS)("configuration")
 	PackageDescription[] configurations;
 
 	@JSON!(jGetStrings, stringsToJ)("")

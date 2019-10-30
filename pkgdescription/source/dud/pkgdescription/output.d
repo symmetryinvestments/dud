@@ -31,5 +31,5 @@ string toSDL(PackageDescription pkg) {
 }
 
 void toSDL(Out)(PackageDescription pkg, auto ref Out o) {
-	packageDescriptionToS(pkg, "", o);
+	packageDescriptionToS(o, pkg.name, pkg, 0);
 }

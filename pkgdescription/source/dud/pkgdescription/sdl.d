@@ -1,10 +1,10 @@
 module dud.pkgdescription.sdl;
 
-import std.array : array, front;
+import std.array : array, empty, front, appender, popFront;
 import std.algorithm.iteration : map, each;
 import std.conv : to;
 import std.exception : enforce;
-import std.format : format;
+import std.format : format, formattedWrite;
 import std.typecons : nullable, Nullable;
 import std.stdio;
 
@@ -52,14 +52,47 @@ void sGetPackageDescription(TagAccessor ts, string key,
 	}
 }
 
-void packageDescriptionsToS(Out)(PackageDescription[] pkgs, string key,
-		auto ref Out o)
+void packageDescriptionsToS(Out)(auto ref Out o, string key,
+		PackageDescription[] pkgs, const size_t indent)
 {
+	pkgs.each!(it => packageDescriptionToS(o, it.name, it, indent + 1));
 }
 
-void packageDescriptionToS(Out)(PackageDescription pkg, string key,
-		auto ref Out o)
+string packageDescriptionToS(PackageDescription pkg) {
+	auto app = appender!string();
+	packageDescriptionToS(app, pkg.name, pkg, 0);
+	return app.data;
+}
+
+void packageDescriptionToS(Out)(auto ref Out o, string key,
+		PackageDescription pkg, const size_t indent)
 {
+	static foreach(mem; __traits(allMembers, PackageDescription)) {{
+		enum Mem = SDLName!mem;
+		alias put = SDLPut!mem;
+		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
+		static if(is(MemType : Nullable!Args, Args...)) {
+			if(!__traits(getMember, pkg, mem).isNull) {
+				put(o, Mem, __traits(getMember, pkg, mem).get(), indent);
+			}
+		} else {
+			put(o, Mem, __traits(getMember, pkg, mem), indent);
+		}
+	}}
+}
+
+void configurationsToS(Out)(auto ref Out o, string key,
+		PackageDescription[] pkgs, const size_t indent)
+{
+	pkgs.each!(pkg => configurationToS(o, key, pkg, indent));
+}
+
+void configurationToS(Out)(auto ref Out o, string key,
+		PackageDescription pkg, const size_t indent)
+{
+	formattedWrite(o, "configuration \"%s\" {\n", pkg.name);
+	packageDescriptionToS(o, pkg.name, pkg, indent + 1);
+	formattedWrite(o, "}\n");
 }
 
 private void indent(Out)(auto ref Out o, const size_t indent) {
@@ -90,7 +123,9 @@ void sGetString(ValueRange v, string key, ref string ret) {
 void stringToS(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
-	formatIndent(o, indent, "%s \"%s\"\n", key, value);
+	if(!value.empty) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, value);
+	}
 }
 
 void sGetStrings(Tag t, string key, ref string[] ret) {
@@ -105,8 +140,8 @@ void sGetStrings(ValueRange v, string key, ref string[] ret) {
 void stringsToS(Out)(auto ref Out o, string key, string[] values,
 		const size_t indent)
 {
-	if(!value.empty) {
-		formatIndent(o, indent, "%s %(\"%s\", %)\n", key, values);
+	if(!values.empty) {
+		formatIndent(o, indent, "%s %(%s-, %)\n", key, values);
 	}
 }
 
@@ -183,7 +218,7 @@ void sGetSubConfig(ValueRange v, string key, ref string[string] ret) {
 void subConfigsToS(Out)(auto ref Out o, string key,
 		string[string] scf, const size_t indent)
 {
-	if(!ps.empty) {
+	if(!scf.empty) {
 		foreach(key, value; scf) {
 			formatIndent(o, indent, "subConfiguration \"%s\" \"%s\"\n", key,
 				value);
@@ -204,7 +239,7 @@ void pathsToS(Out)(auto ref Out o, string key, Path[] ps,
 		const size_t indent)
 {
 	if(!ps.empty) {
-		formatIndent(o, indent, "%s \"%s\"\n", key,
+		formatIndent(o, indent, "%s %(%s %)\n", key,
 			ps.map!(it => it.path));
 	}
 }
@@ -266,7 +301,8 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 				sp.path.get());
 		} else if(!sp.inlinePkg.isNull()) {
 			formatIndent(o, indent, "subPackage \"%s\" {\n");
-			packageDescriptionToS(o, sp.inlinePkg.get(), indent + 1);
+			packageDescriptionToS(o, "SubPackage", sp.inlinePkg.get(),
+					indent + 1);
 			formatIndent(o, indent, "}\n");
 		} else {
 			assert(false, "SubPackage without a path of inlinePkg");
