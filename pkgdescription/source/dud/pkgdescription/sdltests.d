@@ -1,5 +1,6 @@
 module dud.pkgdescription.sdltests;
 
+import std.array : empty;
 import std.conv;
 import std.typecons : nullable;
 import std.format : format;
@@ -57,5 +58,8 @@ configuration "test" {
 	assert(pkg.dependencies == dep, format("\ngot:\n%s\nexp:\n%s",
 		pkg.dependencies, dep));
 
-	writeln(toSDL(pkg));
+	string output = toSDL(pkg);
+	assert(!output.empty);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }

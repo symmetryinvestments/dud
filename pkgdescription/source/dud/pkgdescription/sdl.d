@@ -18,9 +18,13 @@ import dud.sdlang;
 @safe pure:
 
 PackageDescription sdlToPackageDescription(string sdl) @safe {
+	debug writeln("Lex");
 	auto lex = Lexer(sdl);
+	debug writeln("Parser");
 	auto parser = Parser(lex);
+	debug writeln("Parse");
 	Root jv = parser.parseRoot();
+	debug writeln("toPkg");
 	PackageDescription ret;
 	sGetPackageDescription(tags(jv), "dub.sdl", ret);
 	return ret;
