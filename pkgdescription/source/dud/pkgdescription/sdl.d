@@ -11,19 +11,215 @@ import std.stdio;
 import dud.pkgdescription;
 import dud.semver : SemVer;
 import dud.path : Path, AbsoluteNativePath;
+import dud.pkgdescription.udas;
 
 import dud.sdlang;
+
+@safe pure:
 
 PackageDescription sdlToPackageDescription(string sdl) @safe {
 	auto lex = Lexer(sdl);
 	auto parser = Parser(lex);
 	Root jv = parser.parseRoot();
-	return sdlToPackageDescription(jv);
+	return sGetPackageDescription(tags(jv));
 }
 
-PackageDescription sdlToPackageDescription(Root t) @safe {
-	return sdlToPackageDescription(t.tags);
+PackageDescription sGetPackageDescription(TagAccessor ts) @safe {
+	PackageDescription ret;
+
+	foreach(Tag t; ts) {
+		string id = t.fullIdentifier();
+		sw: switch(id) {
+			try {
+				static foreach(mem; __traits(allMembers, PackageDescription)) {{
+					enum Mem = SDLName!mem;
+					alias get = SDLGet!mem;
+					case Mem:
+						get(t, Mem, __traits(getMember, ret, mem));
+						break sw;
+				}}
+				default:
+					enforce(false, format("key '%s' unknown", key));
+					assert(false);
+			} catch(Exception e) {
+				string s = format("While parsing key '%s' an exception occured",
+						key);
+				throw new Exception(s, e);
+			}
+		}
+	}
+	return ret;
 }
+
+void packageDescriptionToS(Out)(PackageDescription pkg, string key,
+		auto ref Out o)
+{
+}
+
+private void indent(Out)(auto ref Out o, const size_t indent) {
+	foreach(i; 0 .. indent) {
+		formattedWrite(o, "\t");
+	}
+}
+
+private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
+		string str, Args args)
+{
+	indent(o, i);
+	formattedWrite(o, str, args);
+}
+
+private string getString(Value v) {
+	enforce(f.type == ValueType.str);
+	return v.get!string();
+}
+
+void sGetString(Tag t, string key, ref string ret) {
+	sGetString(t.values(), key, ret);
+}
+
+void sGetString(ValueRange v, string key, ref string ret) {
+	enforce(!v.empty, "Can not get element of empty range");
+	Value f = v.front;
+	v.popFront();
+	enforce(v.empty, "ValueRange was expected to be empty");
+	ret = getString(v);
+}
+
+void stringToS(Out)(auto ref Out o, string key, string value,
+		const size_t indent)
+{
+	formatIndent(o, indent, "%s \"%s\"\n", key, value);
+}
+
+void sGetStrings(Tag t, string key, ref string[] ret) {
+	sGetStrings(t.values(), key, ret);
+}
+
+void sGetStrings(ValueRange v, string key, ref string[] ret) {
+	enforce(!v.empty, "Can not get element of empty range");
+	v.each!(it => ret ~= getString(v));
+}
+
+void stringsToS(Out)(auto ref Out o, string key, string[] values,
+		const size_t indent)
+{
+	if(!value.empty) {
+		formatIndent(o, indent, "%s %(\"%s\", %)\n", key, values);
+	}
+}
+
+void sGetSemVer(Tag t, string key, ref Nullable!SemVer ret) {
+	sGetSemVer(t.values(), key, ret);
+}
+
+void sGetSemVer(ValueRange v, string key, ref Nullable!SemVer ver) @safe pure {
+	string s;
+	sGetString(v, ver);
+	ver = nullable(SemVer(s));
+}
+
+void semVerToS(Out)(auto ref Out o, string key, SemVer sv,
+		const size_t indent)
+{
+	string s = sv.toString();
+	if(!s.empty) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, s);
+	}
+}
+
+void sGetPath(Tag t, string key, ref string ret) {
+	sGetPath(t.values(), key, ret);
+}
+
+void sGetPath(ValueRange v, string key, ref Path p) {
+	string s;
+	sGetString(v, ver);
+	p = Path(s);
+}
+
+void pathToS(Out)(auto ref Out o, string key, Path p,
+		const size_t indent)
+{
+	string s = p.path;
+	if(!s.empty) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, s);
+	}
+}
+
+void sGetDependencies(Tag t, string key, ref string ret) {
+	sGetDependencies(t.values(), v.attributes(), key, ret);
+}
+
+void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
+		ref Dependency[string] deps)
+{
+	enforce(!v.empty, "Can not get Dependencies of an empty range");
+	string name;
+	sGetString(v);
+	Dependency ret;
+	ret.name = name;
+	foreach(Attribute it; ars) {
+		switch(it.identifier()) {
+			case "version":
+				ret.version_ = it
+					.value
+					.value
+					.extractString
+					.parseVersionSpecifier;
+				break;
+			case "path":
+				ret.path = it.value.value.extractPath;
+				break;
+			case "optional":
+				ret.optional = it
+					.value
+					.value
+					.extractBool
+					.nullable;
+				break;
+			case "default":
+				ret.default_ = it
+					.value
+					.value
+					.extractBool
+					.nullable;
+				break;
+			default:
+				throw new Exception(format(
+					"Key '%s' is not part of a Dependency declaration",
+					it.identifier()));
+		}
+	}
+	deps[name] = ret;
+}
+
+void dependenciesToS(Out)(auto ref Out o, string key, Dependency[string] deps,
+		const size_t indent)
+{
+	foreach(key, value; deps) {
+		formatIndent(o, indent, "dependency \"%s\"", key);
+		if(!value.version_.isNull()) {
+			formattedWrite(o, " version=\"%s\"",
+					value.version_.get().orig);
+		}
+		if(!value.path.isNull()) {
+			formattedWrite(o, " path=\"%s\"",
+					value.path.get().path);
+		}
+		if(!value.default_.isNull()) {
+			formattedWrite(o, " default=%s",
+					value.default_.get());
+		}
+		if(!value.optional.isNull()) {
+			formattedWrite(o, " optional=%s",
+					value.optional.get());
+		}
+		formattedWrite(o, "\n");
+	}
+}
+
+__EOF__
 
 PackageDescription sdlToPackageDescription(Tags input) @safe pure {
 	import dud.pkgdescription.helper : PreprocessKey, KeysToSDLCases;
@@ -65,6 +261,10 @@ PackageDescription sdlToPackageDescription(Tags input) @safe pure {
 						} else static if(is(MemType == Nullable!TargetType)) {
 							__traits(getMember, ret, mem) =
 									nullable(extractTargetType(it.values));
+						} else static if(is(MemType == string[string])) {
+							string[] str = extractStrings(it.values);
+							enforce(str.length == 2, "Expected two strings");
+							__traits(getMember, ret, mem)[str[0]] = str[1];
 						} else static if(is(MemType == Dependency[string])) {
 							string name = extractString(it.values);
 							enforce(name !in __traits(getMember, ret, mem),
@@ -105,11 +305,6 @@ PackageDescription sdlToPackageDescription(Tags input) @safe pure {
 
 string[] extractStrings(ValueRange v) @safe pure {
 	return v.map!(it => extractString(it)).array;
-}
-
-string extractString(ValueRange v) @safe pure {
-	enforce(!v.empty, "Can not get element of empty range");
-	return extractString(v.front);
 }
 
 string extractString(Value v) @safe pure {
@@ -183,44 +378,3 @@ SubPackage extractSubPackage(Tag t) @safe pure {
 	return pkg;
 }
 
-Dependency extractDependency(Tag t) @safe pure {
-	import std.array : front;
-	import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
-
-	Dependency ret;
-	enforce(!t.values().empty, "Can not get element of empty range");
-	ret.name = extractString(t.values());
-	foreach(Attribute it; t.attributes()) {
-		switch(it.identifier()) {
-			case "version":
-				ret.version_ = it
-					.value
-					.value
-					.extractString
-					.parseVersionSpecifier;
-				break;
-			case "path":
-				ret.path = it.value.value.extractPath;
-				break;
-			case "optional":
-				ret.optional = it
-					.value
-					.value
-					.extractBool
-					.nullable;
-				break;
-			case "default":
-				ret.default_ = it
-					.value
-					.value
-					.extractBool
-					.nullable;
-				break;
-			default:
-				throw new Exception(format(
-					"Key '%s' is not part of a Dependency declaration",
-					it.identifier()));
-		}
-	}
-	return ret;
-}

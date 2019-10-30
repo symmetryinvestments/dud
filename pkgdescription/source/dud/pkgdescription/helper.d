@@ -9,6 +9,8 @@ template PreprocessKey(string key) {
 	}
 }
 
+__EOF__
+
 template KeysToSDLCases(string key) {
 	static if(key == "dependencies") {
 		enum KeysToSDLCases = "dependency";

@@ -11,6 +11,8 @@ import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 
+__EOF__
+
 unittest {
 	import dud.semver : SemVer;
 

@@ -14,21 +14,27 @@ import dud.semver;
 import dud.pkgdescription;
 import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.helper;
+import dud.pkgdescription.udas;
+import dud.pkgdescription.json;
+import dud.pkgdescription.sdl;
 
 @safe pure:
 
-void indent(Out)(auto ref Out o, const size_t indent) {
-	foreach(i; 0 .. indent) {
-		formattedWrite(o, "\t");
-	}
+JSONValue toJSON(PackageDescription pkg) {
+	return packageDescriptionToJ(pkg);
 }
 
-void formatIndent(Out, Args...)(auto ref Out o, const size_t i, string str,
-		Args args)
-{
-	indent(o, i);
-	formattedWrite(o, str, args);
+string toSDL(PackageDescription pkg) {
+	auto app = appender!string();
+	toSDL(pkg, app);
+	return app.data;
 }
+
+void toSDL(Out)(PackageDescription pkg, auto ref Out o) {
+	packageDescriptionToS(pkg, "", o);
+}
+
+__EOF__
 
 string toJSONString(PackageDescription pkg) {
 	auto app = appender!string();
@@ -91,6 +97,15 @@ JSONValue toJSON(PackageDescription pkg) {
 			if(!p.empty) {
 				ret[Mem] = p;
 			}
+		}} else static if(is(MemType == string[string])) {{
+			string[string] deps = __traits(getMember, pkg, mem);
+			if(!deps.empty) {
+				JSONValue d;
+				foreach(key, value; deps) {
+					d[key] = JSONValue(value);
+				}
+				ret[Mem] = d;
+			}
 		}} else static if(is(MemType == Dependency[string])) {{
 			Dependency[string] deps = __traits(getMember, pkg, mem);
 			if(!deps.empty) {
@@ -117,48 +132,6 @@ JSONValue toJSON(PackageDescription pkg) {
 		}
 	}}
 	return ret;
-}
-
-JSONValue dependecyToJson(Dependency dep) {
-	JSONValue ret;
-	if(dep.isShortFrom()) {
-		return JSONValue(dep.version_.get().orig);
-	}
-	static foreach(mem; __traits(allMembers, Dependency)) {{
-		alias MemType = typeof(__traits(getMember, Dependency, mem));
-		enum Mem = PreprocessKey!(mem);
-		static if(is(MemType == string)) {{
-			// no need to handle this, this is stored as a json key
-		}} else static if(is(MemType == Nullable!VersionSpecifier)) {{
-			Nullable!VersionSpecifier nvs = __traits(getMember, dep, mem);
-			if(!nvs.isNull()) {
-				ret[Mem] = nvs.get().orig;
-			}
-		}} else static if(is(MemType == Nullable!Path)) {{
-			Nullable!Path p = __traits(getMember, dep, mem);
-			if(!p.isNull()) {
-				string ps = p.get().path;
-				if(!ps.empty) {
-					ret[Mem] = ps;
-				}
-			}
-		}} else static if(is(MemType == Nullable!bool)) {{
-			Nullable!bool b = __traits(getMember, dep, mem);
-			if(!b.isNull()) {
-				ret[Mem] = b;
-			}
-		}} else {
-			static assert(false, "Unhandeld case " ~ MemType.stringof);
-		}
-	}}
-	return ret;
-}
-
-private bool isShortFrom(const Dependency d) {
-	return !d.version_.isNull()
-		&& d.path.isNull()
-		&& d.optional.isNull()
-		&& d.default_.isNull();
 }
 
 string toSDLString(PackageDescription pkg) {
@@ -238,6 +211,12 @@ void toSDLString(Out)(auto ref Out o, PackageDescription pkg,
 				formatIndent(o, indent, "configuration \"%s\" {\n", it.name);
 				toSDLString(o, it, indent + 1);
 				formatIndent(o, indent, "}\n", it.name);
+			}
+		}} else static if(is(MemType == string[string])) {{
+			string[string] deps = __traits(getMember, pkg, mem);
+			foreach(key, value; deps) {
+				formatIndent(o, indent, "subConfiguration \"%s\" \"%s\"\n",
+					key, value);
 			}
 		}} else static if(is(MemType == Dependency[string])) {{
 			Dependency[string] deps = __traits(getMember, pkg, mem);
