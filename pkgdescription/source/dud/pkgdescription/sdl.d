@@ -8,8 +8,7 @@ import std.format : format;
 import std.typecons : nullable, Nullable;
 import std.stdio;
 
-import dud.pkgdescription : Dependency, PackageDescription, TargetType,
-	   SubPackage;
+import dud.pkgdescription;
 import dud.semver : SemVer;
 import dud.path : Path, AbsoluteNativePath;
 
@@ -54,6 +53,9 @@ PackageDescription sdlToPackageDescription(Tags input) @safe pure {
 						} else static if(is(MemType == Path[])) {
 							__traits(getMember, ret, mem) =
 								extractPaths(it.values);
+						} else static if(is(MemType == BuildRequirements[])) {
+							__traits(getMember, ret, mem) =
+								extractBuildRequirements(it.values);
 						} else static if(is(MemType == SubPackage[])) {
 							__traits(getMember, ret, mem) ~=
 								extractSubPackage(it);
@@ -125,6 +127,14 @@ bool extractBool(Value v) @safe pure {
 	enforce(v.type == ValueType.boolean,
 		format("Expected a bool not a '%s'", v.type));
 	return v.get!bool();
+}
+
+BuildRequirements extractBuildRequirement(Value v) @safe pure {
+	return to!BuildRequirements(extractString(v));
+}
+
+BuildRequirements[] extractBuildRequirements(ValueRange v) @safe pure {
+	return v.map!(it => extractBuildRequirement(it)).array;
 }
 
 Path[] extractPaths(Values v) @safe pure {

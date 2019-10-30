@@ -2,13 +2,13 @@ module dud.pkgdescription.json;
 
 import std.array : array;
 import std.algorithm.iteration : map, each;
+import std.conv : to;
 import std.json;
 import std.format : format;
 import std.exception : enforce;
 import std.typecons : nullable, Nullable;
 
-import dud.pkgdescription : Dependency, PackageDescription, TargetType,
-	   SubPackage;
+import dud.pkgdescription;
 import dud.semver : SemVer;
 import dud.path : Path, AbsoluteNativePath;
 
@@ -42,6 +42,9 @@ PackageDescription jsonToPackageDescription(JSONValue js) {
 						__traits(getMember, ret, mem) = extractPath(value);
 					} else static if(is(MemType == Path[])) {
 						__traits(getMember, ret, mem) = extractPaths(value);
+					} else static if(is(MemType == BuildRequirements[])) {
+						__traits(getMember, ret, mem) =
+							extractBuildRequirements(value);
 					} else static if(is(MemType == string[])) {
 						__traits(getMember, ret, mem) = extractStrings(value);
 					} else static if(is(MemType == Dependency[string])) {
@@ -204,6 +207,17 @@ PackageDescription[] extractPackageDescriptions(ref JSONValue jv) {
 SemVer extractSemVer(ref JSONValue jv) {
 	string s = extractString(jv);
 	return SemVer(s);
+}
+
+BuildRequirements extractBuildRequirement(ref JSONValue jv) {
+	string s = extractString(jv);
+	return to!BuildRequirements(s);
+}
+
+BuildRequirements[] extractBuildRequirements(ref JSONValue jv) {
+	enforce(jv.type == JSONType.array,
+			format("Expected an array not a %s", jv.type));
+	return jv.arrayNoRef().map!(it => extractBuildRequirement(it)).array;
 }
 
 Path[] extractPaths(ref JSONValue jv) {

@@ -75,6 +75,21 @@ struct PackageDescription {
 
 	@SDLName("subPackage")
 	SubPackage[] subPackages;
+
+	BuildRequirements[] buildRequirements;
+}
+
+enum BuildRequirements {
+	allowWarnings,
+	silenceWarnings,
+	disallowDeprecations,
+	silenceDeprecations,
+	disallowInlining,
+	disallowOptimization,
+	requireBoundsCheck,
+	requireContracts,
+	relaxProperties,
+	noDefaultFlags,
 }
 
 struct SubPackage {

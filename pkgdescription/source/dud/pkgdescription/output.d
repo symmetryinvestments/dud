@@ -75,6 +75,12 @@ JSONValue toJSON(PackageDescription pkg) {
 				ret[Mem] = JSONValue(
 					subs.map!(it => subPackageToJson(it)).array);
 			}
+		}} else static if(is(MemType == BuildRequirements[])) {{
+			BuildRequirements[] subs = __traits(getMember, pkg, mem);
+			if(!subs.empty) {
+				ret[Mem] = JSONValue(
+					subs.map!(it => JSONValue(to!string(it))).array);
+			}
 		}} else static if(is(MemType == PackageDescription[])) {{
 			PackageDescription[] confs = __traits(getMember, pkg, mem);
 			if(!confs.empty) {
@@ -214,6 +220,11 @@ void toSDLString(Out)(auto ref Out o, PackageDescription pkg,
 				} else {
 					assert(false, "SubPackage without a path of inlinePkg");
 				}
+			}
+		}} else static if(is(MemType == BuildRequirements[])) {{
+			BuildRequirements[] ss = __traits(getMember, pkg, mem);
+			if(!ss.empty) {
+				formatIndent(o, indent, "%s %(\"%s\" %)\n", Mem, ss);
 			}
 		}} else static if(is(MemType == string[])) {{
 			string[] ss = __traits(getMember, pkg, mem);
