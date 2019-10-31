@@ -20,7 +20,7 @@ dependency "path" path="../path"
 dependency "sdlang" path="../sdlang"
 dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
-targetPath "outDir"
+targetPath "outDir" platform="posix"
 importPaths "source" "source1" "source2"
 license "LGPL3"
 version "1.0.0"
@@ -43,6 +43,10 @@ configuration "test" {
 	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.license == "LGPL3", pkg.license);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
+	auto e = Path(
+		[ PathPlatform(UnprocessedPath("outDir"), [Platform.posix]) ]);
+	assert(pkg.targetPath == e, format("\nexp:\n%s\ngot:\n%s", e,
+				pkg.targetPath));
 
 	auto dep =
 		[ "semver" : Dependency("semver")

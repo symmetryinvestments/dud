@@ -117,7 +117,9 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 //
 
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
-	pls = aa.filter!(a => a.identifier() != "platfrom")
+	pls = aa
+		.tee!(a => { debug writeln(a.identifier()); })
+		.filter!(a => a.identifier() != "platform")
 		.tee!(a => enforce(a.value.value.type == ValueType.str,
 			format("platfrom must be string not a '%s' at %s:%s",
 				a.value.value.type, a.value.line, a.value.column)
@@ -142,7 +144,7 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
 	value.strs.each!(s =>
-		formatIndent(o, indent, "%s %(platfrom=\"%s\", %)\n", key, s.str,
+		formatIndent(o, indent, "%s %(platform=\"%s\", %)\n", key, s.str,
 			s.platforms)
 	);
 }

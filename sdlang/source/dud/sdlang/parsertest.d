@@ -433,3 +433,25 @@ postBuildCommands "copy myxll32.dll myxll32.xll"
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+name "pkgdescription"
+dependency "semver" path="../semver"
+dependency "path" path="../path"
+dependency "sdlang" path="../sdlang"
+dependency "graphqld" version=">=1.0.0" default=true optional=false
+targetType "library"
+targetPath "outDir" platform="posix"
+importPaths "source" "source1" "source2"
+license "LGPL3"
+version "1.0.0"
+configuration "test" {
+	platforms "NotWindows"
+	libs "libc"
+}
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}
