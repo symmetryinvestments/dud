@@ -32,7 +32,7 @@ enum TargetType {
 */
 struct PackageDescription {
 	@JSON!(jGetString, stringToJ)("")
-	@SDL!(sGetString, stringToS)("")
+	@SDL!(sGetString, stringToSName)("")
 	string name; /// Qualified name of the package
 
 	@JSON!(jGetSemVer, semVerToJ)("version")
@@ -183,9 +183,8 @@ struct PackageDescription {
 	@SDL!(sGetBuildRequirements, buildRequirementsToS)("")
 	BuildRequirement[] buildRequirements;
 
-	//@SDLName("subConfiguration")
 	@JSON!(jGetStringAA, stringAAToJ)("")
-	@SDL!(sGetSubConfig, subConfigsToS)("")
+	@SDL!(sGetSubConfig, subConfigsToS)("subConfiguration")
 	string[string] subConfigurations;
 
 	@JSON!(jGetString, stringToJ)()

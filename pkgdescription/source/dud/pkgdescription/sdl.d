@@ -18,13 +18,9 @@ import dud.sdlang;
 @safe pure:
 
 PackageDescription sdlToPackageDescription(string sdl) @safe {
-	debug writeln("Lex");
 	auto lex = Lexer(sdl);
-	debug writeln("Parser");
 	auto parser = Parser(lex);
-	debug writeln("Parse");
 	Root jv = parser.parseRoot();
-	debug writeln("toPkg");
 	PackageDescription ret;
 	sGetPackageDescription(tags(jv), "dub.sdl", ret);
 	return ret;
@@ -122,6 +118,14 @@ void sGetString(ValueRange v, string key, ref string ret) {
 	v.popFront();
 	enforce(v.empty, "ValueRange was expected to be empty");
 	ret = f.get!string();
+}
+
+void stringToSName(Out)(auto ref Out o, string key, string value,
+		const size_t indent)
+{
+	if(!value.empty && indent == 0) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, value);
+	}
 }
 
 void stringToS(Out)(auto ref Out o, string key, string value,

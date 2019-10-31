@@ -30,7 +30,7 @@
 		, "dflags" : ["-unittest", "-main"]
 		}
 		, { "name" : "unittest"
-		, "dflags" : ["-unittest"]
+		, "dflags" : ["-unittest", "-debug", "-g"]
 		}
 	]
 }

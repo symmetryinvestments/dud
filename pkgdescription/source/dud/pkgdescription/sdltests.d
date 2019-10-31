@@ -11,10 +11,9 @@ import dud.pkgdescription : PackageDescription, TargetType, Dependency;
 import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
+import dud.semver : SemVer;
 
 unittest {
-	import dud.semver : SemVer;
-
 	string input = `
 name "pkgdescription"
 dependency "semver" path="../semver"
@@ -59,7 +58,19 @@ configuration "test" {
 		pkg.dependencies, dep));
 
 	string output = toSDL(pkg);
+	writeln(output);
 	assert(!output.empty);
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string input = `
+configuration "default"
+
+configuration "testing" {
+}
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(input);
 }

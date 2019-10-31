@@ -36,7 +36,9 @@ alias ValueAccessor = AstAccessor!(Values, Token);
 alias AttributeAccessor = AstAccessor!(Attributes, Attribute);
 
 TagAccessor tags(Root root) {
-	return TagAccessor(root.tags);
+	return root is null
+		? TagAccessor(null)
+		: TagAccessor(root.tags);
 }
 
 TagAccessor tags(Tags t) {
@@ -44,11 +46,15 @@ TagAccessor tags(Tags t) {
 }
 
 TagAccessor tags(OptChild child) {
-	return TagAccessor(child.tags);
+	return child is null
+		? TagAccessor(null)
+		: TagAccessor(child.tags);
 }
 
 IDAccessor key(Tag tag) {
-	return IDAccessor(tag.id);
+	return tag is null
+		? IDAccessor(null)
+		: IDAccessor(tag.id);
 }
 
 AttributeAccessor attributes(Tag tag) {
