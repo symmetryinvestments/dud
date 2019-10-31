@@ -9,7 +9,6 @@ import std.json;
 import std.typecons : Nullable;
 import std.stdio;
 
-import dud.path;
 import dud.semver;
 import dud.pkgdescription;
 import dud.pkgdescription.versionspecifier;

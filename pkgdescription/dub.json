@@ -1,9 +1,5 @@
 {
 	"dependencies": {
-		"path": {
-			"path": "../path",
-			"version": ">=0.0.0"
-		},
 		"testdata": {
 			"path": "../testdata",
 			"version": ">=0.0.0"

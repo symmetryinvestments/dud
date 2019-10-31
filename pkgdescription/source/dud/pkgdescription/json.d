@@ -8,12 +8,12 @@ import std.json;
 import std.format : format, formattedWrite;
 import std.exception : enforce;
 import std.typecons : nullable, Nullable;
+import std.string : indexOf;
 
 import dud.pkgdescription;
 import dud.pkgdescription.udas;
 import dud.pkgdescription.versionspecifier;
 import dud.semver : SemVer;
-import dud.path : Path, AbsoluteNativePath;
 
 @safe pure:
 
@@ -29,6 +29,13 @@ PackageDescription jsonToPackageDescription(string js) {
 //
 // Platform
 //
+
+Platform[] keyToPlatform(string key) {
+	auto s = key.splitter('-');
+	enforce(!s.empty, format("'%s' is an invalid string", key));
+	s.popFront();
+	return toPlatform(s);
+}
 
 Platform[] toPlatform(In)(ref In input) {
 	return input
@@ -102,11 +109,7 @@ void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
 
 	StringPlatform ret;
 	ret.str = jv.str();
-
-	auto s = key.splitter('-');
-	enforce(!s.empty, format("'%s' is an invalid string", jv.str()));
-	s.popFront();
-	ret.platforms = toPlatform(s);
+	ret.platforms = keyToPlatform(key);
 
 	output.strs ~= ret;
 }
@@ -137,27 +140,50 @@ JSONValue stringsToJ(string[] ss) {
 // path
 //
 
-Path jGetPath(ref JSONValue jv) {
-	string s = jGetString(jv);
-	return Path(s);
+void jGetPath(ref JSONValue jv, string key, ref Path output) {
+	enforce(jv.type == JSONType.string,
+			format("Expected a string not a %s", jv.type));
+
+	PathPlatform ret;
+	ret.path = UnprocessedPath(jv.str());
+	ret.platforms = keyToPlatform(key);
+	output.platforms ~= ret;
 }
 
-JSONValue pathToJ(Path s) {
-	return s.path.empty ? JSONValue.init : JSONValue(s.path);
+void pathToJ(Path s, string key, ref JSONValue output) {
+	enforce(output.type == JSONType.object,
+		format("Expected an JSONValue of type object not '%s'", output.type));
+
+	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
+			JSONValue(it.path.path));
 }
 
 //
 // paths
 //
 
-Path[] jGetPaths(ref JSONValue jv) {
+void jGetPaths(ref JSONValue jv, string key, ref Paths output) {
 	enforce(jv.type == JSONType.array,
 			format("Expected an array not a %s", jv.type));
-	return jv.arrayNoRef().map!(it => jGetPath(it)).array;
+
+	PathsPlatform tmp;
+	tmp.platforms = keyToPlatform(key);
+	tmp.paths = jv.arrayNoRef()
+		.map!(j => j.str())
+		.map!(s => UnprocessedPath(s)).array;
+
+	output.platforms ~= tmp;
 }
 
-JSONValue pathsToJ(Path[] ss) {
-	return ss.empty ? JSONValue.init : JSONValue(ss.map!(it => it.path).array);
+void pathsToJ(Paths ss, string key, ref JSONValue output) {
+	enforce(output.type == JSONType.object,
+		format("Expected an JSONValue of type object not '%s'", output.type));
+
+	ss.platforms
+		.each!(pp =>
+				output[platformKeyToS(key, pp.platforms)]
+					= JSONValue(pp.paths.map!(p => p.path).array)
+		);
 }
 
 //
@@ -206,12 +232,14 @@ Dependency[string] jGetDependencies(ref JSONValue jv) {
 
 		Dependency ret;
 		foreach(key, value; jv.objectNoRef()) {
-			switch(key) {
+			ptrdiff_t dash = key.indexOf('-');
+			string noPlatform = dash == -1 ? key : key[0 .. dash];
+			switch(noPlatform) {
 				case "version":
 					ret.version_ = parseVersionSpecifier(jGetString(value));
 					break;
 				case "path":
-					ret.path = jGetPath(value);
+					ret.path.path = jGetString(value);
 					break;
 				case "optional":
 					ret.optional = nullable(jGetBool(value));
@@ -263,7 +291,7 @@ JSONValue dependencyToJ(Dependency dep) {
 
 	bool isShortFrom(const Dependency d) pure {
 		return !d.version_.isNull()
-			&& d.path.isNull()
+			&& d.path.path.empty
 			&& d.optional.isNull()
 			&& d.default_.isNull();
 	}
@@ -282,13 +310,10 @@ JSONValue dependencyToJ(Dependency dep) {
 			if(!nvs.isNull()) {
 				ret[Mem] = nvs.get().orig;
 			}
-		}} else static if(is(MemType == Nullable!Path)) {{
-			Nullable!Path p = __traits(getMember, dep, mem);
-			if(!p.isNull()) {
-				string ps = p.get().path;
-				if(!ps.empty) {
-					ret[Mem] = ps;
-				}
+		}} else static if(is(MemType == UnprocessedPath)) {{
+			UnprocessedPath p = __traits(getMember, dep, mem);
+			if(!p.path.empty) {
+				ret[Mem] = p.path;
 			}
 		}} else static if(is(MemType == Nullable!bool)) {{
 			Nullable!bool b = __traits(getMember, dep, mem);
@@ -327,11 +352,12 @@ PackageDescription[] jGetPackageDescriptions(JSONValue js) {
 
 template isPlatfromDependend(T) {
 	enum isPlatfromDependend =
-		is(T == String);
+		is(T == String)
+		|| is(T == Path)
+		|| is(T == Paths);
 }
 
 PackageDescription jGetPackageDescription(JSONValue js) {
-	import std.string : indexOf;
 	enforce(js.type == JSONType.object, "Expected and object");
 
 	PackageDescription ret;
@@ -406,7 +432,7 @@ JSONValue packageDescriptionsToJ(PackageDescription[] pkgs) {
 
 SubPackage jGetSubpackageStr(ref JSONValue jv) {
 	SubPackage ret;
-	ret.path = jGetPath(jv);
+	jGetPath(jv, "", ret.path);
 	return ret;
 }
 

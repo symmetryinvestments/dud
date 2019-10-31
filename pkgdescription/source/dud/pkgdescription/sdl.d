@@ -11,7 +11,6 @@ import std.stdio;
 
 import dud.pkgdescription;
 import dud.semver : SemVer;
-import dud.path : Path, AbsoluteNativePath;
 import dud.pkgdescription.udas;
 
 import dud.sdlang;
@@ -278,42 +277,67 @@ void subConfigsToS(Out)(auto ref Out o, string key,
 	}
 }
 
-void sGetPaths(Tag t, string key, ref Path[] ret) {
-	sGetPaths(t.values(), key, ret);
-}
+//
+// paths
+//
 
-void sGetPaths(ValueRange v, string key, ref Path[] p) {
+void sGetPaths(Tag t, string key, ref Paths ret) {
+	auto v = t.values();
 	enforce(!v.empty, "Can not get element of empty range");
-	v.map!(it => it.get!string()).each!(s => p ~= Path(s));
+	PathsPlatform pp;
+	pp.paths = v.map!(it => it.get!string())
+		.map!(s => UnprocessedPath(s))
+		.array;
+	sGetPlatform(t.attributes(), pp.platforms);
+	ret.platforms ~= pp;
 }
 
-void pathsToS(Out)(auto ref Out o, string key, Path[] ps,
+/*void sGetPaths(ValueRange v, string key, ref Paths p) {
+	enforce(!v.empty, "Can not get element of empty range");
+	PathsPlatform pp;
+	pp.paths = v.map!(it => it.get!string())
+		.map!(s => UnprocessedPath(s))
+		.array;
+	pp.platforms = sGetPlatform(
+}*/
+
+void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 		const size_t indent)
 {
-	if(!ps.empty) {
-		formatIndent(o, indent, "%s %(%s %)\n", key,
-			ps.map!(it => it.path));
-	}
+	ps.platforms.each!(p =>
+		formatIndent(o, indent, "%s %(%s %) %(platform=\"%s\", %)\n",
+			key, p.paths.map!(it => it.path), p.platforms)
+	);
 }
+
+//
+// path
+//
 
 void sGetPath(Tag t, string key, ref Path ret) {
-	sGetPath(t.values(), key, ret);
-}
-
-void sGetPath(ValueRange v, string key, ref Path p) {
-	string s;
-	sGetString(v, key, s);
-	p = Path(s);
+	auto v = t.values();
+	enforce(!v.empty, "Can not get element of empty range");
+	string s = v.front.get!string();
+	v.popFront();
+	enforce(v.empty, "Expected one path not several");
+	PathPlatform pp;
+	pp.path = UnprocessedPath(s);
+	sGetPlatform(t.attributes(), pp.platforms);
+	ret.platforms ~= pp;
 }
 
 void pathToS(Out)(auto ref Out o, string key, Path p,
 		const size_t indent)
 {
-	string s = p.path;
-	if(!s.empty) {
-		formatIndent(o, indent, "%s \"%s\"\n", key, s);
-	}
+	p.platforms.each!(plt =>
+		formatIndent(o, indent, "%s \"%s\" %(platform=\"%s\", %)\n", key,
+			plt.path.path, plt.platforms)
+	);
 }
+
+//
+// PackageDescription
+//
 
 void sGetPackageDescriptions(Tag t, string key,
 		ref PackageDescription[] ret) @safe
@@ -333,9 +357,10 @@ void sGetSubPackage(Tag t, string key, ref SubPackage[] ret) {
 	ValueRange vr = t.values();
 	SubPackage tmp;
 	if(!vr.empty) {
-		tmp.path = nullable(Path(vr.front.get!string()));
-		vr.popFront();
-		enforce(vr.empty, "Unexpected second SubPackage path");
+		sGetPath(t, key, tmp.path);
+		//tmp.path = nullable(Path(vr.front.get!string()));
+		//vr.popFront();
+		//enforce(vr.empty, "Unexpected second SubPackage path");
 	} else {
 		PackageDescription iTmp;
 		sGetPackageDescription(tags(t.oc), key, iTmp);
@@ -348,11 +373,13 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 		const size_t indent)
 {
 	foreach(sp; sps) {
-		if(!sp.path.isNull()) {
-			formatIndent(o, indent, "subPackage \"%s\"\n",
-				sp.path.get());
+		if(!sp.path.platforms.empty) {
+		sp.path.platforms.each!(p =>
+			formatIndent(o, indent, "subPackage \"%s\" %(platform=\"%s\", %)\n",
+				p.path.path, p.platforms)
+		);
 		} else if(!sp.inlinePkg.isNull()) {
-			formatIndent(o, indent, "subPackage \"%s\" {\n");
+			formatIndent(o, indent, "subPackage {\n");
 			packageDescriptionToS(o, "SubPackage", sp.inlinePkg.get(),
 					indent + 1);
 			formatIndent(o, indent, "}\n");
@@ -385,7 +412,7 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 					.parseVersionSpecifier;
 				break;
 			case "path":
-				ret.path = Path(it.value.value.get!string());
+				ret.path = UnprocessedPath(it.value.value.get!string());
 				break;
 			case "optional":
 				ret.optional = it
@@ -416,20 +443,16 @@ void dependenciesToS(Out)(auto ref Out o, string key, Dependency[string] deps,
 	foreach(key, value; deps) {
 		formatIndent(o, indent, "dependency \"%s\"", key);
 		if(!value.version_.isNull()) {
-			formattedWrite(o, " version=\"%s\"",
-					value.version_.get().orig);
+			formattedWrite(o, " version=\"%s\"", value.version_.get().orig);
 		}
-		if(!value.path.isNull()) {
-			formattedWrite(o, " path=\"%s\"",
-					value.path.get().path);
+		if(!value.path.path.empty) {
+			formattedWrite(o, " path=\"%s\"", value.path.path);
 		}
 		if(!value.default_.isNull()) {
-			formattedWrite(o, " default=%s",
-					value.default_.get());
+			formattedWrite(o, " default=%s", value.default_.get());
 		}
 		if(!value.optional.isNull()) {
-			formattedWrite(o, " optional=%s",
-					value.optional.get());
+			formattedWrite(o, " optional=%s", value.optional.get());
 		}
 		formattedWrite(o, "\n");
 	}

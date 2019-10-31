@@ -2,12 +2,14 @@ module dud.pkgdescription;
 
 import std.typecons : Nullable;
 
-import dud.path;
+public import dud.pkgdescription.path;
+public import dud.pkgdescription.versionspecifier;
+public import dud.pkgdescription.udas;
+public import dud.pkgdescription.json;
+public import dud.pkgdescription.sdl;
+public import dud.pkgdescription.platform;
+
 import dud.semver;
-import dud.pkgdescription.versionspecifier;
-import dud.pkgdescription.udas;
-import dud.pkgdescription.json;
-import dud.pkgdescription.sdl;
 
 @safe pure:
 
@@ -101,11 +103,11 @@ struct PackageDescription {
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] copyFiles; /// Files to copy to the target directory
+	Paths copyFiles; /// Files to copy to the target directory
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] extraDependencyFiles; /// Files to check for rebuild dub project
+	Paths extraDependencyFiles; /// Files to check for rebuild dub project
 
 	@JSON!(jGetStrings, stringsToJ)("")
 	@SDL!(sGetStrings, stringsToS)("")
@@ -117,23 +119,23 @@ struct PackageDescription {
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] importPaths;
+	Paths importPaths;
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] sourcePaths;
+	Paths sourcePaths;
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] sourceFiles;
+	Paths sourceFiles;
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] excludedSourceFiles;
+	Paths excludedSourceFiles;
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
-	Path[] stringImportPaths;
+	Paths stringImportPaths;
 
 	@JSON!(jGetStrings, stringsToJ)("")
 	@SDL!(sGetStrings, stringsToS)("")
@@ -175,9 +177,9 @@ struct PackageDescription {
 	@SDL!(sGetStrings, stringsToS)("x:debugVersionFilters")
 	string[] debugVersionFilters;
 
-	@JSON!(jGetString, stringToJ)("")
-	@SDL!(sGetString, stringToS)("x:ddoxTool")
-	string ddoxTool;
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@SDL!(sGetStringPlatform, stringPlatformToS)("x:ddoxTool")
+	String ddoxTool;
 
 	@JSON!(jGetSubPackages, subPackagesToJ)("")
 	@SDL!(sGetSubPackage, subPackagesToS)("subPackage")
@@ -191,9 +193,9 @@ struct PackageDescription {
 	@SDL!(sGetSubConfig, subConfigsToS)("subConfiguration")
 	string[string] subConfigurations;
 
-	@JSON!(jGetString, stringToJ)()
-	@SDL!(sGetString, stringToS)("x:versionFilters")
-	string versionFilters;
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@SDL!(sGetStringPlatform, stringPlatformToS)("x:versionFilters")
+	String versionFilters;
 }
 
 enum BuildRequirement {
@@ -210,7 +212,7 @@ enum BuildRequirement {
 }
 
 struct SubPackage {
-	Nullable!Path path;
+	Path path;
 	Nullable!PackageDescription inlinePkg;
 }
 
@@ -218,118 +220,9 @@ struct Dependency {
 	import std.typecons : Nullable;
 	string name;
 	Nullable!VersionSpecifier version_;
-	Nullable!Path path;
+	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
-}
-
-enum Platform {
-	all,
-	gnu,
-	dmd,
-	ldc,
-	sdc,
-	windows,
-	win32,
-	win64,
-	linux,
-	osx,
-	freebsd,
-	openbsd,
-	netbsd,
-	dragonflybsd,
-	bsd,
-	solaris,
-	posix,
-	aix,
-	haiku,
-	skyos,
-	sysv3,
-	sysv4,
-	hurd,
-	android,
-	emscripten,
-	playstation,
-	playstation4,
-	cygwin,
-	mingw,
-	freestanding,
-	cruntime_bionic,
-	cruntime_digitalmars,
-	cruntime_glibc,
-	cruntime_microsoft,
-	cruntime_musl,
-	cruntime_uclibc,
-	x86,
-	x86_64,
-	arm,
-	arm_thumb,
-	arm_softfloat,
-	arm_softfp,
-	arm_hardfloat,
-	aarch64,
-	asmjs,
-	epiphany,
-	ppc,
-	ppc_softfloat,
-	ppc_hardfloat,
-	ppc64,
-	ia64,
-	mips32,
-	mips64,
-	mips_o32,
-	mips_n32,
-	mips_o64,
-	mips_n64,
-	mips_eabi,
-	mips_softfloat,
-	mips_hardfloat,
-	nvptx,
-	nvptx64,
-	riscv32,
-	riscv64,
-	sparc,
-	sparc_v8plus,
-	sparc_softfloat,
-	sparc_hardfloat,
-	sparc64,
-	s390,
-	systemz,
-	hppa,
-	hppa64,
-	sh,
-	webassembly,
-	alpha,
-	alpha_softfloat,
-	alpha_hardfloat,
-	littleendian,
-	bigendian,
-	elfv1,
-	elfv2,
-	d_betterc,
-	d_exceptions,
-	d_moduleinfo,
-	d_typeinfo,
-	d_coverage,
-	d_ddoc,
-	d_inlineasm_x86,
-	d_inlineasm_x86_64,
-	d_lp64,
-	d_x32,
-	d_hardfloat,
-	d_softfloat,
-	d_pic,
-	d_simd,
-	d_avx,
-	d_avx2,
-	d_version2,
-	d_noboundschecks,
-	d_objectivec,
-	core,
-	std,
-	unittest_,
-	assert_,
-	none
 }
 
 struct StringPlatform {
