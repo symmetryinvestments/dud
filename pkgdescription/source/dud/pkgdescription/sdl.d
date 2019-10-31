@@ -116,10 +116,13 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 // Platform
 //
 
+void print(Attribute a) {
+	debug writeln(a.identifier());
+}
+
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	pls = aa
-		.tee!(a => { debug writeln(a.identifier()); })
-		.filter!(a => a.identifier() != "platform")
+		.filter!(a => a.identifier() == "platform")
 		.tee!(a => enforce(a.value.value.type == ValueType.str,
 			format("platfrom must be string not a '%s' at %s:%s",
 				a.value.value.type, a.value.line, a.value.column)
@@ -144,8 +147,8 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
 	value.strs.each!(s =>
-		formatIndent(o, indent, "%s %(platform=\"%s\", %)\n", key, s.str,
-			s.platforms)
+		formatIndent(o, indent, "%s %(platform=%s %)\n", key, s.str,
+			s.platforms.map!(p => to!string(p)))
 	);
 }
 
@@ -294,21 +297,13 @@ void sGetPaths(Tag t, string key, ref Paths ret) {
 	ret.platforms ~= pp;
 }
 
-/*void sGetPaths(ValueRange v, string key, ref Paths p) {
-	enforce(!v.empty, "Can not get element of empty range");
-	PathsPlatform pp;
-	pp.paths = v.map!(it => it.get!string())
-		.map!(s => UnprocessedPath(s))
-		.array;
-	pp.platforms = sGetPlatform(
-}*/
-
 void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 		const size_t indent)
 {
 	ps.platforms.each!(p =>
-		formatIndent(o, indent, "%s %(%s %) %(platform=\"%s\", %)\n",
-			key, p.paths.map!(it => it.path), p.platforms)
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s, %)\n",
+			key, p.paths.map!(it => it.path),
+			p.platforms.map!(it => to!string(it)))
 	);
 }
 
@@ -332,8 +327,8 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 		const size_t indent)
 {
 	p.platforms.each!(plt =>
-		formatIndent(o, indent, "%s \"%s\" %(platform=\"%s\", %)\n", key,
-			plt.path.path, plt.platforms)
+		formatIndent(o, indent, "%s \"%s\" %(platform=%s, %)\n", key,
+			plt.path.path, plt.platforms.map!(it => to!string(it)))
 	);
 }
 
@@ -377,8 +372,8 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 	foreach(sp; sps) {
 		if(!sp.path.platforms.empty) {
 		sp.path.platforms.each!(p =>
-			formatIndent(o, indent, "subPackage \"%s\" %(platform=\"%s\", %)\n",
-				p.path.path, p.platforms)
+			formatIndent(o, indent, "subPackage \"%s\" %(platform=%s, %)\n",
+				p.path.path, p.platforms.map!(it => to!string(it)))
 		);
 		} else if(!sp.inlinePkg.isNull()) {
 			formatIndent(o, indent, "subPackage {\n");
