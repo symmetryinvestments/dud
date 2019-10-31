@@ -1,11 +1,12 @@
 module dud.pkgdescription.sdl;
 
 import std.array : array, empty, front, appender, popFront;
-import std.algorithm.iteration : map, each;
+import std.algorithm.iteration : map, each, filter;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format, formattedWrite;
 import std.typecons : nullable, Nullable;
+import std.range : tee;
 import std.stdio;
 
 import dud.pkgdescription;
@@ -95,6 +96,10 @@ void configurationToS(Out)(auto ref Out o, string key,
 	formattedWrite(o, "}\n");
 }
 
+//
+// Output Helper
+//
+
 private void indent(Out)(auto ref Out o, const size_t indent) {
 	foreach(i; 0 .. indent) {
 		formattedWrite(o, "\t");
@@ -107,6 +112,45 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 	indent(o, i);
 	formattedWrite(o, str, args);
 }
+
+//
+// Platform
+//
+
+void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
+	pls = aa.filter!(a => a.identifier() != "platfrom")
+		.tee!(a => enforce(a.value.value.type == ValueType.str,
+			format("platfrom must be string not a '%s' at %s:%s",
+				a.value.value.type, a.value.line, a.value.column)
+		))
+		.map!(a => a.value.value.get!string())
+		.map!(s => to!Platform(s))
+		.array;
+}
+
+//
+// String, StringPlatform
+//
+
+void sGetStringPlatform(Tag t, string key, ref String ret) {
+	StringPlatform tmp;
+	sGetString(t.values(), key, tmp.str);
+	sGetPlatform(t.attributes(), tmp.platforms);
+	ret.strs ~= tmp;
+}
+
+void stringPlatformToS(Out)(auto ref Out o, string key, String value,
+		const size_t indent)
+{
+	value.strs.each!(s =>
+		formatIndent(o, indent, "%s %(platfrom=\"%s\", %)\n", key, s.str,
+			s.platforms)
+	);
+}
+
+//
+// string
+//
 
 void sGetString(Tag t, string key, ref string ret) {
 	sGetString(t.values(), key, ret);

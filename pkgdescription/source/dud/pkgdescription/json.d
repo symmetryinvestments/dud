@@ -1,10 +1,11 @@
 module dud.pkgdescription.json;
 
-import std.array : array, empty;
-import std.algorithm.iteration : map, each;
+import std.array : array, empty, front, popFront, appender;
+import std.algorithm.iteration : map, each, joiner, splitter;
+import std.algorithm.mutation : copy;
 import std.conv : to;
 import std.json;
-import std.format : format;
+import std.format : format, formattedWrite;
 import std.exception : enforce;
 import std.typecons : nullable, Nullable;
 
@@ -16,10 +17,57 @@ import dud.path : Path, AbsoluteNativePath;
 
 @safe pure:
 
+//
+// PackageDescription
+//
+
 PackageDescription jsonToPackageDescription(string js) {
 	JSONValue jv = parseJSON(js);
 	return jGetPackageDescription(jv);
 }
+
+//
+// Platform
+//
+
+Platform[] toPlatform(In)(ref In input) {
+	return input
+		.map!(it => it == "unittest"
+				? "unittest_"
+				: it == "assert"
+					? "assert_"
+					: it
+		)
+		.map!(it => to!Platform(it))
+		.array;
+}
+
+void platformToS(Out)(auto ref Out o, Platform[] p) {
+	p
+		.map!(it => it == Platform.unittest_
+				? "unittest"
+				: it == Platform.assert_
+					? "assert"
+					: to!string(it)
+		)
+		.map!(s => to!string(s))
+		.joiner("-")
+		.copy(o);
+}
+
+string platformKeyToS(string key, Platform[] p) {
+	auto app = appender!string();
+	formattedWrite(app, "%s", key);
+	if(!p.empty) {
+		app.put('-');
+		platformToS(app, p);
+	}
+	return app.data;
+}
+
+//
+// SemVer
+//
 
 JSONValue semVerToJ(SemVer v) {
 	return JSONValue(v.toString());
@@ -29,6 +77,10 @@ SemVer jGetSemVer(ref JSONValue jv) {
 	string s = jGetString(jv);
 	return SemVer(s);
 }
+
+//
+// string
+//
 
 string jGetString(ref JSONValue jv) {
 	enforce(jv.type == JSONType.string,
@@ -40,14 +92,36 @@ JSONValue stringToJ(string s) {
 	return s.empty ? JSONValue.init : JSONValue(s);
 }
 
-Path jGetPath(ref JSONValue jv) {
-	string s = jGetString(jv);
-	return Path(s);
+//
+// String, StringPlatform
+//
+
+void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
+	enforce(jv.type == JSONType.string,
+			format("Expected a string not a %s", jv.type));
+
+	StringPlatform ret;
+	ret.str = jv.str();
+
+	auto s = key.splitter('-');
+	enforce(!s.empty, format("'%s' is an invalid string", jv.str()));
+	s.popFront();
+	ret.platforms = toPlatform(s);
+
+	output.strs ~= ret;
 }
 
-JSONValue pathToJ(Path s) {
-	return s.path.empty ? JSONValue.init : JSONValue(s.path);
+void stringPlatformToJ(String s, string key, ref JSONValue output) {
+	enforce(output.type == JSONType.object,
+		format("Expected an JSONValue of type object not '%s'", output.type));
+
+	s.strs.each!(it => output[platformKeyToS(key, it.platforms)] =
+			JSONValue(it.str));
 }
+
+//
+// strings
+//
 
 string[] jGetStrings(ref JSONValue jv) {
 	enforce(jv.type == JSONType.array,
@@ -59,6 +133,23 @@ JSONValue stringsToJ(string[] ss) {
 	return ss.empty ? JSONValue.init : JSONValue(ss);
 }
 
+//
+// path
+//
+
+Path jGetPath(ref JSONValue jv) {
+	string s = jGetString(jv);
+	return Path(s);
+}
+
+JSONValue pathToJ(Path s) {
+	return s.path.empty ? JSONValue.init : JSONValue(s.path);
+}
+
+//
+// paths
+//
+
 Path[] jGetPaths(ref JSONValue jv) {
 	enforce(jv.type == JSONType.array,
 			format("Expected an array not a %s", jv.type));
@@ -69,11 +160,19 @@ JSONValue pathsToJ(Path[] ss) {
 	return ss.empty ? JSONValue.init : JSONValue(ss.map!(it => it.path).array);
 }
 
+//
+// bool
+//
+
 bool jGetBool(ref JSONValue jv) {
 	enforce(jv.type == JSONType.true_ || jv.type == JSONType.false_,
 			format("Expected a boolean not a %s", jv.type));
 	return jv.boolean();
 }
+
+//
+// Dependency
+//
 
 Dependency[string] jGetDependencies(ref JSONValue jv) {
 	void insert(ref Dependency[string] ret, Dependency nd) pure {
@@ -203,6 +302,10 @@ JSONValue dependencyToJ(Dependency dep) {
 	return ret;
 }
 
+//
+// TargetType
+//
+
 TargetType jGetTargetType(ref JSONValue jv) {
 	import std.conv : to;
 	string s = jGetString(jv);
@@ -213,28 +316,46 @@ JSONValue targetTypeToJ(TargetType t) {
 	return t == TargetType.autodetect ? JSONValue.init : JSONValue(to!string(t));
 }
 
+//
+// PackageDescription
+//
+
 PackageDescription[] jGetPackageDescriptions(JSONValue js) {
 	enforce(js.type == JSONType.array, "Expected and array");
 	return js.arrayNoRef().map!(it => jGetPackageDescription(it)).array;
 }
 
+template isPlatfromDependend(T) {
+	enum isPlatfromDependend =
+		is(T == String);
+}
+
 PackageDescription jGetPackageDescription(JSONValue js) {
+	import std.string : indexOf;
 	enforce(js.type == JSONType.object, "Expected and object");
 
 	PackageDescription ret;
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
-		sw: switch(key) {
+		ptrdiff_t dash = key.indexOf('-');
+		string noPlatform = dash == -1 ? key : key[0 .. dash];
+		sw: switch(noPlatform) {
 			try {
 				static foreach(mem; __traits(allMembers, PackageDescription)) {{
 					enum Mem = JSONName!mem;
 					alias get = JSONGet!mem;
+					alias MemType = typeof(__traits(getMember, ret, mem));
 					case Mem:
-						__traits(getMember, ret, mem) = get(value);
+						static if(isPlatfromDependend!MemType) {
+							get(value, key, __traits(getMember, ret, mem));
+						} else {
+							__traits(getMember, ret, mem) = get(value);
+						}
 						break sw;
 				}}
 				default:
-					enforce(false, format("key '%s' unknown", key));
+					enforce(false, format("noPlatfrom '%s' unknown from key %s",
+						noPlatform, key));
 					assert(false);
 			} catch(Exception e) {
 				string s = format("While parsing key '%s' an exception occured",
@@ -260,9 +381,13 @@ JSONValue packageDescriptionToJ(PackageDescription pkg) {
 				}
 			}
 		} else {
-			JSONValue tmp = put(__traits(getMember, pkg, mem));
-			if(tmp.type != JSONType.null_) {
-				ret[Mem] = tmp;
+			static if(isPlatfromDependend!MemType) {
+				put(__traits(getMember, pkg, mem), Mem, ret);
+			} else {
+				JSONValue tmp = put(__traits(getMember, pkg, mem));
+				if(tmp.type != JSONType.null_) {
+					ret[Mem] = tmp;
+				}
 			}
 		}
 	}}
@@ -274,6 +399,10 @@ JSONValue packageDescriptionsToJ(PackageDescription[] pkgs) {
 		? JSONValue.init
 		: JSONValue(pkgs.map!(it => packageDescriptionToJ(it)).array);
 }
+
+//
+// SubPackage
+//
 
 SubPackage jGetSubpackageStr(ref JSONValue jv) {
 	SubPackage ret;
@@ -306,6 +435,10 @@ JSONValue subPackagesToJ(SubPackage[] sp) {
 	return JSONValue.init;
 }
 
+//
+// BuildRequirement
+//
+
 BuildRequirement jGetBuildRequirement(ref JSONValue jv) {
 	string s = jGetString(jv);
 	return to!BuildRequirement(s);
@@ -320,6 +453,10 @@ BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
 JSONValue buildRequirementsToJ(BuildRequirement[] br) {
 	return JSONValue.init;
 }
+
+//
+// string[string]
+//
 
 string[string] jGetStringAA(ref JSONValue jv) {
 	enforce(jv.type == JSONType.object,

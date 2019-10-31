@@ -7,7 +7,7 @@ import std.format : format;
 
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
-import dud.pkgdescription : PackageDescription, TargetType;
+import dud.pkgdescription;
 
 unittest {
 	import dud.semver : SemVer;
@@ -52,4 +52,26 @@ unittest {
 	JSONValue o = parseJSON(toParse);
 	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n.toPrettyString()));
+}
+
+unittest {
+	import dud.semver : SemVer;
+	string toParse = `
+{
+	"authors": [
+		"Robert burner Schadek"
+	],
+	"copyright": "Copyright © 2019, Symmetry Investments",
+	"targetName-posix": "dudposix",
+	"targetName-windows": "dudwindows",
+}`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	assert(pkg.targetName.strs.length == 2);
+	String s = String(
+			[ StringPlatform("dudposix", [Platform.posix])
+			, StringPlatform("dudwindows", [Platform.windows])
+			]);
+	assert(pkg.targetName == s,
+		format("\ngot:\n%s\nexp:\n%s", pkg.targetName, s));
 }
