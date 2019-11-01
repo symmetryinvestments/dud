@@ -9,10 +9,10 @@ import std.format : format;
 
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
+import dud.semver : SemVer;
 import dud.pkgdescription;
 
 unittest {
-	import dud.semver : SemVer;
 	string toParse = `
 {
 	"authors": [
@@ -88,4 +88,57 @@ unittest {
 	JSONValue n = pkg.toJSON();
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+}
+
+unittest {
+	string toParse = `
+{
+	"dependencies" : {
+		"semver": { "path" : "../semver", "optional": false, "version" : ">=0.0.1" },
+		"path": { "path" : "../path", "default": true },
+	},
+	"dependencies-posix" : {
+		"pkgdescription": { "path" : "../../pkgdescription" },
+		"dmd": ">=2.80.0"
+	}
+}`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+
+	JSONValue n = pkg.toJSON();
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}
+
+unittest {
+	string toParse = `
+{
+	"postBuildCommands-windows" : [
+		"format C:",
+		"install linux"
+	],
+	"postBuildCommands-linux" : [
+		"echo \"You are good\""
+	]
+}`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+
+	JSONValue n = pkg.toJSON();
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
 }

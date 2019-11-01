@@ -81,7 +81,9 @@ string platformKeyToS(string key, Platform[] p) {
 //
 
 JSONValue semVerToJ(SemVer v) {
-	return JSONValue(v.toString());
+	return v.toString().empty
+		? JSONValue.init
+		: JSONValue(v.toString());
 }
 
 SemVer jGetSemVer(ref JSONValue jv) {
@@ -119,7 +121,7 @@ void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
 }
 
 void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object,
+	enforce(output.type == JSONType.object || output.type == JSONType.null_,
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
@@ -142,7 +144,7 @@ void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
 }
 
 void stringPlatformToJ(String s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object,
+	enforce(output.type == JSONType.object || output.type == JSONType.null_,
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	s.strs.each!(it => output[platformKeyToS(key, it.platforms)] =
@@ -178,7 +180,7 @@ void jGetPath(ref JSONValue jv, string key, ref Path output) {
 }
 
 void pathToJ(Path s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object,
+	enforce(output.type == JSONType.object || output.type == JSONType.null_,
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
@@ -203,7 +205,7 @@ void jGetPaths(ref JSONValue jv, string key, ref Paths output) {
 }
 
 void pathsToJ(Paths ss, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object,
+	enforce(output.type == JSONType.object || output.type == JSONType.null_,
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	ss.platforms
@@ -404,8 +406,6 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 					alias get = JSONGet!mem;
 					alias MemType = typeof(__traits(getMember, ret, mem));
 					case Mem:
-						pragma(msg, MemType);
-						pragma(msg, isPlatfromDependend!MemType);
 						static if(isPlatfromDependend!MemType) {
 							get(value, key, __traits(getMember, ret, mem));
 						} else {

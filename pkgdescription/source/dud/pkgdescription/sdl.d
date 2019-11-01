@@ -225,11 +225,11 @@ void stringsToS(Out)(auto ref Out o, string key, string[] values,
 // SemVer
 //
 
-void sGetSemVer(Tag t, string key, ref Nullable!SemVer ret) {
+void sGetSemVer(Tag t, string key, ref SemVer ret) {
 	sGetSemVer(t.values(), key, ret);
 }
 
-void sGetSemVer(ValueRange v, string key, ref Nullable!SemVer ver) @safe pure {
+void sGetSemVer(ValueRange v, string key, ref SemVer ver) @safe pure {
 	string s;
 	sGetString(v, "SemVer", s);
 	ver = nullable(SemVer(s));

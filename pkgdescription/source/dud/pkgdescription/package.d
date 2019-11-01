@@ -39,7 +39,7 @@ struct PackageDescription {
 
 	@JSON!(jGetSemVer, semVerToJ)("version")
 	@SDL!(sGetSemVer, semVerToS)("version")
-	Nullable!SemVer version_; /// Version of the package
+	SemVer version_; /// Version of the package
 
 	@JSON!(jGetString, stringToJ)("")
 	@SDL!(sGetString, stringToS)("")

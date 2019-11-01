@@ -88,3 +88,15 @@ configuration "testing" {
 
 	PackageDescription pkg = sdlToPackageDescription(input);
 }
+
+unittest {
+	string toParse = `
+	postBuildCommands "format C:" "install linux" platform="windows"
+	postBuildCommands "echo \"You are good\"" platform="linux"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+}

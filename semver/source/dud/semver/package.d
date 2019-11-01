@@ -42,7 +42,11 @@ struct SemVer {
 	*/
 	static SemVer fromString(string vers) { return SemVer(vers); }
 
-	bool opEquals(const SemVer oth) const { return opCmp(oth) == 0; }
+	bool opEquals(const SemVer oth) const {
+		return this.m_version == oth.m_version
+			? true
+			: opCmp(oth) == 0;
+	}
 
 	/// Tests if this represents a branch instead of a version.
 	@property bool isBranch() const { return m_version.length > 0 && m_version[0] == branchPrefix; }
@@ -94,7 +98,7 @@ struct SemVer {
 
 unittest {
 	import std.exception : assertNotThrown, assertThrown;
-	SemVer a; 
+	SemVer a;
 	SemVer b;
 
 	assertNotThrown(a = SemVer("1.0.0"), "Constructing SemVer('1.0.0') failed");
