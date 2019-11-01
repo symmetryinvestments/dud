@@ -1,6 +1,7 @@
 module dud.pkgdescription.jsontests;
 
 import std.array : front;
+import std.algorithm.searching : canFind;
 import std.conv : to;
 import std.json;
 import std.stdio;
@@ -45,15 +46,22 @@ unittest {
 		format("%s", pkg.targetPath));
 	assert(pkg.configurations.length == 1);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
-	assert("semver" in pkg.dependencies);
-	assert("path" in pkg.dependencies);
-	assert("pkgdescription" in pkg.dependencies);
-	assert("dmd" in pkg.dependencies);
+	assert(pkg.dependencies.canFind!(dep => dep.name == "semver"),
+			to!string(pkg.dependencies));
+	assert(pkg.dependencies.canFind!(dep => dep.name == "path"),
+			to!string(pkg.dependencies));
+	assert(pkg.dependencies.canFind!(dep => dep.name == "pkgdescription"),
+			to!string(pkg.dependencies));
+	assert(pkg.dependencies.canFind!(dep => dep.name == "dmd"),
+			to!string(pkg.dependencies));
 
 	JSONValue n = pkg.toJSON();
 	JSONValue o = parseJSON(toParse);
 	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
 }
 
 unittest {
@@ -76,4 +84,8 @@ unittest {
 			]);
 	assert(pkg.targetName == s,
 		format("\ngot:\n%s\nexp:\n%s", pkg.targetName, s));
+
+	JSONValue n = pkg.toJSON();
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
 }

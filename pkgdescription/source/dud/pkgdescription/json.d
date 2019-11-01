@@ -26,6 +26,10 @@ PackageDescription jsonToPackageDescription(string js) {
 	return jGetPackageDescription(jv);
 }
 
+PackageDescription jsonToPackageDescription(JSONValue jv) {
+	return jGetPackageDescription(jv);
+}
+
 //
 // Platform
 //
@@ -97,6 +101,29 @@ string jGetString(ref JSONValue jv) {
 
 JSONValue stringToJ(string s) {
 	return s.empty ? JSONValue.init : JSONValue(s);
+}
+
+//
+// Strings, StringsPlatform
+//
+
+void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
+	enforce(jv.type == JSONType.array,
+			format("Expected a array not a %s", jv.type));
+
+	StringsPlatform ret;
+	ret.strs = jGetStrings(jv);
+	ret.platforms = keyToPlatform(key);
+
+	output.platforms ~= ret;
+}
+
+void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
+	enforce(output.type == JSONType.object,
+		format("Expected an JSONValue of type object not '%s'", output.type));
+
+	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
+			JSONValue(it.strs));
 }
 
 //
@@ -200,13 +227,14 @@ bool jGetBool(ref JSONValue jv) {
 // Dependency
 //
 
-Dependency[string] jGetDependencies(ref JSONValue jv) {
+void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	void insert(ref Dependency[string] ret, Dependency nd) pure {
 		ret[nd.name] = nd;
 	}
 
-	Dependency depFromJSON(T)(ref T it) pure {
+	Dependency depFromJSON(T)(ref T it, Platform[] plts) pure {
 		Dependency t = extractDependency(it.value);
+		t.platforms = plts;
 		t.name = it.key;
 		return t;
 	}
@@ -232,9 +260,7 @@ Dependency[string] jGetDependencies(ref JSONValue jv) {
 
 		Dependency ret;
 		foreach(key, value; jv.objectNoRef()) {
-			ptrdiff_t dash = key.indexOf('-');
-			string noPlatform = dash == -1 ? key : key[0 .. dash];
-			switch(noPlatform) {
+			switch(key) {
 				case "version":
 					ret.version_ = parseVersionSpecifier(jGetString(value));
 					break;
@@ -270,20 +296,22 @@ Dependency[string] jGetDependencies(ref JSONValue jv) {
 			format("Expected an object not a %s while extracting dependencies",
 				jv.type));
 
-	Dependency[string] ret;
-	jv.objectNoRef()
+	const ptrdiff_t dash = key.indexOf('-');
+	const string noPlatform = dash == -1 ? key : key[0 .. dash];
+	Platform[] plts = keyToPlatform(key);
+	deps ~= jv.objectNoRef()
 		.byKeyValue()
-		.map!(it => depFromJSON(it))
-		.each!(it => insert(ret, it));
-	return ret;
+		.map!(it => depFromJSON(it, plts))
+		.array;
 }
 
-JSONValue dependenciesToJ(Dependency[string] deps) {
-	JSONValue ret;
-	foreach(key, value; deps) {
-		ret[key] = dependencyToJ(value);
+void dependenciesToJ(Dependency[] deps, string key, ref JSONValue jv) {
+	JSONValue[string][string] tmp;
+	deps.each!(dep => tmp[platformKeyToS(key, dep.platforms)][dep.name] =
+		dependencyToJ(dep));
+	foreach(key, value; tmp) {
+		jv[key] = JSONValue(value);
 	}
-	return ret;
 }
 
 JSONValue dependencyToJ(Dependency dep) {
@@ -320,6 +348,8 @@ JSONValue dependencyToJ(Dependency dep) {
 			if(!b.isNull()) {
 				ret[Mem] = b;
 			}
+		}} else static if(is(MemType == Platform[])) {{
+			// not handled here
 		}} else {
 			static assert(false, "Unhandeld case " ~ MemType.stringof);
 		}
@@ -353,6 +383,8 @@ PackageDescription[] jGetPackageDescriptions(JSONValue js) {
 template isPlatfromDependend(T) {
 	enum isPlatfromDependend =
 		is(T == String)
+		|| is(T == Strings)
+		|| is(T == Dependency[])
 		|| is(T == Path)
 		|| is(T == Paths);
 }
@@ -372,6 +404,8 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 					alias get = JSONGet!mem;
 					alias MemType = typeof(__traits(getMember, ret, mem));
 					case Mem:
+						pragma(msg, MemType);
+						pragma(msg, isPlatfromDependend!MemType);
 						static if(isPlatfromDependend!MemType) {
 							get(value, key, __traits(getMember, ret, mem));
 						} else {

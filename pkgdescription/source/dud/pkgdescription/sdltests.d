@@ -1,10 +1,12 @@
 module dud.pkgdescription.sdltests;
 
+import std.algorithm.sorting : sort;
 import std.array : empty;
 import std.conv;
 import std.typecons : nullable;
 import std.format : format;
 import std.stdio;
+import std.json;
 
 import dud.pkgdescription;
 import dud.pkgdescription.versionspecifier;
@@ -49,26 +51,31 @@ configuration "test" {
 				pkg.targetPath));
 
 	auto dep =
-		[ "semver" : Dependency("semver")
-		, "sdlang" : Dependency("sdlang")
-		, "graphqld" : Dependency("graphqld")
-		, "path" : Dependency("path")
+		[ Dependency("semver")
+		, Dependency("sdlang")
+		, Dependency("graphqld")
+		, Dependency("path")
 		];
-	dep["semver"].path = UnprocessedPath("../semver");
-	dep["path"].path = UnprocessedPath("../path");
-	dep["sdlang"].path = UnprocessedPath("../sdlang");
-	dep["graphqld"].version_ = parseVersionSpecifier(">=1.0.0");
-	dep["graphqld"].default_ = nullable(true);
-	dep["graphqld"].optional = nullable(false);
+	dep[0].path = UnprocessedPath("../semver");
+	dep[3].path = UnprocessedPath("../path");
+	dep[1].path = UnprocessedPath("../sdlang");
+	dep[2].version_ = parseVersionSpecifier(">=1.0.0");
+	dep[2].default_ = nullable(true);
+	dep[2].optional = nullable(false);
+	pkg.dependencies.sort!((a,b) => a.name < b.name);
+	dep.sort!((a,b) => a.name < b.name);
 
-	assert(pkg.dependencies == dep, format("\ngot:\n%s\nexp:\n%s",
+	assert(pkg.dependencies == dep, format("\ngot:\n%(\t%s\n%)\nexp:\n%(\t%s\n%)",
 		pkg.dependencies, dep));
 
 	string output = toSDL(pkg);
-	writeln(output);
 	assert(!output.empty);
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+	JSONValue j = toJSON(pkg);
+	PackageDescription fromJ = jsonToPackageDescription(j);
+	fromJ.dependencies.sort!((a,b) => a.name < b.name);
+	assert(fromJ == pkg, format("\nexp:\n%s\ngot:\n%s", pkg, fromJ));
 }
 
 unittest {

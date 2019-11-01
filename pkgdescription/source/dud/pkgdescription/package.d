@@ -63,7 +63,7 @@ struct PackageDescription {
 
 	@JSON!(jGetDependencies, dependenciesToJ)("")
 	@SDL!(sGetDependencies, dependenciesToS)("dependency")
-	Dependency[string] dependencies;
+	Dependency[] dependencies;
 
 	@JSON!(jGetTargetType, targetTypeToJ)("")
 	@SDL!(sGetTargetType, targetTypeToS)("")
@@ -77,29 +77,29 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("")
 	String targetName;
 
-	@JSON!(jGetString, stringToJ)("")
-	@SDL!(sGetString, stringToS)("")
-	string targetFileName;
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@SDL!(sGetStringPlatform, stringPlatformToS)("")
+	String targetFileName;
 
-	@JSON!(jGetString, stringToJ)("")
-	@SDL!(sGetString, stringToS)("")
-	string workingDirectory;
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@SDL!(sGetStringPlatform, stringPlatformToS)("")
+	String workingDirectory;
 
-	@JSON!(jGetString, stringToJ)("")
-	@SDL!(sGetString, stringToS)("")
-	string mainSourceFile;
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@SDL!(sGetStringPlatform, stringPlatformToS)("")
+	String mainSourceFile;
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] dflags; /// Flags passed to the D compiler
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings dflags; /// Flags passed to the D compiler
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] lflags; /// Flags passed to the linker
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings lflags; /// Flags passed to the linker
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] libs; /// Librariy names to link against (typically using "-l<name>")
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings libs; /// Librariy names to link against (typically using "-l<name>")
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
@@ -109,13 +109,13 @@ struct PackageDescription {
 	@SDL!(sGetPaths, pathsToS)("")
 	Paths extraDependencyFiles; /// Files to check for rebuild dub project
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] versions; /// D version identifiers to set
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings versions; /// D version identifiers to set
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] debugVersions; /// D debug version identifiers to set
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings debugVersions; /// D debug version identifiers to set
 
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
@@ -137,29 +137,29 @@ struct PackageDescription {
 	@SDL!(sGetPaths, pathsToS)("")
 	Paths stringImportPaths;
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] preGenerateCommands; /// commands executed before creating the description
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings preGenerateCommands; /// commands executed before creating the description
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] postGenerateCommands; /// commands executed after creating the description
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings postGenerateCommands; /// commands executed after creating the description
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] preBuildCommands; /// Commands to execute prior to every build
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings preBuildCommands; /// Commands to execute prior to every build
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] postBuildCommands; /// Commands to execute after every build
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings postBuildCommands; /// Commands to execute after every build
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] preRunCommands; /// Commands to execute prior to every run
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings preRunCommands; /// Commands to execute prior to every run
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] postRunCommands; /// Commands to execute after every run
+	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
+	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
+	Strings postRunCommands; /// Commands to execute after every run
 
 	@JSON!(jGetPackageDescriptions, packageDescriptionsToJ)("")
 	@SDL!(sGetPackageDescriptions, configurationsToS)("configuration")
@@ -223,6 +223,7 @@ struct Dependency {
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
+	Platform[] platforms;
 }
 
 struct StringPlatform {
@@ -232,4 +233,14 @@ struct StringPlatform {
 
 struct String {
 	StringPlatform[] strs;
+	string orig;
+}
+
+struct StringsPlatform {
+	string[] strs;
+	Platform[] platforms;
+}
+
+struct Strings {
+	StringsPlatform[] platforms;
 }
