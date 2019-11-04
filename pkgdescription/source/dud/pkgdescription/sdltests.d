@@ -91,6 +91,22 @@ configuration "testing" {
 
 unittest {
 	string toParse = `
+	subConfiguration "pkg1" "fast"
+	subConfiguration "pkg2" "slow"
+	subConfiguration "pkg3" "experimental" platform="posix"
+	workingDirectory "/root"
+	workingDirectory "C:" platform="windows"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
 	postBuildCommands "format C:" "install linux" platform="windows"
 	postBuildCommands "echo \"You are good\"" platform="linux"
 `;
@@ -99,4 +115,17 @@ unittest {
 	string output = toSDL(pkg);
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+	buildRequirements "allowWarnings" "disallowDeprecations"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }

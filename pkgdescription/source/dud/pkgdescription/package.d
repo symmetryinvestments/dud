@@ -181,9 +181,9 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("x:ddoxTool")
 	String ddoxTool;
 
-	@JSON!(jGetSubPackages, subPackagesToJ)("")
-	@SDL!(sGetSubPackage, subPackagesToS)("subPackage")
-	SubPackage[] subPackages;
+	@JSON!(jGetPaths, pathsToJ)("")
+	@SDL!(sGetPaths, pathsToS)("subPackage")
+	Paths subPackages;
 
 	@JSON!(jGetBuildRequirements, buildRequirementsToJ)("")
 	@SDL!(sGetBuildRequirements, buildRequirementsToS)("")
@@ -191,11 +191,16 @@ struct PackageDescription {
 
 	@JSON!(jGetStringAA, stringAAToJ)("")
 	@SDL!(sGetSubConfig, subConfigsToS)("subConfiguration")
-	string[string] subConfigurations;
+	SubConfigs subConfigurations;
 
 	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
 	@SDL!(sGetStringPlatform, stringPlatformToS)("x:versionFilters")
 	String versionFilters;
+}
+
+struct SubConfigs {
+	string[string][immutable(Platform[])] configs;
+	string[string] unspecifiedPlatform;
 }
 
 enum BuildRequirement {
@@ -211,10 +216,9 @@ enum BuildRequirement {
 	noDefaultFlags,
 }
 
-struct SubPackage {
-	Path path;
-	Nullable!PackageDescription inlinePkg;
-}
+/*struct SubPackage {
+	UnprocessedPath path;
+}*/
 
 struct Dependency {
 	import std.typecons : Nullable;
@@ -232,6 +236,7 @@ struct StringPlatform {
 }
 
 struct String {
+@safe pure:
 	StringPlatform[] strs;
 	string orig;
 }

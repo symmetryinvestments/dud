@@ -142,3 +142,34 @@ unittest {
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
 }
+
+unittest {
+	string toParse = `
+{
+	"subConfigurations" : {
+		"semver": "that",
+		"path": "this"
+	},
+
+	"subConfigurations-x86_64" : {
+		"another" : "crazyConfig"
+	},
+
+	"workingDirectory" : "/root",
+	"workingDirectory-windows" : "C:"
+
+}`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+
+	JSONValue n = pkg.toJSON();
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}

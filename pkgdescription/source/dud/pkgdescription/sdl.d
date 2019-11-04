@@ -121,6 +121,8 @@ void print(Attribute a) {
 }
 
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
+	import std.algorithm.sorting : sort;
+	import std.algorithm : uniq;
 	pls = aa
 		.filter!(a => a.identifier() == "platform")
 		.tee!(a => enforce(a.value.value.type == ValueType.str,
@@ -129,6 +131,9 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 		))
 		.map!(a => a.value.value.get!string())
 		.map!(s => to!Platform(s))
+		.array
+		.sort
+		.uniq
 		.array;
 }
 
@@ -167,7 +172,7 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
 	value.strs.each!(s =>
-		formatIndent(o, indent, "%s %(platform=%s %)\n", key, s.str,
+		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key, s.str,
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -279,35 +284,50 @@ void buildRequirementsToS(Out)(auto ref Out o, string key,
 		BuildRequirement[] ps, const size_t indent)
 {
 	if(!ps.empty) {
-		formatIndent(o, indent, "%s %(\"%s\", %)\n", key,
+		formatIndent(o, indent, "%s %(%s %)\n", key,
 			ps.map!(it => to!string(it)));
 	}
 }
 
-void sGetSubConfig(Tag t, string key, ref string[string] ret) {
-	sGetSubConfig(t.values(), key, ret);
-}
+void sGetSubConfig(Tag t, string key, ref SubConfigs ret) {
+	string[] s;
+	sGetStrings(t, key, s);
+	enforce(s.length == 2, format("Expected two strings not '%s'", s));
+	Platform[] plts;
+	sGetPlatform(t.attributes(), plts);
+	immutable(Platform[]) iPlts = plts.idup;
 
-void sGetSubConfig(ValueRange v, string key, ref string[string] ret) {
-	enforce(!v.empty, "Can not get a subconfig from an empty range");
-	string[] tmp;
-	sGetStrings(v, key, tmp);
-	enforce(tmp.length == 2, format(
-		"A SubConfiguration requires 2 strings not %s", tmp));
-	enforce(tmp[0] !in ret, format("SubConfiguration for %s is already present",
-		tmp[0]));
-	ret[tmp[0]] = tmp[1];
+	if(iPlts.empty) {
+		enforce(s[0] !in ret.unspecifiedPlatform, format(
+			"Subconfig for '%s' already specified", s[0]));
+		ret.unspecifiedPlatform[s[0]] = s[1];
+	} else {
+		string[string] tmp;
+		tmp[s[0]] = s[1];
+
+		enforce(iPlts !in ret.configs || s[0] !in ret.configs[iPlts],
+			format("Subconfig for '%s' already specified", s[0]));
+		ret.configs[iPlts] = tmp;
+	}
 }
 
 void subConfigsToS(Out)(auto ref Out o, string key,
-		string[string] scf, const size_t indent)
+		SubConfigs scf, const size_t indent)
 {
-	if(!scf.empty) {
-		foreach(key, value; scf) {
-			formatIndent(o, indent, "subConfiguration \"%s\" \"%s\"\n", key,
-				value);
-		}
-	}
+	scf.unspecifiedPlatform.byKeyValue()
+		.each!(sc =>
+			formatIndent(o, indent, "subConfiguration \"%s\" \"%s\"\n",
+				sc.key, sc.value)
+		);
+	scf.configs.byKeyValue()
+		.each!(plt =>
+				plt.value.byKeyValue().each!(sc =>
+					formatIndent(o, indent,
+						"subConfiguration \"%s\" \"%s\" %(platform=%s, %)\n",
+						sc.key, sc.value, plt.key.map!(it => to!string(it)))
+				)
+			);
+
 }
 
 //
@@ -376,42 +396,6 @@ void sGetPackageDescriptions(Tag t, string key,
 		format("Configuration names must not be changed in OptChild '%s' => '%s'",
 			n, tmp.name));
 	ret ~= tmp;
-}
-
-void sGetSubPackage(Tag t, string key, ref SubPackage[] ret) {
-	ValueRange vr = t.values();
-	SubPackage tmp;
-	if(!vr.empty) {
-		sGetPath(t, key, tmp.path);
-		//tmp.path = nullable(Path(vr.front.get!string()));
-		//vr.popFront();
-		//enforce(vr.empty, "Unexpected second SubPackage path");
-	} else {
-		PackageDescription iTmp;
-		sGetPackageDescription(tags(t.oc), key, iTmp);
-		tmp.inlinePkg = nullable(iTmp);
-	}
-	ret ~= tmp;
-}
-
-void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
-		const size_t indent)
-{
-	foreach(sp; sps) {
-		if(!sp.path.platforms.empty) {
-		sp.path.platforms.each!(p =>
-			formatIndent(o, indent, "subPackage \"%s\" %(platform=%s, %)\n",
-				p.path.path, p.platforms.map!(it => to!string(it)))
-		);
-		} else if(!sp.inlinePkg.isNull()) {
-			formatIndent(o, indent, "subPackage {\n");
-			packageDescriptionToS(o, "SubPackage", sp.inlinePkg.get(),
-					indent + 1);
-			formatIndent(o, indent, "}\n");
-		} else {
-			assert(false, "SubPackage without a path of inlinePkg");
-		}
-	}
 }
 
 void sGetDependencies(Tag t, string key, ref Dependency[] ret) {

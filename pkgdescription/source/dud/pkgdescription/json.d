@@ -42,6 +42,9 @@ Platform[] keyToPlatform(string key) {
 }
 
 Platform[] toPlatform(In)(ref In input) {
+	import std.algorithm.sorting : sort;
+	import std.algorithm : uniq;
+
 	return input
 		.map!(it => it == "unittest"
 				? "unittest_"
@@ -50,10 +53,13 @@ Platform[] toPlatform(In)(ref In input) {
 					: it
 		)
 		.map!(it => to!Platform(it))
+		.array
+		.sort
+		.uniq
 		.array;
 }
 
-void platformToS(Out)(auto ref Out o, Platform[] p) {
+void platformToS(Out)(auto ref Out o, const(Platform)[] p) {
 	p
 		.map!(it => it == Platform.unittest_
 				? "unittest"
@@ -66,7 +72,7 @@ void platformToS(Out)(auto ref Out o, Platform[] p) {
 		.copy(o);
 }
 
-string platformKeyToS(string key, Platform[] p) {
+string platformKeyToS(string key, const(Platform)[] p) {
 	auto app = appender!string();
 	formattedWrite(app, "%s", key);
 	if(!p.empty) {
@@ -388,6 +394,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Strings)
 		|| is(T == Dependency[])
 		|| is(T == Path)
+		|| is(T == SubConfigs)
 		|| is(T == Paths);
 }
 
@@ -461,41 +468,6 @@ JSONValue packageDescriptionsToJ(PackageDescription[] pkgs) {
 }
 
 //
-// SubPackage
-//
-
-SubPackage jGetSubpackageStr(ref JSONValue jv) {
-	SubPackage ret;
-	jGetPath(jv, "", ret.path);
-	return ret;
-}
-
-SubPackage jGetSubpackageObj(ref JSONValue jv) {
-	SubPackage ret;
-	ret.inlinePkg = jGetPackageDescription(jv);
-	return ret;
-}
-
-SubPackage jGetSubPackage(ref JSONValue jv) {
-	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
-			format("Expected an object or a string not a %s while extracting "
-				~ "a dependency", jv.type));
-	return jv.type == JSONType.object
-		? jGetSubpackageObj(jv)
-		: jGetSubpackageStr(jv);
-}
-
-SubPackage[] jGetSubPackages(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array,
-			format("Expected an array not a %s", jv.type));
-	return jv.arrayNoRef().map!(it => jGetSubPackage(it)).array;
-}
-
-JSONValue subPackagesToJ(SubPackage[] sp) {
-	return JSONValue.init;
-}
-
-//
 // BuildRequirement
 //
 
@@ -515,19 +487,45 @@ JSONValue buildRequirementsToJ(BuildRequirement[] br) {
 }
 
 //
-// string[string]
+// string[string][Platform[]]
 //
 
-string[string] jGetStringAA(ref JSONValue jv) {
+void jGetStringAA(ref JSONValue jv, string key, ref SubConfigs ret)
+{
 	enforce(jv.type == JSONType.object,
 			format("Expected an object not a %s", jv.type));
-	string[string] ret;
-	foreach(key, value; jv.objectNoRef()) {
-		ret[key] = value.str();
+	immutable(Platform[]) platforms = keyToPlatform(key);
+
+	string[string] tmp;
+	foreach(pkg, value; jv.objectNoRef()) {
+		if(platforms.empty) {
+			ret.unspecifiedPlatform[pkg] = value.str();
+		} else {
+			tmp[pkg] = value.str();
+		}
 	}
-	return ret;
+	if(!platforms.empty) {
+		ret.configs[platforms] = tmp;
+	}
 }
 
-JSONValue stringAAToJ(string[string] aa) {
-	return aa.empty ? JSONValue.init : JSONValue(aa);
+void stringAAToJ(SubConfigs aa, string key, ref JSONValue ret) {
+	JSONValue unspecific;
+	aa.unspecifiedPlatform.byKeyValue()
+		.each!(it => unspecific[it.key] = it.value);
+
+	if(!aa.unspecifiedPlatform.empty) {
+		ret["subConfigurations"] = unspecific;
+	}
+
+	foreach(plt, value; aa.configs) {
+		JSONValue tmp;
+		foreach(pkg, ver; value) {
+			tmp[pkg] =ver;
+		}
+		if(!value.empty) {
+			string k = platformKeyToS("subConfigurations", plt);
+			ret[k] = tmp;
+		}
+	}
 }
