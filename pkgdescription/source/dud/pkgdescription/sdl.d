@@ -1,6 +1,6 @@
 module dud.pkgdescription.sdl;
 
-import std.array : array, empty, front, appender, popFront;
+import std.array : array, back, empty, front, appender, popFront;
 import std.algorithm.iteration : map, each, filter;
 import std.conv : to;
 import std.exception : enforce;
@@ -116,10 +116,6 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 // Platform
 //
 
-void print(Attribute a) {
-	debug writeln(a.identifier());
-}
-
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	import std.algorithm.sorting : sort;
 	import std.algorithm : uniq;
@@ -196,7 +192,7 @@ void sGetString(ValueRange v, string key, ref string ret) {
 void stringToSName(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
-	if(!value.empty && indent == 0) {
+	if(!value.empty || indent == 0) {
 		formatIndent(o, indent, "%s \"%s\"\n", key, value);
 	}
 }
@@ -222,7 +218,45 @@ void stringsToS(Out)(auto ref Out o, string key, string[] values,
 		const size_t indent)
 {
 	if(!values.empty) {
-		formatIndent(o, indent, "%s %(%s-, %)\n", key, values);
+		formatIndent(o, indent, "%s %(%s %)\n", key, values);
+	}
+}
+
+//
+// SubPackage
+//
+
+void sGetSubPackage(Tag t, string key, ref SubPackage[] ret) {
+	ValueRange vr = t.values();
+	SubPackage tmp;
+	if(!vr.empty) {
+		sGetPath(t, key, tmp.path);
+	} else {
+		PackageDescription iTmp;
+		sGetPackageDescription(tags(t.oc), key, iTmp);
+		tmp.inlinePkg = nullable(iTmp);
+	}
+	ret ~= tmp;
+}
+
+void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
+		const size_t indent)
+{
+	foreach(sp; sps) {
+		if(!sp.path.platforms.empty) {
+			sp.path.platforms.each!(p =>
+					formatIndent(o, indent, "subPackage \"%s\"
+						%(platform=%s, %)\n",
+						p.path.path, p.platforms.map!(it => to!string(it)))
+					);
+		} else if(!sp.inlinePkg.isNull()) {
+			formatIndent(o, indent, "subPackage {\n");
+			packageDescriptionToS(o, "SubPackage", sp.inlinePkg.get(),
+					indent + 1);
+			formatIndent(o, indent, "}\n");
+		} else {
+			assert(false, "SubPackage without a path or inlinePkg");
+		}
 	}
 }
 
@@ -250,6 +284,60 @@ void semVerToS(Out)(auto ref Out o, string key, SemVer sv,
 }
 
 //
+// BuildOption
+//
+
+void sGetBuildOptions(Tag t, string key, ref BuildOptions ret) {
+	string[] s;
+	sGetStrings(t, key, s);
+	enforce(!s.empty, format("'%s' must not be empty", key));
+	BuildOption[] bos = s.map!(it => to!BuildOption(it)).array;
+
+	Platform[] plts;
+	sGetPlatform(t.attributes(), plts);
+	if(!plts.empty) {
+		immutable(Platform[]) iPlts = plts.idup;
+		ret.platforms[iPlts] = bos;
+	} else {
+		ret.unspecifiedPlatform = bos;
+	}
+}
+
+void buildOptionsToS(Out)(auto ref Out o, string key, BuildOptions bos,
+		const size_t indent)
+{
+	if(!bos.unspecifiedPlatform.empty) {
+		formatIndent(o, indent, "%s %(%s %)\n", key,
+				bos.unspecifiedPlatform.map!(bo => to!string(bo)));
+	}
+
+	foreach(plt, bo; bos.platforms) {
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s, %)\n", key,
+				bo.map!(bo => to!string(bo)),
+				plt.map!(p => to!string(p)));
+	}
+}
+
+/*
+void sGetTargetType(Tag t, string key, ref TargetType ret) {
+	sGetTargetType(t.values(), key, ret);
+}
+
+void sGetTargetType(ValueRange v, string key, ref TargetType p) {
+	string s;
+	sGetString(v, "TargetType", s);
+	p = to!TargetType(s);
+}
+
+void targetTypeToS(Out)(auto ref Out o, string key, TargetType p,
+		const size_t indent)
+{
+	if(p != TargetType.autodetect) {
+		formatIndent(o, indent, "%s \"%s\"\n", key, p);
+	}
+}*/
+
+//
 // TargetType
 //
 
@@ -270,6 +358,10 @@ void targetTypeToS(Out)(auto ref Out o, string key, TargetType p,
 		formatIndent(o, indent, "%s \"%s\"\n", key, p);
 	}
 }
+
+//
+// BuildRequirements
+//
 
 void sGetBuildRequirements(Tag t, string key, ref BuildRequirement[] ret) {
 	sGetBuildRequirements(t.values(), key, ret);
@@ -336,7 +428,7 @@ void subConfigsToS(Out)(auto ref Out o, string key,
 
 void sGetPaths(Tag t, string key, ref Paths ret) {
 	auto v = t.values();
-	enforce(!v.empty, "Can not get element of empty range");
+	enforce(!v.empty, format("Can not get element of empty range for '%s'", key));
 	PathsPlatform pp;
 	pp.paths = v.map!(it => it.get!string())
 		.map!(s => UnprocessedPath(s))
@@ -397,6 +489,10 @@ void sGetPackageDescriptions(Tag t, string key,
 			n, tmp.name));
 	ret ~= tmp;
 }
+
+//
+// Dependencies
+//
 
 void sGetDependencies(Tag t, string key, ref Dependency[] ret) {
 	sGetDependencies(t.values(), t.attributes(), key, ret);

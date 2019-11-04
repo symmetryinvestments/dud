@@ -129,3 +129,61 @@ unittest {
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }
+
+unittest {
+	string toParse = `
+	buildOptions "verbose"
+	buildOptions "debugMode" "coverage" platform="windows"
+	buildOptions "debugMode" "inline" "coverage" platform="posix"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+name "describe-dependency-1"
+version "~master"
+description "A test describe project"
+homepage "fake.com"
+authors "nobody"
+copyright "Copyright © 2015, nobody"
+license "BSD 2-clause"
+x:ddoxFilterArgs "dfa1" "dfa2"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+subPackage {
+	name "sub1"
+}
+subPackage {
+	name "sub2"
+	targetType "executable"
+}
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	assert(pkg.subPackages.length == 2, output);
+	assert(pkg.subPackages[0].inlinePkg.get().name == "sub1",
+			pkg.subPackages[0].inlinePkg.get().name);
+	assert(pkg.subPackages[1].inlinePkg.get().name == "sub2",
+			pkg.subPackages[1].inlinePkg.get().name);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse);
+	//assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}

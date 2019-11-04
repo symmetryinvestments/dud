@@ -9,6 +9,7 @@ import std.format : format, formattedWrite;
 import std.exception : enforce;
 import std.typecons : nullable, Nullable;
 import std.string : indexOf;
+import std.stdio;
 
 import dud.pkgdescription;
 import dud.pkgdescription.udas;
@@ -366,6 +367,74 @@ JSONValue dependencyToJ(Dependency dep) {
 }
 
 //
+// SubPackage
+//
+
+SubPackage jGetSubpackageStr(ref JSONValue jv) {
+	SubPackage ret;
+	jGetPath(jv, "", ret.path);
+	return ret;
+}
+
+SubPackage jGetSubpackageObj(ref JSONValue jv) {
+	SubPackage ret;
+	ret.inlinePkg = jGetPackageDescription(jv);
+	return ret;
+}
+
+SubPackage jGetSubPackage(ref JSONValue jv) {
+	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
+			format("Expected an object or a string not a %s while extracting "
+				~ "a dependency", jv.type));
+	return jv.type == JSONType.object
+		? jGetSubpackageObj(jv)
+		: jGetSubpackageStr(jv);
+}
+
+SubPackage[] jGetSubPackages(ref JSONValue jv) {
+	enforce(jv.type == JSONType.array,
+			format("Expected an array not a %s", jv.type));
+	return jv.arrayNoRef().map!(it => jGetSubPackage(it)).array;
+}
+
+JSONValue subPackagesToJ(SubPackage[] sp) {
+	return JSONValue.init;
+}
+
+//
+// BuildOption
+//
+
+void jGetBuildOptions(ref JSONValue jv, string key, ref BuildOptions bos) {
+	immutable(Platform[]) iPlts = keyToPlatform(key);
+
+	if(iPlts.empty) {
+		bos.unspecifiedPlatform = jv.arrayNoRef()
+			.map!(it => it.str())
+			.map!(s => to!BuildOption(s))
+			.array;
+	} else {
+		bos.platforms[iPlts] = jv.arrayNoRef()
+			.map!(it => it.str())
+			.map!(s => to!BuildOption(s))
+			.array;
+	}
+}
+
+void buildOptionsToJ(BuildOptions bos, string key, ref JSONValue ret) {
+	if(!bos.unspecifiedPlatform.empty) {
+		JSONValue j = JSONValue(
+			bos.unspecifiedPlatform.map!(bo => to!string(bo)).array);
+		ret["buildOptions"] = j;
+	}
+
+	foreach(plts, value; bos.platforms) {
+		ret[platformKeyToS("buildOptions", plts)] =
+			JSONValue(value.map!(bo => to!string(bo)).array);
+	}
+}
+
+//
 // TargetType
 //
 
@@ -395,6 +464,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Dependency[])
 		|| is(T == Path)
 		|| is(T == SubConfigs)
+		|| is(T == BuildOptions)
 		|| is(T == Paths);
 }
 
@@ -482,8 +552,10 @@ BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
 	return jv.arrayNoRef().map!(it => jGetBuildRequirement(it)).array;
 }
 
-JSONValue buildRequirementsToJ(BuildRequirement[] br) {
-	return JSONValue.init;
+JSONValue buildRequirementsToJ(BuildRequirement[] brs) {
+	return brs.empty
+		? JSONValue.init
+		: JSONValue(brs.map!(br => to!string(br)).array);
 }
 
 //
