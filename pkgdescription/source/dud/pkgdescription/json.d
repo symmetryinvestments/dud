@@ -397,8 +397,22 @@ SubPackage[] jGetSubPackages(ref JSONValue jv) {
 	return jv.arrayNoRef().map!(it => jGetSubPackage(it)).array;
 }
 
-JSONValue subPackagesToJ(SubPackage[] sp) {
-	return JSONValue.init;
+JSONValue subPackagesToJ(SubPackage[] sps) {
+	if(sps.empty) {
+		return JSONValue.init;
+	}
+
+	JSONValue[] ret;
+	foreach(sp; sps) {
+		if(!sp.inlinePkg.isNull()) {
+			ret ~= packageDescriptionToJ(sp.inlinePkg.get());
+		} else {
+			JSONValue t;
+			pathToJ(sp.path, "", t);
+			ret ~= t;
+		}
+	}
+	return JSONValue(ret);
 }
 
 //

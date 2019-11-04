@@ -215,3 +215,36 @@ unittest {
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
 }
+
+unittest {
+	string toParse = `
+{
+	"subPackages" : [
+		{
+			"name" : "sub1"
+		}
+		, {
+			"name" : "sub2",
+			"targetType" : "executable"
+		}
+	]
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	assert(pkg.subPackages.length == 2);
+	assert(pkg.subPackages[0].inlinePkg.get().name == "sub1",
+			pkg.subPackages[0].inlinePkg.get().name);
+	assert(pkg.subPackages[1].inlinePkg.get().name == "sub2",
+			pkg.subPackages[1].inlinePkg.get().name);
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}
