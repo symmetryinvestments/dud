@@ -58,12 +58,6 @@ void packageDescriptionsToS(Out)(auto ref Out o, string key,
 	pkgs.each!(it => packageDescriptionToS(o, it.name, it, indent + 1));
 }
 
-string packageDescriptionToS(PackageDescription pkg) {
-	auto app = appender!string();
-	packageDescriptionToS(app, pkg.name, pkg, 0);
-	return app.data;
-}
-
 void packageDescriptionToS(Out)(auto ref Out o, string key,
 		PackageDescription pkg, const size_t indent)
 {
@@ -245,10 +239,10 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 	foreach(sp; sps) {
 		if(!sp.path.platforms.empty) {
 			sp.path.platforms.each!(p =>
-					formatIndent(o, indent, "subPackage \"%s\"
-						%(platform=%s, %)\n",
-						p.path.path, p.platforms.map!(it => to!string(it)))
-					);
+				formatIndent(o, indent, "subPackage \"%s\"
+					%(platform=%s, %)\n",
+					p.path.path, p.platforms.map!(it => to!string(it)))
+			);
 		} else if(!sp.inlinePkg.isNull()) {
 			formatIndent(o, indent, "subPackage {\n");
 			packageDescriptionToS(o, "SubPackage", sp.inlinePkg.get(),
@@ -317,25 +311,6 @@ void buildOptionsToS(Out)(auto ref Out o, string key, BuildOptions bos,
 				plt.map!(p => to!string(p)));
 	}
 }
-
-/*
-void sGetTargetType(Tag t, string key, ref TargetType ret) {
-	sGetTargetType(t.values(), key, ret);
-}
-
-void sGetTargetType(ValueRange v, string key, ref TargetType p) {
-	string s;
-	sGetString(v, "TargetType", s);
-	p = to!TargetType(s);
-}
-
-void targetTypeToS(Out)(auto ref Out o, string key, TargetType p,
-		const size_t indent)
-{
-	if(p != TargetType.autodetect) {
-		formatIndent(o, indent, "%s \"%s\"\n", key, p);
-	}
-}*/
 
 //
 // TargetType
@@ -470,6 +445,42 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 		formatIndent(o, indent, "%s \"%s\" %(platform=%s, %)\n", key,
 			plt.path.path, plt.platforms.map!(it => to!string(it)))
 	);
+}
+
+//
+// BuildTypes
+//
+
+void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
+	string buildTypesName;
+	sGetString(t, "name", buildTypesName);
+
+	Platform[] plts;
+	sGetPlatform(t.attributes(), plts);
+
+	PackageDescription* pkgDesc = new PackageDescription;
+	sGetPackageDescription(tags(t.oc), "buildTypes", *pkgDesc);
+
+	BuildType bt;
+	bt.name = buildTypesName;
+	bt.platforms = plts;
+	bt.pkg = pkgDesc;
+
+	bts ~= bt;
+}
+
+void buildTypeToS(Out)(auto ref Out o, string key, ref BuildType bt,
+		const size_t indent)
+{
+	formatIndent(o, indent, "debugType \"%s\" {\n", bt.name);
+	packageDescriptionToS(o, "", *(bt.pkg), indent);
+	formatIndent(o, indent, "}\n");
+}
+
+void buildTypesToS(Out)(auto ref Out o, string key, ref BuildType[] bts,
+		const size_t indent)
+{
+	bts.each!(bt => buildTypeToS(o, key, bt, indent));
 }
 
 //

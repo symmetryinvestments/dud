@@ -372,7 +372,9 @@ JSONValue dependencyToJ(Dependency dep) {
 
 SubPackage jGetSubpackageStr(ref JSONValue jv) {
 	SubPackage ret;
-	jGetPath(jv, "", ret.path);
+	PathPlatform pp;
+	pp.path.path = jGetString(jv);
+	ret.path.platforms ~= pp;
 	return ret;
 }
 
@@ -407,12 +409,53 @@ JSONValue subPackagesToJ(SubPackage[] sps) {
 		if(!sp.inlinePkg.isNull()) {
 			ret ~= packageDescriptionToJ(sp.inlinePkg.get());
 		} else {
-			JSONValue t;
-			pathToJ(sp.path, "", t);
-			ret ~= t;
+			enforce(!sp.path.platforms.empty,
+				"SubPackage entry must be either Package description or path");
+			ret ~= stringToJ(sp.path.platforms.front.path.path);
 		}
 	}
 	return JSONValue(ret);
+}
+
+//
+// BuildType
+//
+
+void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
+	const ptrdiff_t dash = key.indexOf('-');
+	const string noPlatform = dash == -1 ? key : key[0 .. dash];
+
+	bt.platforms = keyToPlatform(key);
+	bt.name = noPlatform;
+	auto p = new PackageDescription;
+	*p = jGetPackageDescription(jv);
+	bt.pkg = p;
+}
+
+void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
+	enforce(jv.type == JSONType.object,
+			format("Expected an object not a %s", jv.type));
+	foreach(key, value; jv.objectNoRef()) {
+		BuildType tmp;
+		jGetBuildType(value, key, tmp);
+		bts ~= tmp;
+	}
+}
+
+void buildTypesToJ(BuildType[] bts, string key, ref JSONValue ret) {
+	enforce(ret.type == JSONType.object || ret.type == JSONType.null_,
+		format("Expected an JSONValue of type object not '%s'", ret.type));
+	if(bts.empty) {
+		return;
+	}
+
+	JSONValue[string] map;
+	foreach(value; bts) {
+		string name = platformKeyToS(value.name, value.platforms);
+		JSONValue tmp = packageDescriptionToJ(*(value.pkg));
+		map[name] = tmp;
+	}
+	ret["buildTypes"] = map;
 }
 
 //
@@ -479,6 +522,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Path)
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)
+		|| is(T == BuildType[])
 		|| is(T == Paths);
 }
 

@@ -197,9 +197,9 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("x:versionFilters")
 	String versionFilters;
 
-	//@JSON!(jGetBuildTypes, buildTypesToJ)("")
-	//@SDL!(sGetBuildTypes, buildTypesToS)("buildType")
-	//BuildTypes buildTypes;
+	@JSON!(jGetBuildTypes, buildTypesToJ)("")
+	@SDL!(sGetBuildTypes, buildTypesToS)("buildType")
+	BuildType[] buildTypes;
 
 	@JSON!(jGetBuildOptions, buildOptionsToJ)("")
 	@SDL!(sGetBuildOptions, buildOptionsToS)("")
@@ -212,29 +212,62 @@ struct BuildOptions {
 }
 
 enum BuildOption {
-	debugMode,  /// Compile in debug mode (enables contracts) -debug
-	releaseMode,  /// Compile in release mode (disables assertions and bounds checks) -release
-	coverage,  /// Enable code coverage analysis -cov
-	debugInfo,  /// Enable symbolic debug information -g
-	debugInfoC,  /// Enable symbolic debug information in C compatible form -gc
-	alwaysStackFrame,  /// Always generate a stack frame -gs
-	stackStomping,  /// Perform stack stomping -gx
-	inline,  /// Perform function inlining -inline
-	noBoundsCheck,  /// Disable all bounds checking -boundscheck=off
-	optimize,  /// Enable optimizations -O
-	profile,  /// Emit profiling code -profile
-	profileGC,  /// Emit GC profiling information -profile=gc
-	unittests,  /// Compile unit tests -unittest
-	verbose,  /// Verbose compiler output -v
-	ignoreUnknownPragmas,  /// Ignores unknown pragmas during compilation -ignore
-	syntaxOnly,  /// Don't generate object files -o-
-	warnings,  /// Enable warnings, enabled by default (use , buildRequirements,  to control this setting) -wi
-	warningsAsErrors,  /// Treat warnings as errors (use , buildRequirements,  to control this setting) -w
-	ignoreDeprecations,  /// Do not warn about using deprecated features (use , buildRequirements,  to control this setting) -d
-	deprecationWarnings,  /// Warn about using deprecated features, enabled by default (use , buildRequirements,  to control this setting) -dw
-	deprecationErrors,  /// Stop compilation upon usage of deprecated features (use , buildRequirements,  to control this setting) -de
-	property,  /// Enforce property syntax - deprecated -property
-	betterC,  /// Compile in betterC mode -betterC
+	/// Compile in debug mode (enables contracts) -debug
+	debugMode,
+	/// Compile in release mode (disables assertions and bounds checks) -release
+	releaseMode,
+	/// Enable code coverage analysis -cov
+	coverage,
+	/// Enable symbolic debug information -g
+	debugInfo,
+	/// Enable symbolic debug information in C compatible form -gc
+	debugInfoC,
+	/// Always generate a stack frame -gs
+	alwaysStackFrame,
+	/// Perform stack stomping -gx
+	stackStomping,
+	/// Perform function inlining -inline
+	inline,
+	/// Disable all bounds checking -boundscheck=off
+	noBoundsCheck,
+	/// Enable optimizations -O
+	optimize,
+	/// Emit profiling code -profile
+	profile,
+	/// Emit GC profiling information -profile=gc
+	profileGC,
+	/// Compile unit tests -unittest
+	unittests,
+	/// Verbose compiler output -v
+	verbose,
+	/// Ignores unknown pragmas during compilation -ignore
+	ignoreUnknownPragmas,
+	/// Don't generate object files -o-
+	syntaxOnly,
+	/** Enable warnings, enabled by default
+	(use , buildRequirements,  to control this setting) -wi
+	*/
+	warnings,
+	/** Treat warnings as errors
+	(use , buildRequirements,  to control this setting) -w
+	*/
+	warningsAsErrors,
+	/** Do not warn about using deprecated features
+	(use , buildRequirements,  to control this setting) -d
+	*/
+	ignoreDeprecations,
+	/** Warn about using deprecated features, enabled by default
+	(use , buildRequirements,  to control this setting) -dw
+	*/
+	deprecationWarnings,
+	/** Stop compilation upon usage of deprecated features
+	(use , buildRequirements,  to control this setting) -de
+	*/
+	deprecationErrors,
+	/// Enforce property syntax - deprecated -property
+	property,
+	/// Compile in betterC mode -betterC
+	betterC,
 }
 
 struct SubConfigs {
@@ -244,13 +277,12 @@ struct SubConfigs {
 
 struct BuildType {
 	string name;
-	string originalName;
 	Platform[] platforms;
-	PackageDescription pkg;
+	PackageDescription* pkg;
 }
 
 struct BuildTypes {
-	BuildType[string] buildOptions;
+	BuildType[] buildOptions;
 }
 
 enum BuildRequirement {

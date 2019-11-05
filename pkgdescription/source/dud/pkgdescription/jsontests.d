@@ -227,12 +227,14 @@ unittest {
 			"name" : "sub2",
 			"targetType" : "executable"
 		}
+		, "../some/sub/package"
+
 	]
 }
 `;
 
 	PackageDescription pkg = jsonToPackageDescription(toParse);
-	assert(pkg.subPackages.length == 2);
+	assert(pkg.subPackages.length == 3);
 	assert(pkg.subPackages[0].inlinePkg.get().name == "sub1",
 			pkg.subPackages[0].inlinePkg.get().name);
 	assert(pkg.subPackages[1].inlinePkg.get().name == "sub2",
