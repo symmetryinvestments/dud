@@ -61,6 +61,10 @@ struct PackageDescription {
 	@SDL!(sGetString, stringToS)("")
 	string license;
 
+	@JSON!(jGetString, stringToJ)("")
+	@SDL!(sGetString, stringToS)("")
+	string systemDependencies;
+
 	@JSON!(jGetDependencies, dependenciesToJ)("")
 	@SDL!(sGetDependencies, dependenciesToS)("dependency")
 	Dependency[] dependencies;
@@ -193,9 +197,9 @@ struct PackageDescription {
 	@SDL!(sGetSubConfig, subConfigsToS)("subConfiguration")
 	SubConfigs subConfigurations;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("x:versionFilters")
-	String versionFilters;
+	@JSON!(jGetStrings, stringsToJ)("")
+	@SDL!(sGetStrings, stringsToS)("x:versionFilters")
+	string[] versionFilters;
 
 	@JSON!(jGetBuildTypes, buildTypesToJ)("")
 	@SDL!(sGetBuildTypes, buildTypesToS)("buildType")

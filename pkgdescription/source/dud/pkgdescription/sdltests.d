@@ -186,3 +186,61 @@ subPackage {
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }
+
+unittest {
+	string toParse = `
+dependency "vibe-d:core" version="*"
+dependency "mir-linux-kernel" version="~>1.0.0" platform="linux"
+libs "advapi32" platform="windows"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+configuration "libevent" {
+	libs "wsock32" "ws2_32" "advapi32" platform="windows"
+	sourceFiles "../lib/win-i386/event2.lib" platform="windows-x86"
+}
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+configuration "windows-mscoff" {
+	platforms "windows-x86_mscoff" "windows-x86_64" "windows-x86-ldc"
+	sourceFiles "../lib/win-i386-mscoff/libeay32.lib" "../lib/win-i386-mscoff/ssleay32.lib" platform="windows-x86_mscoff"
+	sourceFiles "../lib/win-amd64/libeay32.lib" "../lib/win-amd64/ssleay32.lib" platform="windows-x86_64"
+}
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+x:versionFilters "Daughter" "Parent"
+x:debugVersionFilters "dDaughter" "dParent"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}

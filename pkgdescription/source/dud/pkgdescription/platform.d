@@ -3,6 +3,7 @@ module dud.pkgdescription.platform;
 enum Platform {
 	all,
 	gnu,
+	gdc,
 	dmd,
 	ldc,
 	sdc,
@@ -38,7 +39,9 @@ enum Platform {
 	cruntime_musl,
 	cruntime_uclibc,
 	x86,
+	x86_32,
 	x86_64,
+	x86_mscoff,
 	arm,
 	arm_thumb,
 	arm_softfloat,

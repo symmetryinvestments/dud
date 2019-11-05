@@ -112,19 +112,21 @@ private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
 
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	import std.algorithm.sorting : sort;
+	import std.algorithm.iteration : splitter, joiner;
 	import std.algorithm : uniq;
-	pls = aa
+	pls ~= aa
 		.filter!(a => a.identifier() == "platform")
 		.tee!(a => enforce(a.value.value.type == ValueType.str,
 			format("platfrom must be string not a '%s' at %s:%s",
 				a.value.value.type, a.value.line, a.value.column)
 		))
 		.map!(a => a.value.value.get!string())
+		.map!(s => s.splitter("-"))
+		.joiner
 		.map!(s => to!Platform(s))
-		.array
-		.sort
-		.uniq
 		.array;
+
+	pls = pls.sort.uniq.array;
 }
 
 //
@@ -142,7 +144,7 @@ void stringsPlatformToS(Out)(auto ref Out o, string key, Strings value,
 		const size_t indent)
 {
 	value.platforms.each!(s =>
-		formatIndent(o, indent, "%s %(%s %)%(platform=%s %)\n", key, s.strs,
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key, s.strs,
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -186,7 +188,8 @@ void sGetString(ValueRange v, string key, ref string ret) {
 void stringToSName(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
-	if(!value.empty || indent == 0) {
+	//if(!value.empty || indent == 0) {
+	if(!value.empty) {
 		formatIndent(o, indent, "%s \"%s\"\n", key, value);
 	}
 }
@@ -198,6 +201,10 @@ void stringToS(Out)(auto ref Out o, string key, string value,
 		formatIndent(o, indent, "%s \"%s\"\n", key, value);
 	}
 }
+
+//
+// string[]
+//
 
 void sGetStrings(Tag t, string key, ref string[] ret) {
 	sGetStrings(t.values(), key, ret);
@@ -239,8 +246,7 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 	foreach(sp; sps) {
 		if(!sp.path.platforms.empty) {
 			sp.path.platforms.each!(p =>
-				formatIndent(o, indent, "subPackage \"%s\"
-					%(platform=%s, %)\n",
+				formatIndent(o, indent, "subPackage \"%s\" (platform=%s %)\n",
 					p.path.path, p.platforms.map!(it => to!string(it)))
 			);
 		} else if(!sp.inlinePkg.isNull()) {
@@ -306,7 +312,7 @@ void buildOptionsToS(Out)(auto ref Out o, string key, BuildOptions bos,
 	}
 
 	foreach(plt, bo; bos.platforms) {
-		formatIndent(o, indent, "%s %(%s %) %(platform=%s, %)\n", key,
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key,
 				bo.map!(bo => to!string(bo)),
 				plt.map!(p => to!string(p)));
 	}
@@ -390,7 +396,7 @@ void subConfigsToS(Out)(auto ref Out o, string key,
 		.each!(plt =>
 				plt.value.byKeyValue().each!(sc =>
 					formatIndent(o, indent,
-						"subConfiguration \"%s\" \"%s\" %(platform=%s, %)\n",
+						"subConfiguration \"%s\" \"%s\" %(platform=%s %)\n",
 						sc.key, sc.value, plt.key.map!(it => to!string(it)))
 				)
 			);
@@ -416,7 +422,7 @@ void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 		const size_t indent)
 {
 	ps.platforms.each!(p =>
-		formatIndent(o, indent, "%s %(%s %) %(platform=%s, %)\n",
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n",
 			key, p.paths.map!(it => it.path),
 			p.platforms.map!(it => to!string(it)))
 	);
@@ -442,7 +448,7 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 		const size_t indent)
 {
 	p.platforms.each!(plt =>
-		formatIndent(o, indent, "%s \"%s\" %(platform=%s, %)\n", key,
+		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key,
 			plt.path.path, plt.platforms.map!(it => to!string(it)))
 	);
 }
@@ -546,6 +552,9 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 					.get!bool()
 					.nullable;
 				break;
+			case "platform":
+				sGetPlatform(ars, ret.platforms);
+				break;
 			default:
 				throw new Exception(format(
 					"Key '%s' is not part of a Dependency declaration",
@@ -572,7 +581,7 @@ void dependenciesToS(Out)(auto ref Out o, string key, Dependency[] deps,
 		if(!value.optional.isNull()) {
 			formattedWrite(o, " optional=%s", value.optional.get());
 		}
-		formattedWrite(o, "%( platform=%s,%)",
+		formattedWrite(o, " %(platform=%s %)",
 			value.platforms.map!(p => to!string(p)));
 		formattedWrite(o, "\n");
 	}
