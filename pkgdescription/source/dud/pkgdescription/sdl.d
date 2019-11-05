@@ -458,8 +458,9 @@ void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
 	Platform[] plts;
 	sGetPlatform(t.attributes(), plts);
 
-	PackageDescription* pkgDesc = new PackageDescription;
-	sGetPackageDescription(tags(t.oc), "buildTypes", *pkgDesc);
+	//PackageDescription* pkgDesc = new PackageDescription;
+	PackageDescription pkgDesc;
+	sGetPackageDescription(tags(t.oc), "buildTypes", pkgDesc);
 
 	BuildType bt;
 	bt.name = buildTypesName;
@@ -473,7 +474,7 @@ void buildTypeToS(Out)(auto ref Out o, string key, ref BuildType bt,
 		const size_t indent)
 {
 	formatIndent(o, indent, "debugType \"%s\" {\n", bt.name);
-	packageDescriptionToS(o, "", *(bt.pkg), indent);
+	packageDescriptionToS(o, "", bt.pkg, indent);
 	formatIndent(o, indent, "}\n");
 }
 

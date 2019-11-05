@@ -89,6 +89,7 @@ configuration "testing" {
 	PackageDescription pkg = sdlToPackageDescription(input);
 }
 
+
 unittest {
 	string toParse = `
 	subConfiguration "pkg1" "fast"
@@ -160,7 +161,6 @@ x:ddoxFilterArgs "dfa1" "dfa2"
 	string output = toSDL(pkg);
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
-	assert(pkg == pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }
 
@@ -184,6 +184,5 @@ subPackage {
 			pkg.subPackages[1].inlinePkg.get().name);
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
-	assert(pkg == pkgReParse);
-	//assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }

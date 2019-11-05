@@ -427,9 +427,7 @@ void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 
 	bt.platforms = keyToPlatform(key);
 	bt.name = noPlatform;
-	auto p = new PackageDescription;
-	*p = jGetPackageDescription(jv);
-	bt.pkg = p;
+	bt.pkg = jGetPackageDescription(jv);
 }
 
 void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
@@ -452,7 +450,7 @@ void buildTypesToJ(BuildType[] bts, string key, ref JSONValue ret) {
 	JSONValue[string] map;
 	foreach(value; bts) {
 		string name = platformKeyToS(value.name, value.platforms);
-		JSONValue tmp = packageDescriptionToJ(*(value.pkg));
+		JSONValue tmp = packageDescriptionToJ(value.pkg);
 		map[name] = tmp;
 	}
 	ret["buildTypes"] = map;
