@@ -12,6 +12,7 @@ import std.stdio;
 import dud.pkgdescription;
 import dud.semver : SemVer;
 import dud.pkgdescription.udas;
+import dud.pkgdescription.outpututils;
 
 import dud.sdlang;
 
@@ -144,7 +145,8 @@ void stringsPlatformToS(Out)(auto ref Out o, string key, Strings value,
 		const size_t indent)
 {
 	value.platforms.each!(s =>
-		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key, s.strs,
+		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key,
+			s.strs.map!(s => s.escapeString()),
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -164,7 +166,8 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
 	value.strs.each!(s =>
-		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key, s.str,
+		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key,
+			s.str.escapeString(),
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -198,7 +201,7 @@ void stringToS(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
 	if(!value.empty) {
-		formatIndent(o, indent, "%s \"%s\"\n", key, value);
+		formatIndent(o, indent, "%s \"%s\"\n", key, value.escapeString());
 	}
 }
 
@@ -219,7 +222,8 @@ void stringsToS(Out)(auto ref Out o, string key, string[] values,
 		const size_t indent)
 {
 	if(!values.empty) {
-		formatIndent(o, indent, "%s %(%s %)\n", key, values);
+		formatIndent(o, indent, "%s %(%s %)\n", key,
+			values.map!(s => s.escapeString()));
 	}
 }
 
@@ -246,7 +250,7 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 	foreach(sp; sps) {
 		if(!sp.path.platforms.empty) {
 			sp.path.platforms.each!(p =>
-				formatIndent(o, indent, "subPackage \"%s\" (platform=%s %)\n",
+				formatIndent(o, indent, "subPackage \"%s\" %(platform=%s %)\n",
 					p.path.path, p.platforms.map!(it => to!string(it)))
 			);
 		} else if(!sp.inlinePkg.isNull()) {

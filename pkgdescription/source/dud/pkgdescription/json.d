@@ -1,19 +1,20 @@
 module dud.pkgdescription.json;
 
-import std.array : array, empty, front, popFront, appender;
 import std.algorithm.iteration : map, each, joiner, splitter;
 import std.algorithm.mutation : copy;
+import std.array : array, empty, front, popFront, appender;
 import std.conv : to;
-import std.json;
-import std.format : format, formattedWrite;
 import std.exception : enforce;
-import std.typecons : nullable, Nullable;
-import std.string : indexOf;
+import std.format : format, formattedWrite;
+import std.json;
 import std.stdio;
+import std.string : indexOf;
+import std.typecons : nullable, Nullable;
 
-import dud.pkgdescription;
+import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
 import dud.pkgdescription.versionspecifier;
+import dud.pkgdescription;
 import dud.semver : SemVer;
 
 @safe pure:
@@ -109,7 +110,7 @@ string jGetString(ref JSONValue jv) {
 }
 
 JSONValue stringToJ(string s) {
-	return s.empty ? JSONValue.init : JSONValue(s);
+	return s.empty ? JSONValue.init : JSONValue(s.escapeString());
 }
 
 //
@@ -155,7 +156,7 @@ void stringPlatformToJ(String s, string key, ref JSONValue output) {
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	s.strs.each!(it => output[platformKeyToS(key, it.platforms)] =
-			JSONValue(it.str));
+			JSONValue(it.str.escapeString()));
 }
 
 //
@@ -169,7 +170,9 @@ string[] jGetStrings(ref JSONValue jv) {
 }
 
 JSONValue stringsToJ(string[] ss) {
-	return ss.empty ? JSONValue.init : JSONValue(ss);
+	return ss.empty
+		? JSONValue.init
+		: JSONValue(ss.map!(s => s.escapeString()).array);
 }
 
 //
