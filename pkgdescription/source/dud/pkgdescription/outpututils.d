@@ -3,7 +3,7 @@ module dud.pkgdescription.outpututils;
 @safe pure:
 
 private enum string[dchar] tTable = [
-	'"' : "\\\"", '\n' : "\\\\n", '\v' : "\\\v", '\r' : "\\\r"
+	'"' : "\\\"", '\n' : "\\\\n", '\v' : "\\\v", '\r' : "\\\r", '\\' : "\\\\"
 ];
 
 string escapeString(string s) {

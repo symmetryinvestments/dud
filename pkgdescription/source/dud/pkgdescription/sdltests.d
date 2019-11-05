@@ -268,3 +268,17 @@ description "A basic \"Hello, World\" program."
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }
+
+unittest {
+	string toParse = q{
+	preGenerateCommands `rdmd --eval='
+auto data = text("module openssl_version;\nenum OPENSSL_VERSION=\"", opensslVersion, "\";");
+` platform="posix"
+};
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
