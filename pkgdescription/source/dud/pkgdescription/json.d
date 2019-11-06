@@ -110,7 +110,7 @@ string jGetString(ref JSONValue jv) {
 }
 
 JSONValue stringToJ(string s) {
-	return s.empty ? JSONValue.init : JSONValue(s.escapeString());
+	return s.empty ? JSONValue.init : JSONValue(s);
 }
 
 //
@@ -156,7 +156,7 @@ void stringPlatformToJ(String s, string key, ref JSONValue output) {
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
 	s.strs.each!(it => output[platformKeyToS(key, it.platforms)] =
-			JSONValue(it.str.escapeString()));
+			JSONValue(it.str));
 }
 
 //
@@ -172,7 +172,7 @@ string[] jGetStrings(ref JSONValue jv) {
 JSONValue stringsToJ(string[] ss) {
 	return ss.empty
 		? JSONValue.init
-		: JSONValue(ss.map!(s => s.escapeString()).array);
+		: JSONValue(ss.map!(s => s).array);
 }
 
 //

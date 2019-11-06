@@ -85,13 +85,13 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("")
 	String targetFileName;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("")
-	String workingDirectory;
+	@JSON!(jGetPath, pathToJ)("")
+	@SDL!(sGetPath, pathToS)("")
+	Path workingDirectory;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("")
-	String mainSourceFile;
+	@JSON!(jGetPath, pathToJ)("")
+	@SDL!(sGetPath, pathToS)("")
+	Path mainSourceFile;
 
 	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
 	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")

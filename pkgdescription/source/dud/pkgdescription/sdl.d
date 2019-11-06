@@ -2,6 +2,7 @@ module dud.pkgdescription.sdl;
 
 import std.array : array, back, empty, front, appender, popFront;
 import std.algorithm.iteration : map, each, filter;
+import std.algorithm.searching : any;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format, formattedWrite;
@@ -145,8 +146,12 @@ void stringsPlatformToS(Out)(auto ref Out o, string key, Strings value,
 		const size_t indent)
 {
 	value.platforms.each!(s =>
-		formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key,
-			s.strs.map!(s => s.escapeString()),
+		formatIndent(o, indent,
+			s.strs.any!containsEscapable
+				? "%s %-(`%s`%| %) %(platform=%s %)\n"
+				: "%s %(%s %) %(platform=%s %)\n",
+			key,
+			s.strs.map!(s => s),
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -166,8 +171,12 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
 	value.strs.each!(s =>
-		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key,
-			s.str.escapeString(),
+		formatIndent(o, indent,
+			s.str.containsEscapable
+				? "%s `%s` %(platform=%s %)\n"
+				: "%s \"%s\" %(platform=%s %)\n",
+			key,
+			s.str,
 			s.platforms.map!(p => to!string(p)))
 	);
 }
@@ -201,7 +210,11 @@ void stringToS(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
 	if(!value.empty) {
-		formatIndent(o, indent, "%s \"%s\"\n", key, value.escapeString());
+		if(value.containsEscapable()) {
+			formatIndent(o, indent, "%s `%s`\n", key, value);
+		} else {
+			formatIndent(o, indent, "%s \"%s\"\n", key, value);
+		}
 	}
 }
 
@@ -222,8 +235,12 @@ void stringsToS(Out)(auto ref Out o, string key, string[] values,
 		const size_t indent)
 {
 	if(!values.empty) {
-		formatIndent(o, indent, "%s %(%s %)\n", key,
-			values.map!(s => s.escapeString()));
+		formatIndent(o, indent,
+			values.any!containsEscapable
+				? "%s %-(`%s`%| %)\n"
+				: "%s %(%s %)\n",
+			key,
+			values.map!(s => s));
 	}
 }
 

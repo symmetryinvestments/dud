@@ -1,7 +1,7 @@
 module dud.pkgdescription.sdltests;
 
 import std.algorithm.sorting : sort;
-import std.array : empty;
+import std.array : empty, front;
 import std.conv;
 import std.typecons : nullable;
 import std.format : format;
@@ -274,6 +274,26 @@ unittest {
 	preGenerateCommands `rdmd --eval='
 auto data = text("module openssl_version;\nenum OPENSSL_VERSION=\"", opensslVersion, "\";");
 ` platform="posix"
+};
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = q{
+configuration "unittest" {
+    dependency "unit-threaded" version="*"
+
+    targetType "executable"
+    mainSourceFile "bin/ut.d"
+    excludedSourceFiles "source/app.d"
+    targetType "executable"
+    preBuildCommands "dub run unit-threaded -c gen_ut_main -- -f bin/ut.d"
+}
 };
 
 	PackageDescription pkg = sdlToPackageDescription(toParse);

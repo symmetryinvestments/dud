@@ -20,3 +20,12 @@ unittest {
 	string se = s.escapeString();
 	assert(se == "Hello \\\"World", se);
 }
+
+bool containsEscapable(string s) {
+	foreach(idx; 0 .. s.length) {
+		if(s[idx] == '\n' || s[idx] == '"' || s[idx] == '\r') {
+			return true;
+		}
+	}
+	return false;
+}

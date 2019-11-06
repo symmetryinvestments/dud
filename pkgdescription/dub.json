@@ -20,10 +20,10 @@
 	"name": "pkgdescription",
 	"targetType": "library",
 	"configurations" : [
-		{ "name" : "ExcessiveTests"
-		, "versions" : ["ExcessivTests"]
+		{ "name" : "ExcessiveSDLTests"
+		, "versions" : ["ExcessivSDLTests"]
 		, "targetType" : "executable"
-		, "dflags" : ["-unittest", "-main"]
+		, "dflags" : ["-unittest", "-main", "-cov"]
 		}
 		, { "name" : "unittest"
 		, "dflags" : ["-unittest", "-debug", "-g"]

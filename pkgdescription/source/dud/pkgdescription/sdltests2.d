@@ -1,6 +1,6 @@
 module dud.pkgdescription.sdltests2;
 
-version(ExcessivTests):
+version(ExcessivSDLTests):
 
 import std.stdio;
 import std.file : readText;
@@ -24,7 +24,6 @@ unittest {
 	string[] dubs = () @trusted { return allDubSDLFiles(); }();
 	size_t failCnt;
 	foreach(idx, f; dubs) {
-		writeln(f);
 		string input = readText(f);
 		PackageDescription pkg;
 		try {
