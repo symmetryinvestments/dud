@@ -1,14 +1,15 @@
 module dud.pkgdescription.sdl;
 
-import std.array : array, back, empty, front, appender, popFront;
 import std.algorithm.iteration : map, each, filter;
 import std.algorithm.searching : any;
+import std.array : array, back, empty, front, appender, popFront;
 import std.conv : to;
 import std.exception : enforce;
 import std.format : format, formattedWrite;
-import std.typecons : nullable, Nullable;
 import std.range : tee;
 import std.stdio;
+import std.traits : FieldNameTuple;
+import std.typecons : nullable, Nullable;
 
 import dud.pkgdescription;
 import dud.semver : SemVer;
@@ -35,7 +36,7 @@ void sGetPackageDescription(TagAccessor ts, string key,
 		string id = t.fullIdentifier();
 		sw: switch(id) {
 			try {
-				static foreach(mem; __traits(allMembers, PackageDescription)) {{
+				static foreach(mem; FieldNameTuple!PackageDescription) {{
 					enum Mem = SDLName!mem;
 					alias get = SDLGet!mem;
 					case Mem:
@@ -63,7 +64,7 @@ void packageDescriptionsToS(Out)(auto ref Out o, string key,
 void packageDescriptionToS(Out)(auto ref Out o, string key,
 		PackageDescription pkg, const size_t indent)
 {
-	static foreach(mem; __traits(allMembers, PackageDescription)) {{
+	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		enum Mem = SDLName!mem;
 		alias put = SDLPut!mem;
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));

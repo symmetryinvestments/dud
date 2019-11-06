@@ -10,6 +10,7 @@ import std.json;
 import std.stdio;
 import std.string : indexOf;
 import std.typecons : nullable, Nullable;
+import std.traits : FieldNameTuple;
 
 import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
@@ -346,7 +347,7 @@ JSONValue dependencyToJ(Dependency dep) {
 	if(isShortFrom(dep)) {
 		return JSONValue(dep.version_.get().orig);
 	}
-	static foreach(mem; __traits(allMembers, Dependency)) {{
+	static foreach(mem; FieldNameTuple!Dependency) {{
 		alias MemType = typeof(__traits(getMember, Dependency, mem));
 		enum Mem = PreprocessKey!(mem);
 		static if(is(MemType == string)) {{
@@ -369,7 +370,8 @@ JSONValue dependencyToJ(Dependency dep) {
 		}} else static if(is(MemType == Platform[])) {{
 			// not handled here
 		}} else {
-			static assert(false, "Unhandeld case " ~ MemType.stringof);
+			static assert(false, "Unhandeld type " ~ MemType.stringof ~
+				" for mem " ~ Mem);
 		}
 	}}
 	return ret;
@@ -543,7 +545,7 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 		string noPlatform = dash == -1 ? key : key[0 .. dash];
 		sw: switch(noPlatform) {
 			try {
-				static foreach(mem; __traits(allMembers, PackageDescription)) {{
+				static foreach(mem; FieldNameTuple!PackageDescription) {{
 					enum Mem = JSONName!mem;
 					alias get = JSONGet!mem;
 					alias MemType = typeof(__traits(getMember, ret, mem));
@@ -571,7 +573,7 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 
 JSONValue packageDescriptionToJ(PackageDescription pkg) {
 	JSONValue ret;
-	static foreach(mem; __traits(allMembers, PackageDescription)) {{
+	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		enum Mem = JSONName!mem;
 		alias put = JSONPut!mem;
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));

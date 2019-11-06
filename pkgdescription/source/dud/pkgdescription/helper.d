@@ -15,11 +15,11 @@ string pkgCompare(const PackageDescription a, const PackageDescription b) {
 	import std.typecons : Nullable;
 	import std.format : formattedWrite;
 	import std.array : appender;
-	import std.traits : isArray;
+	import std.traits : isArray, FieldNameTuple;
 
 	auto app = appender!string();
 	formattedWrite(app, "PackageDescription difference {\n");
-	static foreach(mem; __traits(allMembers, PackageDescription)) {{
+	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		auto aMem = __traits(getMember, a, mem);
 		auto bMem = __traits(getMember, b, mem);
 

@@ -33,6 +33,7 @@ enum TargetType {
 	writing a build-tool.
 */
 struct PackageDescription {
+@safe pure:
 	@JSON!(jGetString, stringToJ)("")
 	@SDL!(sGetString, stringToSName)("")
 	string name; /// Qualified name of the package
@@ -208,6 +209,12 @@ struct PackageDescription {
 	@JSON!(jGetBuildOptions, buildOptionsToJ)("")
 	@SDL!(sGetBuildOptions, buildOptionsToS)("")
 	BuildOptions buildOptions;
+
+	bool opEquals(const PackageDescription other) const {
+		import dud.pkgdescription.compare : areEqual;
+		//return areEqual(this, other);
+		return true;
+	}
 }
 
 struct BuildOptions {
@@ -304,6 +311,7 @@ struct SubPackage {
 }
 
 struct Dependency {
+@safe pure:
 	import std.typecons : Nullable;
 	string name;
 	Nullable!VersionSpecifier version_;
@@ -311,6 +319,10 @@ struct Dependency {
 	Nullable!bool optional;
 	Nullable!bool default_;
 	Platform[] platforms;
+
+	bool opEqual()(auto ref const Dependency other) const {
+		return areEqual(this, other);
+	}
 }
 
 struct StringPlatform {
@@ -321,7 +333,6 @@ struct StringPlatform {
 struct String {
 @safe pure:
 	StringPlatform[] strs;
-	string orig;
 }
 
 struct StringsPlatform {
