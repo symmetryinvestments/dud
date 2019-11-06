@@ -83,44 +83,6 @@ bool areEqual(const BuildOptions[] as, const BuildOptions[] bs) {
 }
 
 //
-// Helper
-//
-
-bool aaCmp(alias cmp, AA)(AA a, AA b) {
-	if(a.length != b.length) {
-		return false;
-	}
-
-	foreach(key, value; a) {
-		auto bVal = key in b;
-		if(bVal is null) {
-			return false;
-		}
-
-		if(!cmp(value, *bVal)) {
-			return false;
-		}
-	}
-
-	foreach(key, value; b) {
-		auto aVal = key in a;
-		if(aVal is null) {
-			return false;
-		}
-
-		if(!cmp(value, *aVal)) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool simpleCmp(T)(auto ref T a, auto ref T b) {
-	return a == b;
-}
-
-//
 // BuildType[]
 //
 
@@ -467,4 +429,42 @@ unittest {
 	Platform[] a = [Platform.gnu, Platform.bsd];
 	Platform[] b = [Platform.bsd, Platform.gnu];
 	assert(areEqual(a, b));
+}
+
+//
+// Helper
+//
+
+bool aaCmp(alias cmp, AA)(AA a, AA b) {
+	if(a.length != b.length) {
+		return false;
+	}
+
+	foreach(key, value; a) {
+		auto bVal = key in b;
+		if(bVal is null) {
+			return false;
+		}
+
+		if(!cmp(value, *bVal)) {
+			return false;
+		}
+	}
+
+	foreach(key, value; b) {
+		auto aVal = key in a;
+		if(aVal is null) {
+			return false;
+		}
+
+		if(!cmp(value, *aVal)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool simpleCmp(T)(auto ref T a, auto ref T b) {
+	return a == b;
 }
