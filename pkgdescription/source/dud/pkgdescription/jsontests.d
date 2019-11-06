@@ -403,7 +403,29 @@ unittest {
 	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n.toPrettyString()));
 
-	debug writeln(n.toPrettyString());
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}
+
+unittest {
+	string toParse = `
+{
+	"-ddoxTool" : "ddoxFoo"
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	assert(pkg.ddoxTool.platforms.front.str == "ddoxFoo");
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
 		pkgCompare(pkg, pkgFromJ)

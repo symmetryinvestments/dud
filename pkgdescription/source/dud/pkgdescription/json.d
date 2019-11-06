@@ -2,6 +2,7 @@ module dud.pkgdescription.json;
 
 import std.algorithm.iteration : map, each, joiner, splitter;
 import std.algorithm.mutation : copy;
+import std.algorithm.searching : startsWith;
 import std.array : array, empty, front, popFront, appender;
 import std.conv : to;
 import std.exception : enforce;
@@ -44,7 +45,9 @@ PackageDescription jsonToPackageDescription(JSONValue jv) {
 //
 
 Platform[] keyToPlatform(string key) {
-	auto s = key.splitter('-');
+	auto s = key.startsWith("-")
+		? key[1 .. $].splitter('-')
+		: key.splitter('-');
 	enforce(!s.empty, format("'%s' is an invalid string", key));
 	s.popFront();
 	return toPlatform(s);
@@ -315,8 +318,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 			format("Expected an object not a %s while extracting dependencies",
 				jv.type));
 
-	const ptrdiff_t dash = key.indexOf('-');
-	const string noPlatform = dash == -1 ? key : key[0 .. dash];
+	const string noPlatform = splitOutKey(key);
 	Platform[] plts = keyToPlatform(key);
 	deps ~= jv.objectNoRef()
 		.byKeyValue()
@@ -433,8 +435,7 @@ JSONValue subPackagesToJ(SubPackage[] sps) {
 //
 
 void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
-	const ptrdiff_t dash = key.indexOf('-');
-	const string noPlatform = dash == -1 ? key : key[0 .. dash];
+	const string noPlatform = splitOutKey(key);
 
 	bt.platforms = keyToPlatform(key);
 	bt.name = noPlatform;
@@ -541,8 +542,7 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 	PackageDescription ret;
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
-		ptrdiff_t dash = key.indexOf('-');
-		string noPlatform = dash == -1 ? key : key[0 .. dash];
+		const string noPlatform = splitOutKey(key);
 		sw: switch(noPlatform) {
 			try {
 				static foreach(mem; FieldNameTuple!PackageDescription) {{
@@ -667,4 +667,20 @@ void stringAAToJ(SubConfigs aa, string key, ref JSONValue ret) {
 			ret[k] = tmp;
 		}
 	}
+}
+
+//
+// Helper
+//
+
+string splitOutKey(string key) {
+	const ptrdiff_t dash = key.indexOf('-', 1);
+	const string noPlatform = dash == -1 ? key : key[0 .. dash];
+	return noPlatform;
+}
+
+unittest {
+	assert(splitOutKey("hello-posix") == "hello");
+	assert(splitOutKey("-hello-posix") == "-hello");
+	assert(splitOutKey("-hello") == "-hello");
 }

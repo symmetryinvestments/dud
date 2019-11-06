@@ -174,7 +174,7 @@ struct PackageDescription {
 	@SDL!(sGetStrings, stringsToS)("")
 	string[] platforms;
 
-	@JSON!(jGetStrings, stringsToJ)("")
+	@JSON!(jGetStrings, stringsToJ)("-ddoxFilterArgs")
 	@SDL!(sGetStrings, stringsToS)("x:ddoxFilterArgs")
 	string[] ddoxFilterArgs;
 
@@ -182,7 +182,7 @@ struct PackageDescription {
 	@SDL!(sGetStrings, stringsToS)("x:debugVersionFilters")
 	string[] debugVersionFilters;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
+	@JSON!(jGetStringPlatform, stringPlatformToJ)("-ddoxTool")
 	@SDL!(sGetStringPlatform, stringPlatformToS)("x:ddoxTool")
 	String ddoxTool;
 
