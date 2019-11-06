@@ -1,14 +1,15 @@
-module dud.pkgdescription.sdltests2;
+module dud.pkgdescription.jsontests2;
 
-version(ExcessivSDLTests):
+version(ExcessivJSONTests):
 
 import std.stdio;
 import std.file : readText;
 import std.format : format;
+import std.json;
 
 import dud.testdata;
 import dud.pkgdescription;
-import dud.pkgdescription.sdl;
+import dud.pkgdescription.json;
 import dud.pkgdescription.output;
 
 private void unRollException(Exception e, string f) {
@@ -21,23 +22,23 @@ private void unRollException(Exception e, string f) {
 }
 
 unittest {
-	string[] dubs = () @trusted { return allDubSDLFiles(); }();
+	string[] dubs = () @trusted { return allDubJSONFiles(); }();
 	size_t failCnt;
 	foreach(idx, f; dubs) {
 		string input = readText(f);
 		PackageDescription pkg;
 		try {
 			pkg = () @safe {
-				return sdlToPackageDescription(input);
+				return jsonToPackageDescription(input);
 			}();
 		} catch(Exception e) {
 			unRollException(e, f);
 			++failCnt;
 			continue;
 		}
-		string s;
+		JSONValue s;
 		try {
-			s = toSDL(pkg);
+			s = toJSON(pkg);
 		} catch(Exception e) {
 			unRollException(e, f);
 			++failCnt;
@@ -45,8 +46,8 @@ unittest {
 		}
 
 		try {
-			PackageDescription nPkg = sdlToPackageDescription(s);
-			assert(pkg == nPkg, format("\nexp:\n%s\ngot:\n%s", pkg, nPkg));
+			PackageDescription nPkg = jsonToPackageDescription(s);
+			assert(pkg == nPkg, format("%s\nexp:\n%s\ngot:\n%s", f, pkg, nPkg));
 		} catch(Exception e) {
 			unRollException(e, f);
 			++failCnt;

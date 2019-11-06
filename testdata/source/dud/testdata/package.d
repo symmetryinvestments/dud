@@ -9,6 +9,7 @@ import std.stdio : File;
 import std.file : exists, readText, dirEntries, SpanMode;
 
 enum dubsdlfilename = "../dubsdlfilelist.txt";
+enum dubjsonfilename = "../dubjsonfilelist.txt";
 
 immutable string[] knownBad = [
 	"dtiled-0.3.0/dtiled"
@@ -49,5 +50,33 @@ string[] allDubSDLFiles() {
 		.filter!(isKnownBad)
 		.array;
 	writeDubSDLFileList(dubs);
+	return dubs;
+}
+
+void writeDubJSONFileList(string[] fns) {
+	auto f = File(dubjsonfilename, "w");
+	auto ltw = f.lockingTextWriter();
+	fns
+		.filter!(isKnownBad)
+		.each!(it => formattedWrite(ltw, "%s\n", it));
+}
+
+string[] readDubJSONFileList() {
+	return readText(dubjsonfilename)
+		.split("\n")
+		.filter!(it => !it.empty)
+		.filter!(isKnownBad)
+		.array;
+}
+
+string[] allDubJSONFiles() {
+	if(exists(dubjsonfilename)) {
+		return readDubJSONFileList();
+	}
+	string[] dubs = dirEntries("../testpackages/", "dub.json", SpanMode.depth)
+		.map!(it => it.name)
+		.filter!(isKnownBad)
+		.array;
+	writeDubJSONFileList(dubs);
 	return dubs;
 }

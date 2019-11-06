@@ -23,10 +23,15 @@
 		{ "name" : "ExcessiveSDLTests"
 		, "versions" : ["ExcessivSDLTests"]
 		, "targetType" : "executable"
-		, "dflags" : ["-unittest", "-main", "-cov"]
+		, "dflags" : ["-unittest", "-main"]
 		}
 		, { "name" : "unittest"
 		, "dflags" : ["-unittest", "-debug", "-g"]
+		}
+		, { "name" : "ExcessiveJSONTests"
+		, "versions" : ["ExcessivJSONTests"]
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
 		}
 	]
 }

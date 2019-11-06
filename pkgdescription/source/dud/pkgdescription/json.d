@@ -24,6 +24,12 @@ import dud.semver : SemVer;
 //
 
 PackageDescription jsonToPackageDescription(string js) {
+	import std.encoding : getBOM, BOM, BOMSeq;
+	immutable(BOMSeq) bom = () @trusted {
+		return getBOM(cast(ubyte[])js);
+	}();
+	js = js[bom.sequence.length .. $];
+
 	JSONValue jv = parseJSON(js);
 	return jGetPackageDescription(jv);
 }

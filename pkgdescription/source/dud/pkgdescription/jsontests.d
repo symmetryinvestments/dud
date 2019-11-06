@@ -9,6 +9,7 @@ import std.format : format;
 
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
+import dud.pkgdescription.helper;
 import dud.semver : SemVer;
 import dud.pkgdescription;
 
@@ -246,6 +247,167 @@ unittest {
 
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}
+
+unittest {
+	string toParse = `
+{
+    "authors": [
+        "Guillaume Piolat",
+        "Andrej Mitrovic",
+        "Sean M. Costello (Hilbert transformer)"
+    ],
+    "copyright": "Steinberg",
+    "description": "Audio plugins framework. VST client + host, AU client, UI widgets.",
+    "homepage": "http:\/\/github.com\/p0nce\/dplug\/",
+    "license": "VST",
+    "name": "dplug",
+    "subPackages": [
+        {
+            "dependencies": {
+                "gfm:core": "~>6.0"
+            },
+            "importPaths": [
+                "core"
+            ],
+            "name": "core",
+            "sourcePaths": [
+                "core\/dplug\/core"
+            ]
+        },
+        {
+            "dependencies": {
+                "dplug:core": "*",
+                "gfm:math": "~>6.0"
+            },
+            "importPaths": [
+                "dsp"
+            ],
+            "name": "dsp",
+            "sourcePaths": [
+                "dsp\/dplug\/dsp"
+            ]
+        },
+        {
+            "dependencies": {
+                "dplug:core": "*"
+            },
+            "importPaths": [
+                "client"
+            ],
+            "name": "client",
+            "sourcePaths": [
+                "client\/dplug\/client"
+            ]
+        },
+        {
+            "dependencies": {
+                "derelict-util": "~>2.0",
+                "dplug:core": "*",
+                "dplug:vst": "*"
+            },
+            "importPaths": [
+                "host"
+            ],
+            "name": "host",
+            "sourcePaths": [
+                "host\/dplug\/host"
+            ]
+        },
+        {
+            "dependencies": {
+                "dplug:client": "*"
+            },
+            "importPaths": [
+                "vst"
+            ],
+            "name": "vst",
+            "sourcePaths": [
+                "vst\/dplug\/vst"
+            ]
+        },
+        {
+            "dependencies": {
+                "dplug:client": "*"
+            },
+            "dependencies-osx": {
+                "derelict-carbon": "~>0.0",
+                "derelict-cocoa": "~>0.0"
+            },
+            "importPaths": [
+                "au"
+            ],
+            "name": "au",
+            "sourcePaths": [
+                "au\/dplug\/au"
+            ]
+        },
+        {
+            "dependencies": {
+                "ae-graphics": "~>0.0",
+                "dplug:core": "*",
+                "gfm:core": "~>6.0",
+                "gfm:math": "~>6.0"
+            },
+            "dependencies-osx": {
+                "derelict-carbon": "~>0.0",
+                "derelict-cocoa": "~>0.0"
+            },
+            "importPaths": [
+                "window"
+            ],
+            "importPaths-windows": [
+                "platforms\/windows"
+            ],
+            "libs-windows": [
+                "gdi32",
+                "user32"
+            ],
+            "name": "window",
+            "sourcePaths": [
+                "window\/dplug\/window"
+            ],
+            "sourcePaths-windows": [
+                "platforms\/windows"
+            ]
+        },
+        {
+            "dependencies": {
+                "ae-graphics": "~>0.0",
+                "dplug:client": "*",
+                "dplug:core": "*",
+                "dplug:window": "*",
+                "gfm:math": "~>6.0",
+                "imageformats": "~>6.0"
+            },
+            "importPaths": [
+                "gui"
+            ],
+            "name": "gui",
+            "sourcePaths": [
+                "gui\/dplug\/gui"
+            ]
+        }
+    ],
+    "targetType": "none",
+    "version": "2.0.65"
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	debug writeln(n.toPrettyString());
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));

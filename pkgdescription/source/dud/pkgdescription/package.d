@@ -282,13 +282,8 @@ struct SubConfigs {
 struct BuildType {
 	string name;
 	Platform[] platforms;
-	//PackageDescription* pkg;
 	PackageDescription pkg;
 }
-
-//struct BuildTypes {
-//	BuildType[] buildOptions;
-//}
 
 enum BuildRequirement {
 	allowWarnings,
