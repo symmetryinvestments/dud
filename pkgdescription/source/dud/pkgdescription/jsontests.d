@@ -78,7 +78,7 @@ unittest {
 }`;
 
 	PackageDescription pkg = jsonToPackageDescription(toParse);
-	assert(pkg.targetName.strs.length == 2);
+	assert(pkg.targetName.platforms.length == 2);
 	String s = String(
 			[ StringPlatform("dudposix", [Platform.posix])
 			, StringPlatform("dudwindows", [Platform.windows])

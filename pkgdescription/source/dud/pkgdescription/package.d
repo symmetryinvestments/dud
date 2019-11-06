@@ -212,8 +212,7 @@ struct PackageDescription {
 
 	bool opEquals(const PackageDescription other) const {
 		import dud.pkgdescription.compare : areEqual;
-		//return areEqual(this, other);
-		return true;
+		return areEqual(this, other);
 	}
 }
 
@@ -332,7 +331,7 @@ struct StringPlatform {
 
 struct String {
 @safe pure:
-	StringPlatform[] strs;
+	StringPlatform[] platforms;
 }
 
 struct StringsPlatform {

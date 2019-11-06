@@ -155,14 +155,14 @@ void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
 	ret.str = jv.str();
 	ret.platforms = keyToPlatform(key);
 
-	output.strs ~= ret;
+	output.platforms ~= ret;
 }
 
 void stringPlatformToJ(String s, string key, ref JSONValue output) {
 	enforce(output.type == JSONType.object || output.type == JSONType.null_,
 		format("Expected an JSONValue of type object not '%s'", output.type));
 
-	s.strs.each!(it => output[platformKeyToS(key, it.platforms)] =
+	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
 			JSONValue(it.str));
 }
 

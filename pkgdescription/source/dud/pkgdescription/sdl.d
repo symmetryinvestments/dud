@@ -165,13 +165,13 @@ void sGetStringPlatform(Tag t, string key, ref String ret) {
 	StringPlatform tmp;
 	sGetString(t.values(), key, tmp.str);
 	sGetPlatform(t.attributes(), tmp.platforms);
-	ret.strs ~= tmp;
+	ret.platforms ~= tmp;
 }
 
 void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 		const size_t indent)
 {
-	value.strs.each!(s =>
+	value.platforms.each!(s =>
 		formatIndent(o, indent,
 			s.str.containsEscapable
 				? "%s `%s` %(platform=%s %)\n"
