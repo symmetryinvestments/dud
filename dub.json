@@ -8,7 +8,6 @@
 	"name": "dud",
 	"dependencies" : {
 		"semver": { "path" : "semver" },
-		"path": { "path" : "path" },
 		"pkgdescription": { "path" : "pkgdescription" }
 	}
 }
