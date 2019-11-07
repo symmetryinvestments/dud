@@ -455,3 +455,19 @@ configuration "test" {
 	auto p = Parser(l);
 	Root r = p.parseRoot();
 }
+
+unittest {
+	auto l = Lexer(`
+name "bootstrap-webpack"
+description "Webpack bootstrapper for developing spasm applications ."
+authors "Sebastiaan Koppe"
+copyright "Copyright © 2018, Sebastiaan Koppe"
+license "MIT"
+dflags "-J$PACKAGE_DIR/bootstrap"
+dependency "sdlang-d" version="~>0.10.4"
+dependency "asdf" version="~>0.3.0"
+	`);
+
+	auto p = Parser(l);
+	Root r = p.parseRoot();
+}

@@ -36,6 +36,11 @@
 		, "versions" : ["ExcessivJSONTests"]
 		, "targetType" : "executable"
 		, "dflags" : ["-unittest", "-main"]
+		},
+		{ "name" : "ExcessiveConvTests"
+		, "versions" : ["ExcessivConvTests"]
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
 		}
 	]
 }

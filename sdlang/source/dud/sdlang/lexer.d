@@ -182,6 +182,10 @@ struct Lexer {
 					app.put('"');
 					this.input = this.input[2 .. $];
 					this.column += 2;
+				} else if(this.input.startsWith("\\\\")) {
+					app.put('\\');
+					this.input = this.input[2 .. $];
+					this.column += 2;
 				} else if(this.input.startsWith("\\t")) {
 					app.put('\t');
 					this.input = this.input[2 .. $];
@@ -286,7 +290,9 @@ struct Lexer {
 			this.input = this.input[e .. $];
 			return;
 		}
-		assert(false, format("'%s' %d", this.input, this.input[0]));
+		throw new Exception(format(
+			"Unexpected character' %s' %d at Line:%d Column:%d", this.input,
+			this.input[0], this.line, this.column));
 	}
 
 	void parseNumber(size_t idx, size_t l, size_t c) @safe pure {

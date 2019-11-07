@@ -8,5 +8,5 @@ package void unRollException(Exception e, string f) {
 	while(en.next !is null) {
 		en = en.next;
 	}
-	writefln("excp %s", en.msg);
+	writefln("%s", en.msg);
 }

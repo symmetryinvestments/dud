@@ -23,7 +23,11 @@ unittest {
 
 bool containsEscapable(string s) {
 	foreach(idx; 0 .. s.length) {
-		if(s[idx] == '\n' || s[idx] == '"' || s[idx] == '\r') {
+		if(s[idx] == '\n'
+				|| s[idx] == '"'
+				|| s[idx] == '\r'
+				|| s[idx] == '\\')
+		{
 			return true;
 		}
 	}

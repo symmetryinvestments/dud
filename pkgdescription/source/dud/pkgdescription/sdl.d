@@ -455,7 +455,11 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 		const size_t indent)
 {
 	p.platforms.each!(plt =>
-		formatIndent(o, indent, "%s \"%s\" %(platform=%s %)\n", key,
+		formatIndent(o, indent,
+			(plt.path.path.containsEscapable()
+				? "%s `%s` %(platform=%s %)\n"
+				: "%s \"%s\" %(platform=%s %)\n"),
+			key,
 			plt.path.path, plt.platforms.map!(it => to!string(it)))
 	);
 }

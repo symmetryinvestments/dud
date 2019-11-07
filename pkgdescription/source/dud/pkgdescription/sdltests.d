@@ -302,3 +302,24 @@ configuration "unittest" {
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
 }
+
+unittest {
+	string toParse = `
+name "animated"
+version "~develop"
+description "An animation library, written in D, based loosely upon the animation framework used in Android."
+homepage "https://github.com/luke5542/AnimateD"
+authors "luke5542"
+copyright "Copyright © 2015, Devin Ridgway"
+license "GPL-2.0"
+dependency "d-unit" version="~master"
+targetType "library"
+targetPath "bin\\"
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
