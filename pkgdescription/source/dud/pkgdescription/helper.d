@@ -2,6 +2,8 @@ module dud.pkgdescription.helper;
 
 import dud.pkgdescription : PackageDescription;
 
+@safe:
+
 template PreprocessKey(string key) {
 	import std.algorithm.searching : endsWith;
 	static if(key.endsWith("_")) {
@@ -11,7 +13,9 @@ template PreprocessKey(string key) {
 	}
 }
 
-string pkgCompare(const PackageDescription a, const PackageDescription b) {
+string pkgCompare(const PackageDescription a, const PackageDescription b)
+		@trusted
+{
 	import std.typecons : Nullable;
 	import std.format : formattedWrite;
 	import std.array : appender;

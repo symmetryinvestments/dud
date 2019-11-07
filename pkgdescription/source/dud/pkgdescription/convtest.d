@@ -1,9 +1,7 @@
 module dud.pkgdescription.convtest;
 
-version(ExcessivConvTests):
-
 import std.stdio;
-import std.array : empty;
+import std.array : empty, front;
 import std.algorithm.iteration : filter, map;
 import std.algorithm.searching : endsWith;
 import std.file : readText;
@@ -21,6 +19,32 @@ import dud.pkgdescription.output;
 import dud.pkgdescription.testhelper;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.helper;
+
+@safe:
+
+unittest {
+	string input = q{
+configuration "windows-release" {
+  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015 Win64\" && cmake --build . --config Release" platforms="windows-x86_64"
+  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015\" && cmake --build . --config Release" platforms="windows-x86_mscoff"
+}
+};
+	PackageDescription a = sdlToPackageDescription(input);
+	assert(a.configurations.front.preBuildCommands.platforms[0].platforms
+			== [ Platform.windows, Platform.x86_64],
+		format("%s", a.configurations.front.preBuildCommands));
+	assert(a.configurations.front.preBuildCommands.platforms[1].platforms
+			== [ Platform.windows, Platform.x86_mscoff],
+		format("%s", a.configurations.front.preBuildCommands));
+	JSONValue j = a.toJSON();
+	PackageDescription b = jsonToPackageDescription(j);
+
+	assert(a == b,
+		j.toPrettyString());
+		//pkgCompare(a, b));
+}
+
+version(ExcessivConvTests):
 
 unittest {
 	auto all = chain(
@@ -45,7 +69,8 @@ unittest {
 			JSONValue js = a.toJSON();
 			PackageDescription b = jsonToPackageDescription(js);
 			if(b != a) {
-				writefln("%5d b == a failed\n%s", idx, pkgCompare(b, a));
+				writefln("%5d %s\nb == a failed\n%s", idx, it[0],
+						pkgCompare(b, a));
 				++failed;
 				continue;
 			}
@@ -54,13 +79,15 @@ unittest {
 			//writefln("%s:\n%s", it[0], sdlOut);
 			PackageDescription c = sdlToPackageDescription(sdlOut);
 			if(c != a) {
-				writefln("%5d c == a failed\n%s", idx, pkgCompare(c, a));
+				writefln("%5d %s\nc == a failed\n%s", idx, it[0],
+						pkgCompare(c, a));
 				++failed;
 				continue;
 			}
 
 			if(b != c) {
-				writefln("%5d b == c failed\n%s", idx, pkgCompare(b, c));
+				writefln("%5d %s\nb == c failed\n%s", idx, it[0],
+						pkgCompare(b, c));
 				++failed;
 				continue;
 			}

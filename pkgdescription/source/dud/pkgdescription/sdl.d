@@ -96,16 +96,18 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	import std.algorithm.sorting : sort;
 	import std.algorithm.iteration : splitter, joiner;
 	import std.algorithm : uniq;
-	pls ~= aa
+	Platform[] tmp = aa
 		.filter!(a => a.identifier() == "platform")
 		.tee!(a => typeCheck(a.value, [ ValueType.str ]))
 		.map!(a => a.value.value.get!string())
 		.map!(s => s.splitter("-"))
 		.joiner
 		.map!(s => to!Platform(s))
-		.array;
+		.array
+		~ pls;
 
-	pls = pls.sort.uniq.array;
+	pls = tmp.sort.uniq.array;
+	debug writeln(pls);
 }
 
 //
@@ -116,6 +118,7 @@ void sGetStringsPlatform(Tag t, string key, ref Strings ret) {
 	StringsPlatform tmp;
 	sGetStrings(t.values(), key, tmp.strs);
 	sGetPlatform(t.attributes(), tmp.platforms);
+	debug writeln(tmp);
 	ret.platforms ~= tmp;
 }
 

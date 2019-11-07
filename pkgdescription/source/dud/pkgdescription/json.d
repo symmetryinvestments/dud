@@ -140,8 +140,16 @@ void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
 void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
-	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
-			JSONValue(it.strs));
+	debug writeln(s.platforms);
+	s.platforms.each!(delegate(StringsPlatform it) pure @safe {
+			string nKey = platformKeyToS(key, it.platforms);
+			debug writeln(nKey);
+			if(nKey in output) {
+				output[nKey] ~= JSONValue(it.strs);
+			} else {
+				output[nKey] = JSONValue(it.strs);
+			}
+		});
 }
 
 //
