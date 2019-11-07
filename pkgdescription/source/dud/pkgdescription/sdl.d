@@ -36,22 +36,17 @@ void sGetPackageDescription(TagAccessor ts, string key,
 	foreach(Tag t; ts) {
 		string id = t.fullIdentifier();
 		sw: switch(id) {
-			try {
-				static foreach(mem; FieldNameTuple!PackageDescription) {{
-					enum Mem = SDLName!mem;
-					alias get = SDLGet!mem;
-					case Mem:
-						get(t, Mem, __traits(getMember, ret, mem));
-						break sw;
-				}}
-				default:
-					enforce(false, format("key '%s' unknown", id));
-					assert(false);
-			} catch(Exception e) {
-				string s = format("While parsing key '%s' an exception occured",
-						key);
-				throw new Exception(s, e);
-			}
+			static foreach(mem; FieldNameTuple!PackageDescription) {{
+				enum Mem = SDLName!mem;
+				alias get = SDLGet!mem;
+				case Mem:
+					get(t, Mem, __traits(getMember, ret, mem));
+					break sw;
+			}}
+			default:
+				throw new KeyNotHandled(
+					format("The sdl dud format does not know a key '%s'.", id)
+				);
 		}
 	}
 }
@@ -172,10 +167,7 @@ void sGetString(Tag t, string key, ref string ret) {
 }
 
 void sGetString(ValueRange v, string key, ref string ret) {
-	enforce(!v.empty, "Can not get element of empty range");
-	Token f = v.front;
-	v.popFront();
-	enforce(v.empty, "ValueRange was expected to be empty");
+	Token f = expectedSingleValue(v);
 	typeCheck(f, [ ValueType.str ]);
 	ret = f.value.get!string();
 }
@@ -209,7 +201,7 @@ void sGetStrings(Tag t, string key, ref string[] ret) {
 }
 
 void sGetStrings(ValueRange v, string key, ref string[] ret) {
-	enforce(!v.empty, format("Can not get element of '%s'", key));
+	enforce!EmptyInput(!v.empty, format("Can not get elements of '%s'", key));
 	v
 		.tee!(it => typeCheck(it, [ ValueType.str ]))
 		.each!(it => ret ~= it.value.get!string());
@@ -295,7 +287,7 @@ void semVerToS(Out)(auto ref Out o, string key, SemVer sv,
 void sGetBuildOptions(Tag t, string key, ref BuildOptions ret) {
 	string[] s;
 	sGetStrings(t, key, s);
-	enforce(!s.empty, format("'%s' must not be empty", key));
+	enforce!EmptyInput(!s.empty, format("'%s' must not be empty", key));
 	BuildOption[] bos = s.map!(it => to!BuildOption(it)).array;
 
 	Platform[] plts;
@@ -354,7 +346,7 @@ void sGetBuildRequirements(Tag t, string key, ref BuildRequirement[] ret) {
 }
 
 void sGetBuildRequirements(ValueRange v, string key, ref BuildRequirement[] p) {
-	enforce(!v.empty, "Can not get element of empty range");
+	enforce!EmptyInput(!v.empty, "Can not get element of empty range");
 	v.map!(it => it.value.get!string()).each!(s => p ~= to!BuildRequirement(s));
 }
 
@@ -370,21 +362,30 @@ void buildRequirementsToS(Out)(auto ref Out o, string key,
 void sGetSubConfig(Tag t, string key, ref SubConfigs ret) {
 	string[] s;
 	sGetStrings(t, key, s);
-	enforce(s.length == 2, format("Expected two strings not '%s'", s));
+	if(s.length != 2) {
+		throw new UnexpectedInput(format("Expected two strings not '%s'"),
+			Location("", t.id.cur.line, t.id.cur.column));
+	}
 	Platform[] plts;
 	sGetPlatform(t.attributes(), plts);
 	immutable(Platform[]) iPlts = plts.idup;
 
 	if(iPlts.empty) {
-		enforce(s[0] !in ret.unspecifiedPlatform, format(
-			"Subconfig for '%s' already specified", s[0]));
+		if(s[0] in ret.unspecifiedPlatform) {
+			throw new ConflictingInput(
+				format("Subconfig for '%s' already specified", s[0]),
+				Location("", t.id.cur.line, t.id.cur.column));
+		}
 		ret.unspecifiedPlatform[s[0]] = s[1];
 	} else {
 		string[string] tmp;
 		tmp[s[0]] = s[1];
 
-		enforce(iPlts !in ret.configs || s[0] !in ret.configs[iPlts],
-			format("Subconfig for '%s' already specified", s[0]));
+		if(iPlts in ret.configs && s[0] in ret.configs[iPlts]) {
+			throw new ConflictingInput(
+				format("Subconfig for '%s' already specified", s[0]),
+				Location("", t.id.cur.line, t.id.cur.column));
+		}
 		ret.configs[iPlts] = tmp;
 	}
 }
@@ -414,7 +415,7 @@ void subConfigsToS(Out)(auto ref Out o, string key,
 
 void sGetPaths(Tag t, string key, ref Paths ret) {
 	auto v = t.values();
-	enforce(!v.empty, format("Can not get element of empty range for '%s'", key));
+	enforce!EmptyInput(!v.empty, format("Can not get elements of '%s'", key));
 	PathsPlatform pp;
 	pp.paths = v
 		.tee!(it => typeCheck(it, [ ValueType.str ]))
@@ -441,11 +442,9 @@ void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 
 void sGetPath(Tag t, string key, ref Path ret) {
 	auto v = t.values();
-	enforce(!v.empty, "Can not get element of empty range");
-	typeCheck(v.front, [ ValueType.str ]);
-	string s = v.front.value.get!string();
-	v.popFront();
-	enforce(v.empty, "Expected one path not several");
+	Token f = expectedSingleValue(v);
+	typeCheck(f, [ ValueType.str ]);
+	string s = f.value.get!string();
 	PathPlatform pp;
 	pp.path = UnprocessedPath(s);
 	sGetPlatform(t.attributes(), pp.platforms);
@@ -510,9 +509,13 @@ void sGetPackageDescriptions(Tag t, string key,
 	PackageDescription tmp;
 	tmp.name = n;
 	sGetPackageDescription(tags(t.oc), "configuration", tmp);
-	enforce(tmp.name == n,
-		format("Configuration names must not be changed in OptChild '%s' => '%s'",
-			n, tmp.name));
+	if(tmp.name != n) {
+		throw new UnexpectedInput(format(
+			"Configuration names must not be changed in OptChild '%s' => '%s'",
+			n, tmp.name),
+			Location("", t.id.cur.line, t.id.cur.column)
+		);
+	}
 	ret ~= tmp;
 }
 
@@ -528,7 +531,8 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 		ref Dependency[] deps)
 {
 	import dud.pkgdescription.versionspecifier;
-	enforce(!v.empty, "Can not get Dependencies of an empty range");
+	enforce!EmptyInput(!v.empty,
+		format("Can not get Dependencies of an empty range", key));
 	string name;
 	sGetString(v, key, name);
 	Dependency ret;
@@ -629,4 +633,21 @@ void typeCheck(const Token got, const ValueType[] exp,
 				Location("", got.line, got.column), filename, line
 		);
 	}
+}
+
+Token expectedSingleValue(ValueRange vr, string filename = __FILE__,
+		size_t line = __LINE__)
+{
+	if(vr.empty) {
+		throw new SingleElement("ValueRange was incorrectly empty",
+			filename, line);
+	}
+	Token ret = vr.front;
+	vr.popFront();
+	if(!vr.empty) {
+		throw new SingleElement(
+			"ValueRange incorrectly contains more than one element",
+			Location("", vr.front.line, vr.front.column), filename, line);
+	}
+	return ret;
 }
