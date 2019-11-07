@@ -1,7 +1,7 @@
 module dud.pkgdescription.sdl;
 
 import std.algorithm.iteration : map, each, filter;
-import std.algorithm.searching : any;
+import std.algorithm.searching : any, canFind;
 import std.array : array, back, empty, front, appender, popFront;
 import std.conv : to;
 import std.exception : enforce;
@@ -11,10 +11,11 @@ import std.stdio;
 import std.traits : FieldNameTuple;
 import std.typecons : nullable, Nullable;
 
+import dud.pkgdescription.exception;
+import dud.pkgdescription.outpututils;
+import dud.pkgdescription.udas;
 import dud.pkgdescription;
 import dud.semver : SemVer;
-import dud.pkgdescription.udas;
-import dud.pkgdescription.outpututils;
 
 import dud.sdlang;
 
@@ -93,23 +94,6 @@ void configurationToS(Out)(auto ref Out o, string key,
 }
 
 //
-// Output Helper
-//
-
-private void indent(Out)(auto ref Out o, const size_t indent) {
-	foreach(i; 0 .. indent) {
-		formattedWrite(o, "\t");
-	}
-}
-
-private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
-		string str, Args args)
-{
-	indent(o, i);
-	formattedWrite(o, str, args);
-}
-
-//
 // Platform
 //
 
@@ -119,10 +103,7 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	import std.algorithm : uniq;
 	pls ~= aa
 		.filter!(a => a.identifier() == "platform")
-		.tee!(a => enforce(a.value.value.type == ValueType.str,
-			format("platfrom must be string not a '%s' at %s:%s",
-				a.value.value.type, a.value.line, a.value.column)
-		))
+		.tee!(a => typeCheck(a.value, [ ValueType.str ]))
 		.map!(a => a.value.value.get!string())
 		.map!(s => s.splitter("-"))
 		.joiner
@@ -192,16 +173,16 @@ void sGetString(Tag t, string key, ref string ret) {
 
 void sGetString(ValueRange v, string key, ref string ret) {
 	enforce(!v.empty, "Can not get element of empty range");
-	Value f = v.front;
+	Token f = v.front;
 	v.popFront();
 	enforce(v.empty, "ValueRange was expected to be empty");
-	ret = f.get!string();
+	typeCheck(f, [ ValueType.str ]);
+	ret = f.value.get!string();
 }
 
 void stringToSName(Out)(auto ref Out o, string key, string value,
 		const size_t indent)
 {
-	//if(!value.empty || indent == 0) {
 	if(!value.empty) {
 		formatIndent(o, indent, "%s \"%s\"\n", key, value);
 	}
@@ -229,7 +210,9 @@ void sGetStrings(Tag t, string key, ref string[] ret) {
 
 void sGetStrings(ValueRange v, string key, ref string[] ret) {
 	enforce(!v.empty, format("Can not get element of '%s'", key));
-	v.each!(it => ret ~= it.get!string());
+	v
+		.tee!(it => typeCheck(it, [ ValueType.str ]))
+		.each!(it => ret ~= it.value.get!string());
 }
 
 void stringsToS(Out)(auto ref Out o, string key, string[] values,
@@ -372,7 +355,7 @@ void sGetBuildRequirements(Tag t, string key, ref BuildRequirement[] ret) {
 
 void sGetBuildRequirements(ValueRange v, string key, ref BuildRequirement[] p) {
 	enforce(!v.empty, "Can not get element of empty range");
-	v.map!(it => it.get!string()).each!(s => p ~= to!BuildRequirement(s));
+	v.map!(it => it.value.get!string()).each!(s => p ~= to!BuildRequirement(s));
 }
 
 void buildRequirementsToS(Out)(auto ref Out o, string key,
@@ -433,7 +416,9 @@ void sGetPaths(Tag t, string key, ref Paths ret) {
 	auto v = t.values();
 	enforce(!v.empty, format("Can not get element of empty range for '%s'", key));
 	PathsPlatform pp;
-	pp.paths = v.map!(it => it.get!string())
+	pp.paths = v
+		.tee!(it => typeCheck(it, [ ValueType.str ]))
+		.map!(it => it.value.get!string())
 		.map!(s => UnprocessedPath(s))
 		.array;
 	sGetPlatform(t.attributes(), pp.platforms);
@@ -457,7 +442,8 @@ void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 void sGetPath(Tag t, string key, ref Path ret) {
 	auto v = t.values();
 	enforce(!v.empty, "Can not get element of empty range");
-	string s = v.front.get!string();
+	typeCheck(v.front, [ ValueType.str ]);
+	string s = v.front.value.get!string();
 	v.popFront();
 	enforce(v.empty, "Expected one path not several");
 	PathPlatform pp;
@@ -606,5 +592,41 @@ void dependenciesToS(Out)(auto ref Out o, string key, Dependency[] deps,
 		formattedWrite(o, " %(platform=%s %)",
 			value.platforms.map!(p => to!string(p)));
 		formattedWrite(o, "\n");
+	}
+}
+
+//
+// Output Helper
+//
+
+private void indent(Out)(auto ref Out o, const size_t indent) {
+	foreach(i; 0 .. indent) {
+		formattedWrite(o, "\t");
+	}
+}
+
+private void formatIndent(Out, Args...)(auto ref Out o, const size_t i,
+		string str, Args args)
+{
+	indent(o, i);
+	formattedWrite(o, str, args);
+}
+
+//
+// Helper
+//
+
+void typeCheck(const Token got, const ValueType[] exp,
+		string filename = __FILE__, size_t line = __LINE__)
+{
+	if(!canFind(exp, got.value.type)) {
+		throw new WrongTypeSDL(
+			exp.length == 1
+				? format("Expected a Value of type '%s' but got '%s'",
+					exp.front, got.value.type)
+				: format("Expected a Value of types [%(%s, %)]' but got '%s'",
+					exp, got.value.type),
+				Location("", got.line, got.column), filename, line
+		);
 	}
 }

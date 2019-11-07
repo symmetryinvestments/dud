@@ -8,6 +8,10 @@
 			"path": "../sdlang",
 			"version": ">=0.0.0"
 		},
+		"exception": {
+			"path": "../exception",
+			"version": ">=0.0.0"
+		},
 		"semver": {
 			"path": "../semver",
 			"version": ">=0.0.0"
@@ -20,15 +24,15 @@
 	"name": "pkgdescription",
 	"targetType": "library",
 	"configurations" : [
+		{ "name" : "library"
+		, "targetType" : "library"
+		},
 		{ "name" : "ExcessiveSDLTests"
 		, "versions" : ["ExcessivSDLTests"]
 		, "targetType" : "executable"
 		, "dflags" : ["-unittest", "-main"]
-		}
-		, { "name" : "unittest"
-		, "dflags" : ["-unittest", "-debug", "-g"]
-		}
-		, { "name" : "ExcessiveJSONTests"
+		},
+		{ "name" : "ExcessiveJSONTests"
 		, "versions" : ["ExcessivJSONTests"]
 		, "targetType" : "executable"
 		, "dflags" : ["-unittest", "-main"]

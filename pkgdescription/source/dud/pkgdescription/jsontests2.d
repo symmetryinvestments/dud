@@ -11,15 +11,7 @@ import dud.testdata;
 import dud.pkgdescription;
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
-
-private void unRollException(Exception e, string f) {
-	Throwable en = e;
-	writefln("%s", f);
-	while(en.next !is null) {
-		en = en.next;
-	}
-	writefln("excp %s", en.msg);
-}
+import dud.pkgdescription.testhelper;
 
 unittest {
 	string[] dubs = () @trusted { return allDubJSONFiles(); }();

@@ -2,7 +2,7 @@ module dud.pkgdescription.json;
 
 import std.algorithm.iteration : map, each, joiner, splitter;
 import std.algorithm.mutation : copy;
-import std.algorithm.searching : startsWith;
+import std.algorithm.searching : canFind, startsWith;
 import std.array : array, empty, front, popFront, appender;
 import std.conv : to;
 import std.exception : enforce;
@@ -13,6 +13,7 @@ import std.string : indexOf;
 import std.typecons : nullable, Nullable;
 import std.traits : FieldNameTuple;
 
+import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
 import dud.pkgdescription.versionspecifier;
@@ -114,8 +115,7 @@ SemVer jGetSemVer(ref JSONValue jv) {
 //
 
 string jGetString(ref JSONValue jv) {
-	enforce(jv.type == JSONType.string,
-			format("Expected a string not a %s", jv.type));
+	typeCheck(jv, [JSONType.string]);
 	return jv.str();
 }
 
@@ -128,8 +128,7 @@ JSONValue stringToJ(string s) {
 //
 
 void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
-	enforce(jv.type == JSONType.array,
-			format("Expected a array not a %s", jv.type));
+	typeCheck(jv, [JSONType.array]);
 
 	StringsPlatform ret;
 	ret.strs = jGetStrings(jv);
@@ -139,8 +138,7 @@ void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
 }
 
 void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object || output.type == JSONType.null_,
-		format("Expected an JSONValue of type object not '%s'", output.type));
+	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
 			JSONValue(it.strs));
@@ -151,8 +149,7 @@ void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
 //
 
 void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
-	enforce(jv.type == JSONType.string,
-			format("Expected a string not a %s", jv.type));
+	typeCheck(jv, [JSONType.string]);
 
 	StringPlatform ret;
 	ret.str = jv.str();
@@ -162,8 +159,7 @@ void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
 }
 
 void stringPlatformToJ(String s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object || output.type == JSONType.null_,
-		format("Expected an JSONValue of type object not '%s'", output.type));
+	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
 			JSONValue(it.str));
@@ -174,8 +170,7 @@ void stringPlatformToJ(String s, string key, ref JSONValue output) {
 //
 
 string[] jGetStrings(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array,
-			format("Expected an array not a %s", jv.type));
+	typeCheck(jv, [JSONType.array]);
 	return jv.arrayNoRef().map!(it => jGetString(it)).array;
 }
 
@@ -190,8 +185,7 @@ JSONValue stringsToJ(string[] ss) {
 //
 
 void jGetPath(ref JSONValue jv, string key, ref Path output) {
-	enforce(jv.type == JSONType.string,
-			format("Expected a string not a %s", jv.type));
+	typeCheck(jv, [JSONType.string]);
 
 	PathPlatform ret;
 	ret.path = UnprocessedPath(jv.str());
@@ -200,8 +194,7 @@ void jGetPath(ref JSONValue jv, string key, ref Path output) {
 }
 
 void pathToJ(Path s, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object || output.type == JSONType.null_,
-		format("Expected an JSONValue of type object not '%s'", output.type));
+	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
 			JSONValue(it.path.path));
@@ -212,8 +205,7 @@ void pathToJ(Path s, string key, ref JSONValue output) {
 //
 
 void jGetPaths(ref JSONValue jv, string key, ref Paths output) {
-	enforce(jv.type == JSONType.array,
-			format("Expected an array not a %s", jv.type));
+	typeCheck(jv, [JSONType.array]);
 
 	PathsPlatform tmp;
 	tmp.platforms = keyToPlatform(key);
@@ -225,8 +217,7 @@ void jGetPaths(ref JSONValue jv, string key, ref Paths output) {
 }
 
 void pathsToJ(Paths ss, string key, ref JSONValue output) {
-	enforce(output.type == JSONType.object || output.type == JSONType.null_,
-		format("Expected an JSONValue of type object not '%s'", output.type));
+	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	ss.platforms
 		.each!(pp =>
@@ -240,8 +231,7 @@ void pathsToJ(Paths ss, string key, ref JSONValue output) {
 //
 
 bool jGetBool(ref JSONValue jv) {
-	enforce(jv.type == JSONType.true_ || jv.type == JSONType.false_,
-			format("Expected a boolean not a %s", jv.type));
+	typeCheck(jv, [JSONType.true_, JSONType.false_]);
 	return jv.boolean();
 }
 
@@ -264,9 +254,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	Dependency extractDependencyStr(ref JSONValue jv) pure {
 		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
-		enforce(jv.type == JSONType.string,
-				format("Expected an string not a %s while extracting a dependency",
-					jv.type));
+		typeCheck(jv, [JSONType.string]);
 
 		Dependency ret;
 		ret.version_ = parseVersionSpecifier(jv.str());
@@ -276,9 +264,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	Dependency extractDependencyObj(ref JSONValue jv) pure {
 		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
 
-		enforce(jv.type == JSONType.object,
-				format("Expected an object not a %s while extracting a dependency",
-					jv.type));
+		typeCheck(jv, [JSONType.object]);
 
 		Dependency ret;
 		foreach(key, value; jv.objectNoRef()) {
@@ -306,17 +292,13 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	}
 
 	Dependency extractDependency(ref JSONValue jv) pure {
-		enforce(jv.type == JSONType.object || jv.type == JSONType.string,
-				format("Expected an object or a string not a %s while extracting "
-					~ "a dependency", jv.type));
+		typeCheck(jv, [JSONType.object, JSONType.string]);
 		return jv.type == JSONType.object
 			? extractDependencyObj(jv)
 			: extractDependencyStr(jv);
 	}
 
-	enforce(jv.type == JSONType.object,
-			format("Expected an object not a %s while extracting dependencies",
-				jv.type));
+	typeCheck(jv, [JSONType.object]);
 
 	const string noPlatform = splitOutKey(key);
 	Platform[] plts = keyToPlatform(key);
@@ -398,17 +380,14 @@ SubPackage jGetSubpackageObj(ref JSONValue jv) {
 }
 
 SubPackage jGetSubPackage(ref JSONValue jv) {
-	enforce(jv.type == JSONType.object || jv.type == JSONType.string,
-			format("Expected an object or a string not a %s while extracting "
-				~ "a dependency", jv.type));
+	typeCheck(jv, [JSONType.object, JSONType.string]);
 	return jv.type == JSONType.object
 		? jGetSubpackageObj(jv)
 		: jGetSubpackageStr(jv);
 }
 
 SubPackage[] jGetSubPackages(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array,
-			format("Expected an array not a %s", jv.type));
+	typeCheck(jv, [JSONType.array]);
 	return jv.arrayNoRef().map!(it => jGetSubPackage(it)).array;
 }
 
@@ -443,8 +422,7 @@ void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 }
 
 void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
-	enforce(jv.type == JSONType.object,
-			format("Expected an object not a %s", jv.type));
+	typeCheck(jv, [JSONType.object]);
 	foreach(key, value; jv.objectNoRef()) {
 		BuildType tmp;
 		jGetBuildType(value, key, tmp);
@@ -453,8 +431,7 @@ void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
 }
 
 void buildTypesToJ(BuildType[] bts, string key, ref JSONValue ret) {
-	enforce(ret.type == JSONType.object || ret.type == JSONType.null_,
-		format("Expected an JSONValue of type object not '%s'", ret.type));
+	typeCheck(ret, [JSONType.object, JSONType.null_]);
 	if(bts.empty) {
 		return;
 	}
@@ -520,7 +497,7 @@ JSONValue targetTypeToJ(TargetType t) {
 //
 
 PackageDescription[] jGetPackageDescriptions(JSONValue js) {
-	enforce(js.type == JSONType.array, "Expected and array");
+	typeCheck(js, [JSONType.array]);
 	return js.arrayNoRef().map!(it => jGetPackageDescription(it)).array;
 }
 
@@ -537,35 +514,33 @@ template isPlatfromDependend(T) {
 }
 
 PackageDescription jGetPackageDescription(JSONValue js) {
-	enforce(js.type == JSONType.object, "Expected and object");
+	typeCheck(js, [JSONType.object]);
 
 	PackageDescription ret;
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
 		const string noPlatform = splitOutKey(key);
 		sw: switch(noPlatform) {
-			try {
-				static foreach(mem; FieldNameTuple!PackageDescription) {{
-					enum Mem = JSONName!mem;
-					alias get = JSONGet!mem;
-					alias MemType = typeof(__traits(getMember, ret, mem));
-					case Mem:
-						static if(isPlatfromDependend!MemType) {
-							get(value, key, __traits(getMember, ret, mem));
-						} else {
-							__traits(getMember, ret, mem) = get(value);
-						}
-						break sw;
-				}}
-				default:
-					enforce(false, format("noPlatfrom '%s' unknown from key %s",
-						noPlatform, key));
-					assert(false);
-			} catch(Exception e) {
-				string s = format("While parsing key '%s' an exception occured",
-						key);
-				throw new Exception(s, e);
-			}
+			static foreach(mem; FieldNameTuple!PackageDescription) {{
+				enum Mem = JSONName!mem;
+				alias get = JSONGet!mem;
+				alias MemType = typeof(__traits(getMember, ret, mem));
+				case Mem:
+					static if(isPlatfromDependend!MemType) {
+						get(value, key, __traits(getMember, ret, mem));
+					} else {
+						__traits(getMember, ret, mem) = get(value);
+					}
+					break sw;
+			}}
+			default:
+				throw new KeyNotHandled(
+					key == noPlatform
+						? format("The json dud format does not know a key '%s'.",
+							key)
+						: format("The json dud format does not know a key '%s'."
+							~ " Without platform '%s'", key, noPlatform)
+				);
 		}
 	}
 	return ret;
@@ -614,8 +589,7 @@ BuildRequirement jGetBuildRequirement(ref JSONValue jv) {
 }
 
 BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
-	enforce(jv.type == JSONType.array,
-			format("Expected an array not a %s", jv.type));
+	typeCheck(jv, [JSONType.array]);
 	return jv.arrayNoRef().map!(it => jGetBuildRequirement(it)).array;
 }
 
@@ -629,10 +603,8 @@ JSONValue buildRequirementsToJ(BuildRequirement[] brs) {
 // string[string][Platform[]]
 //
 
-void jGetStringAA(ref JSONValue jv, string key, ref SubConfigs ret)
-{
-	enforce(jv.type == JSONType.object,
-			format("Expected an object not a %s", jv.type));
+void jGetStringAA(ref JSONValue jv, string key, ref SubConfigs ret) {
+	typeCheck(jv, [JSONType.object]);
 	immutable(Platform[]) platforms = keyToPlatform(key);
 
 	string[string] tmp;
@@ -672,6 +644,21 @@ void stringAAToJ(SubConfigs aa, string key, ref JSONValue ret) {
 //
 // Helper
 //
+
+void typeCheck(const JSONValue got, const JSONType[] exp,
+		const string file = __FILE__, const size_t line = __LINE__)
+{
+	assert(!exp.empty);
+	if(!canFind(exp, got.type)) {
+		throw new WrongTypeJSON(
+			exp.length == 1
+				? format("Expected a JSONValue of type '%s' but got '%s'",
+					exp.front, got.type)
+				: format("Expected a JSONValue of types [%(%s, %)]' but got '%s'",
+					exp, got.type),
+			file, line);
+	}
+}
 
 string splitOutKey(string key) {
 	const ptrdiff_t dash = key.indexOf('-', 1);

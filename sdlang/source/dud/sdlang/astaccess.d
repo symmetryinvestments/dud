@@ -105,8 +105,8 @@ struct ValueRange {
 		return this.range.empty;
 	}
 
-	@property ref Value front() {
-		return this.range.front.value;
+	@property ref Token front() {
+		return this.range.front;
 	}
 
 	void popFront() {

@@ -20,7 +20,7 @@ unittest {
 		assert(tag.identifier() == "key", tag.identifier());
 		auto vals = tag.values();
 		assert(!vals.empty);
-		assert(vals.front.type == ValueType.str);
+		assert(vals.front.value.type == ValueType.str);
 	}
 }
 
@@ -37,7 +37,7 @@ unittest {
 	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.str);
+	assert(val.front.value.type == ValueType.str);
 	vals.popFront();
 
 	assert(!vals.empty);
@@ -45,7 +45,7 @@ unittest {
 	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.int32);
+	assert(val.front.value.type == ValueType.int32);
 	vals.popFront();
 
 	assert(vals.empty);
@@ -65,7 +65,7 @@ unittest {
 	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.str);
+	assert(val.front.value.type == ValueType.str);
 	vals.popFront();
 
 	assert(!vals.empty);
@@ -73,7 +73,7 @@ unittest {
 	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.int32);
+	assert(val.front.value.type == ValueType.int32);
 	vals.popFront();
 
 	assert(vals.empty);
@@ -95,7 +95,7 @@ unittest {
 	assert(f.identifier() == "key", f.identifier());
 	auto val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.str);
+	assert(val.front.value.type == ValueType.str);
 	vals.popFront();
 
 	assert(!vals.empty);
@@ -103,7 +103,7 @@ unittest {
 	assert(f.identifier() == "key2", f.identifier());
 	val = f.values();
 	assert(!val.empty);
-	assert(val.front.type == ValueType.int32);
+	assert(val.front.value.type == ValueType.int32);
 	vals.popFront();
 
 	assert(vals.empty);
