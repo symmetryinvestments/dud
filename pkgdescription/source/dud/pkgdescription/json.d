@@ -49,7 +49,7 @@ Platform[] keyToPlatform(string key) {
 	auto s = key.startsWith("-")
 		? key[1 .. $].splitter('-')
 		: key.splitter('-');
-	enforce(!s.empty, format("'%s' is an invalid string", key));
+	enforce!EmptyInput(!s.empty, format("'%s' is an invalid key", key));
 	s.popFront();
 	return toPlatform(s);
 }
@@ -401,7 +401,7 @@ JSONValue subPackagesToJ(SubPackage[] sps) {
 		if(!sp.inlinePkg.isNull()) {
 			ret ~= packageDescriptionToJ(sp.inlinePkg.get());
 		} else {
-			enforce(!sp.path.platforms.empty,
+			enforce!EmptyInput(!sp.path.platforms.empty,
 				"SubPackage entry must be either Package description or path");
 			ret ~= stringToJ(sp.path.platforms.front.path.path);
 		}
