@@ -17,15 +17,10 @@ int main(string[] args) {
 
 	switch(noUserOptions[1]) {
 		case "convert":
-			convert(noUserOptions);
-			return 0;
+			import dud.convert : convert;
+			return convert(noUserOptions);
 		default:
 			writefln("Operation '%s' is not supported", noUserOptions[1]);
 			return 1;
 	}
-}
-
-void convert(string[] args) {
-	const OptionReturn!(ConvertOptions) options = getConvertOptions(args);
-	writeln(options);
 }

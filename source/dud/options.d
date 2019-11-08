@@ -1,7 +1,10 @@
 module dud.options;
 
 import std.getopt;
+import std.stdio;
 import std.traits : FieldNameTuple;
+
+@safe:
 
 private struct OptionUDA {
 	string s;
@@ -41,17 +44,25 @@ struct OptionReturn(Option) {
 
 void getOptions(T)(ref T t, ref string[] args) {
 	static foreach(mem; FieldNameTuple!T) {
-		getopt(args, "No explanatio here",
+		getopt(args, config.passThrough,
 			buildSelector!(__traits(getMember, T, mem)),
 			&__traits(getMember, t, mem));
+		//writeln(buildSelector!(__traits(getMember, T, mem)), " ",
+		//			__traits(getMember, t, mem));
 	}
 }
 
+void writeOptions(Out, Ops)(auto ref Out output,
+		const ref OptionReturn!Ops options)
+{
+}
+
 OptionReturn!ConvertOptions getConvertOptions(ref string[] args) {
+	CommonOptions common;
+	getOptions(common, args);
+
 	ConvertOptions conv;
 	getOptions(conv, args);
-
-	CommonOptions common = getCommonOptions(args);
 
 	return OptionReturn!(ConvertOptions)(conv, common);
 }
@@ -71,6 +82,9 @@ struct ConvertOptions {
 
 	@OptionUDA("f", "format", "The type to convert to")
 	ConvertTargetFormat outputTargetType;
+
+	@OptionUDA("k", "keepInput", "Keep the input file")
+	bool keepInput;
 }
 
 struct CommonOptions {
@@ -82,10 +96,4 @@ struct CommonOptions {
 
 	@OptionUDA("", "vverbose", "Print debug output")
 	bool vverbose;
-}
-
-CommonOptions getCommonOptions(ref string[] args) {
-	CommonOptions com;
-	getOptions(com, args);
-	return com;
 }
