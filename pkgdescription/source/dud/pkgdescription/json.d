@@ -8,6 +8,7 @@ import std.conv : to;
 import std.exception : enforce;
 import std.format : format, formattedWrite;
 import std.json;
+import std.range : tee;
 import std.stdio;
 import std.string : indexOf;
 import std.typecons : nullable, Nullable;
@@ -95,6 +96,22 @@ string platformKeyToS(string key, const(Platform)[] p) {
 	return app.data;
 }
 
+Platform[] jGetPlatforms(ref JSONValue jv) {
+	typeCheck(jv, [JSONType.array]);
+
+	return jv.arrayNoRef()
+		.tee!(it => typeCheck(it, [JSONType.string]))
+		.map!(it => it.str())
+		.map!(s => to!Platform(s))
+		.array;
+}
+
+JSONValue platformsToJ(Platform[] plts) {
+	return plts.empty
+		? JSONValue.init
+		: JSONValue(plts.map!(plt => to!string(plt)).array);
+}
+
 //
 // SemVer
 //
@@ -140,16 +157,17 @@ void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
 void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
-	debug writeln(s.platforms);
 	s.platforms.each!(delegate(StringsPlatform it) pure @safe {
-			string nKey = platformKeyToS(key, it.platforms);
-			debug writeln(nKey);
-			if(nKey in output) {
-				output[nKey] ~= JSONValue(it.strs);
-			} else {
-				output[nKey] = JSONValue(it.strs);
-			}
-		});
+		string nKey = platformKeyToS(key, it.platforms);
+		if(output.type == JSONType.object && nKey in output) {
+			throw new ConflictingOutput(format(
+				"'%s' already present in output JSON", nKey));
+		} else if(output.type == JSONType.object && nKey !in output) {
+			output[nKey] = JSONValue(it.strs);
+		} else {
+			output = JSONValue([nKey : it.strs]);
+		}
+	});
 }
 
 //

@@ -170,10 +170,6 @@ struct PackageDescription {
 	@SDL!(sGetPackageDescriptions, configurationsToS)("configuration")
 	PackageDescription[] configurations;
 
-	@JSON!(jGetStrings, stringsToJ)("")
-	@SDL!(sGetStrings, stringsToS)("")
-	string[] platforms;
-
 	@JSON!(jGetStrings, stringsToJ)("-ddoxFilterArgs")
 	@SDL!(sGetStrings, stringsToS)("x:ddoxFilterArgs")
 	string[] ddoxFilterArgs;
@@ -209,6 +205,10 @@ struct PackageDescription {
 	@JSON!(jGetBuildOptions, buildOptionsToJ)("")
 	@SDL!(sGetBuildOptions, buildOptionsToS)("")
 	BuildOptions buildOptions;
+
+	@JSON!(jGetPlatforms, platformsToJ)("")
+	@SDL!(sGetPlatforms, platformsToS)("")
+	Platform[] platforms;
 
 	bool opEquals(const PackageDescription other) const {
 		import dud.pkgdescription.compare : areEqual;

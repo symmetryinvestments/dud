@@ -35,6 +35,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(BuildRequirement[]))
 				|| is(aMemType == const(SubConfigs))
 				|| is(aMemType == const(BuildType[]))
+				|| is(aMemType == const(Platform[]))
 				|| is(aMemType == const(BuildOptions))
 			)
 		{

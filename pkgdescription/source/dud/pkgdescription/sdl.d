@@ -1,7 +1,8 @@
 module dud.pkgdescription.sdl;
 
-import std.algorithm.iteration : map, each, filter;
+import std.algorithm.iteration : map, each, filter, uniq, splitter, joiner;
 import std.algorithm.searching : any, canFind;
+import std.algorithm.sorting : sort;
 import std.array : array, back, empty, front, appender, popFront;
 import std.conv : to;
 import std.exception : enforce;
@@ -93,9 +94,6 @@ void configurationToS(Out)(auto ref Out o, string key,
 //
 
 void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
-	import std.algorithm.sorting : sort;
-	import std.algorithm.iteration : splitter, joiner;
-	import std.algorithm : uniq;
 	Platform[] tmp = aa
 		.filter!(a => a.identifier() == "platform")
 		.tee!(a => typeCheck(a.value, [ ValueType.str ]))
@@ -107,7 +105,34 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 		~ pls;
 
 	pls = tmp.sort.uniq.array;
-	debug writeln(pls);
+}
+
+void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
+	auto vals = t.values();
+	enforce!EmptyInput(!vals.empty,
+		"The platforms must not by empty");
+	ret = vals
+		.tee!(val => typeCheck(val, [ ValueType.str ]))
+		.map!(val => val.value.get!string())
+		.map!(s => s.splitter("-"))
+		.joiner
+		.map!(s => to!Platform(s))
+		.array
+		.sort
+		.uniq
+		.array;
+
+	enforce!UnexpectedInput(t.attributes().empty,
+		"No attributes expected for platforms key");
+}
+
+void platformsToS(Out)(auto ref Out o, string key, Platform[] plts,
+		const size_t indent)
+{
+	if(!plts.empty) {
+		formatIndent(o, indent, "platforms %-(\"%s\"%| %)\n",
+			plts.map!(plt => to!string(plt)));
+	}
 }
 
 //
@@ -118,7 +143,6 @@ void sGetStringsPlatform(Tag t, string key, ref Strings ret) {
 	StringsPlatform tmp;
 	sGetStrings(t.values(), key, tmp.strs);
 	sGetPlatform(t.attributes(), tmp.platforms);
-	debug writeln(tmp);
 	ret.platforms ~= tmp;
 }
 

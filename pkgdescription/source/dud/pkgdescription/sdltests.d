@@ -27,7 +27,7 @@ importPaths "source" "source1" "source2"
 license "LGPL3"
 version "1.0.0"
 configuration "test" {
-	platforms "NotWindows"
+	platforms "windows"
 	libs "libc"
 }
 `;

@@ -25,8 +25,8 @@ import dud.pkgdescription.helper;
 unittest {
 	string input = q{
 configuration "windows-release" {
-  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015 Win64\" && cmake --build . --config Release" platforms="windows-x86_64"
-  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015\" && cmake --build . --config Release" platforms="windows-x86_mscoff"
+  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015 Win64\" && cmake --build . --config Release" platform="windows-x86_64"
+  preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015\" && cmake --build . --config Release" platform="windows-x86_mscoff"
 }
 };
 	PackageDescription a = sdlToPackageDescription(input);
