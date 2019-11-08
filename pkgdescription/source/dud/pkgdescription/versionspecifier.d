@@ -1,6 +1,8 @@
 module dud.pkgdescription.versionspecifier;
 
+import std.array : empty;
 import std.exception : enforce;
+import std.typecons : nullable, Nullable;
 
 import dud.semver;
 import dud.semver.operations;

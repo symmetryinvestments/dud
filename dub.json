@@ -4,7 +4,9 @@
 	],
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"dependencies": {
-		"pkgdescription": "pkgdescription"
+		"pkgdescription": {
+			"path" : "pkgdescription"
+		}
 	},
 	"description": "A dub replacement",
 	"license": "LGPL3",
