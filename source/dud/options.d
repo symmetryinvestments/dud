@@ -85,6 +85,9 @@ struct ConvertOptions {
 
 	@OptionUDA("k", "keepInput", "Keep the input file")
 	bool keepInput;
+
+	@OptionUDA("", "override", "Override output file if exists")
+	bool override_;
 }
 
 struct CommonOptions {

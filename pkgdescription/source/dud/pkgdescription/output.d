@@ -17,9 +17,9 @@ import dud.pkgdescription.udas;
 import dud.pkgdescription.json;
 import dud.pkgdescription.sdl;
 
-@safe pure:
+@safe:
 
-JSONValue toJSON(PackageDescription pkg) {
+JSONValue toJSON(PackageDescription pkg) pure {
 	return packageDescriptionToJ(pkg);
 }
 

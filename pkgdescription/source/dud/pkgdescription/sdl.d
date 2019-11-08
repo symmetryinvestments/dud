@@ -20,7 +20,7 @@ import dud.semver : SemVer;
 
 import dud.sdlang;
 
-@safe pure:
+@safe:
 
 //
 // PackageDescription
@@ -301,7 +301,7 @@ void sGetSemVer(Tag t, string key, ref SemVer ret) {
 	checkEmptyAttributes(t, key, []);
 }
 
-void sGetSemVer(ValueRange v, string key, ref SemVer ver) @safe pure {
+void sGetSemVer(ValueRange v, string key, ref SemVer ver) {
 	string s;
 	sGetString(v, "SemVer", s);
 	ver = nullable(SemVer(s));
