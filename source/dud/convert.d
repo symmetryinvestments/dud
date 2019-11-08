@@ -126,7 +126,7 @@ string buildOutFilename(const ConvertTargetFormat ctf) {
 		case ConvertTargetFormat.json:
 			return buildPath(cwd, "dub.json");
 		case ConvertTargetFormat.sdl:
-			return buildPath(cwd, "sdl.json");
+			return buildPath(cwd, "dub.sdl");
 		case ConvertTargetFormat.undefined:
 			return "";
 	}
