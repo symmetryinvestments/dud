@@ -1,0 +1,9 @@
+{
+	"name" : "conflicting_platform",
+	"sourcePaths" : ["../../source"],
+	"configuration-posix" : [
+		{ "name" : "strange"
+		, "platform" : "windows"
+		}
+	]
+}

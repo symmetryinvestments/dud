@@ -1,0 +1,22 @@
+{
+	"name": "sdlang",
+	"targetType": "library",
+	"dependencies" : {
+		"utils" : {
+			"path" : "../utils"
+		},
+		"testdata" : {
+			"path" : "../testdata"
+		}
+	},
+	"configurations" : [
+		{ "name" : "ExcessiveTests"
+		, "versions" : ["ExcessivTests"]
+		, "targetType" : "executable"
+		, "dflags" : ["-unittest", "-main"]
+		}
+		, { "name" : "unittest"
+		, "dflags" : ["-unittest"]
+		}
+	]
+}

@@ -1,0 +1,62 @@
+Root:
+    T: [Tags#tags, eof]
+    TT: [TagTerminator, Tags#tags, eof]
+    E: [eof]
+
+Tags:
+    Tag: [Tag#cur]
+    TagFollow: [Tag#cur, Tags#follow]
+
+Tag:
+    IVAO: [IDFull#id, Values#vals, Attributes#attrs, OptChild#oc]
+    IAO: [IDFull#id, Attributes#attrs, OptChild#oc]
+    IVO: [IDFull#id, Values#vals, OptChild#oc]
+    IVA: [IDFull#id, Values#vals, Attributes#attrs]
+    IO: [IDFull#id, OptChild#oc]
+    IA: [IDFull#id, Attributes#attrs]
+    IV: [IDFull#id, Values#vals]
+    IE: [IDFull#id]
+    IVAOT: [IDFull#id, Values#vals, Attributes#attrs, OptChild#oc, TagTerminator]
+    IAOT: [IDFull#id, Attributes#attrs, OptChild#oc, TagTerminator]
+    IVOT: [IDFull#id, Values#vals, OptChild#oc, TagTerminator]
+    IVAT: [IDFull#id, Values#vals, Attributes#attrs, TagTerminator]
+    IOT: [IDFull#id, OptChild#oc, TagTerminator]
+    IAT: [IDFull#id, Attributes#attrs, TagTerminator]
+    IVT: [IDFull#id, Values#vals, TagTerminator]
+    IET: [IDFull#id, TagTerminator]
+    VAO: [Values#vals, Attributes#attrs, OptChild#oc]
+    VO: [Values#vals, OptChild#oc]
+    VA: [Values#vals, Attributes#attrs]
+    O: [OptChild#oc]
+    V: [Values#vals]
+    VAOT: [Values#vals, Attributes#attrs, OptChild#oc, TagTerminator]
+    VOT: [Values#vals, OptChild#oc, TagTerminator]
+    VAT: [Values#vals, Attributes#attrs, TagTerminator]
+    OT: [OptChild#oc, TagTerminator]
+    VT: [Values#vals, TagTerminator]
+
+IDFull:
+    S: [ident#cur]
+    L: [ident#cur, colon, IDFull#follow]
+
+Values:
+    Value: [value#cur]
+    ValueFollow: [value#cur, Values#follow]
+
+Attributes:
+    Attribute: [Attribute#cur]
+    AttributeFollow: [Attribute#cur, Attributes#follow]
+
+Attribute:
+    A: [IDFull#id, assign, value#value]
+
+OptChild:
+    T: [lcurly, TagTerminator, Tags#tags, rcurly]
+    E: [lcurly, TagTerminator, rcurly]
+    E2: [lcurly, rcurly]
+
+TagTerminator:
+    E: [eol]
+    S: [semicolon]
+    EF: [eol, TagTerminator]
+    SF: [semicolon, TagTerminator]
