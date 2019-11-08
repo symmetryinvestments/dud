@@ -22,6 +22,10 @@ import dud.sdlang;
 
 @safe pure:
 
+//
+// PackageDescription
+//
+
 PackageDescription sdlToPackageDescription(string sdl) @safe {
 	auto lex = Lexer(sdl);
 	auto parser = Parser(lex);
@@ -143,6 +147,7 @@ void sGetStringsPlatform(Tag t, string key, ref Strings ret) {
 	StringsPlatform tmp;
 	sGetStrings(t.values(), key, tmp.strs);
 	sGetPlatform(t.attributes(), tmp.platforms);
+	checkEmptyAttributes(t, key, [ "platform" ]);
 	ret.platforms ~= tmp;
 }
 
@@ -166,7 +171,7 @@ void stringsPlatformToS(Out)(auto ref Out o, string key, Strings value,
 
 void sGetStringPlatform(Tag t, string key, ref String ret) {
 	StringPlatform tmp;
-	sGetString(t.values(), key, tmp.str);
+	sGetString(t, key, tmp.str, [ "platform"] );
 	sGetPlatform(t.attributes(), tmp.platforms);
 	ret.platforms ~= tmp;
 }
@@ -189,8 +194,11 @@ void stringPlatformToS(Out)(auto ref Out o, string key, String value,
 // string
 //
 
-void sGetString(Tag t, string key, ref string ret) {
+void sGetString(Tag t, string key, ref string ret,
+		string[] allowedAttributes = string[].init)
+{
 	sGetString(t.values(), key, ret);
+	checkEmptyAttributes(t, key, allowedAttributes);
 }
 
 void sGetString(ValueRange v, string key, ref string ret) {
@@ -290,6 +298,7 @@ void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
 
 void sGetSemVer(Tag t, string key, ref SemVer ret) {
 	sGetSemVer(t.values(), key, ret);
+	checkEmptyAttributes(t, key, []);
 }
 
 void sGetSemVer(ValueRange v, string key, ref SemVer ver) @safe pure {
@@ -497,7 +506,7 @@ void pathToS(Out)(auto ref Out o, string key, Path p,
 
 void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
 	string buildTypesName;
-	sGetString(t, "name", buildTypesName);
+	sGetString(t, "name", buildTypesName, [ "platform" ]);
 
 	Platform[] plts;
 	sGetPlatform(t.attributes(), plts);
@@ -568,6 +577,8 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 	sGetString(v, key, name);
 	Dependency ret;
 	sGetPlatform(ars, ret.platforms);
+	checkEmptyAttributes(ars, key,
+		[ "version", "path", "optional", "default", "platform" ]);
 	ret.name = name;
 	foreach(Attribute it; ars) {
 		switch(it.identifier()) {
@@ -681,4 +692,19 @@ Token expectedSingleValue(ValueRange vr, string filename = __FILE__,
 			Location("", vr.front.line, vr.front.column), filename, line);
 	}
 	return ret;
+}
+
+void checkEmptyAttributes(Tag t, string key, string[] toIgnore) {
+	checkEmptyAttributes(t.attributes(), key, toIgnore);
+}
+
+void checkEmptyAttributes(AttributeAccessor ars, string key, string[] toIgnore) {
+	auto attrs = ars
+		.map!(attr => attr.identifier())
+		.filter!(s => !canFind(toIgnore, s));
+	if(!attrs.empty) {
+		throw new UnsupportedAttributes(format(
+			"The key '%s' does not support attributes [%(%s, %)]",
+				key, attrs));
+	}
 }

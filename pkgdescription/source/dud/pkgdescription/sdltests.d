@@ -3,6 +3,7 @@ module dud.pkgdescription.sdltests;
 import std.algorithm.sorting : sort;
 import std.array : empty, front;
 import std.conv;
+import std.exception : assertThrown;
 import std.typecons : nullable;
 import std.format : format;
 import std.stdio;
@@ -12,6 +13,7 @@ import dud.pkgdescription;
 import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
+import dud.pkgdescription.exception;
 import dud.semver : SemVer;
 
 unittest {
@@ -322,4 +324,12 @@ targetPath "bin\\"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}
+
+unittest {
+	string toParse = `
+name "animated" foobar="args"
+`;
+
+	assertThrown!UnsupportedAttributes(sdlToPackageDescription(toParse));
 }
