@@ -3,11 +3,11 @@
 		"Robert burner Schadek"
 	],
 	"copyright": "Copyright © 2019, Symmetry Investments",
+	"dependencies": {
+		"pkgdescription": "pkgdescription"
+	},
 	"description": "A dub replacement",
 	"license": "LGPL3",
 	"name": "dud",
-	"targetType" : "executable",
-	"dependencies" : {
-		"pkgdescription": { "path" : "pkgdescription" }
-	}
+	"targetType": "executable"
 }

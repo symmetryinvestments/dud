@@ -35,7 +35,7 @@ struct VersionSpecifier {
 	Apart from "$(LT)" and "$(GT)", "$(GT)=" and "$(LT)=" are also valid
 	comparators.
 */
-VersionSpecifier parseVersionSpecifier(string ves) {
+Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
 	static import std.string;
 	import std.algorithm.searching : startsWith;
 	import std.format : format;
@@ -45,6 +45,10 @@ VersionSpecifier parseVersionSpecifier(string ves) {
 
 	VersionSpecifier ret;
 	ret.orig = orig;
+
+	if(orig.empty) {
+		return Nullable!(VersionSpecifier).init;
+	}
 
 	ves = ves == "*"
 		// Any version is good.
@@ -112,7 +116,7 @@ VersionSpecifier parseVersionSpecifier(string ves) {
 		}
 	}
 
-	return ret;
+	return nullable(ret);
 }
 
 private string skipComp(ref string c) {
