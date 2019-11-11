@@ -1,0 +1,17 @@
+language: d
+sudo: false
+
+d:
+  - dmd
+  - ldc
+
+script:
+  - cd utils && dub test --compiler=${DC}
+  - cd exception && dub test --compiler=${DC}
+  - cd path && dub test --compiler=${DC}
+  - cd semver && dub test --compiler=${DC}
+  - cd sdlang && dub test --compiler=${DC}
+  - cd pkgdescription && dub test --compiler=${DC}
+
+notifications:
+  email: false
