@@ -40,7 +40,8 @@ int convert(ref string[] args) {
 		absNormInputPath);
 
 	if(!exists(absNormInputPath)) {
-		writefln("No path '%s' exists in the filesystem", absNormInputPath);
+		writefln("Input '%s' doesn't exists in the filesystem",
+			absNormInputPath);
 		return 1;
 	}
 
@@ -91,7 +92,8 @@ int convert(ref string[] args) {
 		return 1;
 	}
 
-	Nullable!PackageDescription nParse = parse(absNormInputPath, inExt);
+	Nullable!PackageDescription nParse = parse(absNormInputPath, inExt,
+			opts.common);
 	if(nParse.isNull()) {
 		writefln("Failed to parse file '%s'", absNormInputPath);
 		return 2;
@@ -100,7 +102,7 @@ int convert(ref string[] args) {
 	PackageDescription nnParse = nParse.get();
 
 	tracef(opts.common.vverbose, "Write output to '%s'", absNormOutputPath);
-	int writeRslt = writeOutput(nnParse, absNormOutputPath, outExt);
+	int writeRslt = writeOutput(nnParse, absNormOutputPath, outExt, opts.common);
 	if(writeRslt != 0) {
 		writefln("Failed to copy the PackageDescription into file '%s'",
 			absNormOutputPath);
@@ -154,7 +156,8 @@ bool extMatchesConvertTargetFormat(string ext, const ConvertTargetFormat ctf)
 	}
 }
 
-Nullable!PackageDescription parse(const string absNormPath, const string inExt)
+Nullable!PackageDescription parse(const string absNormPath, const string inExt,
+	const ref CommonOptions opts)
 {
 	const string input = readText(absNormPath);
 	Nullable!PackageDescription ret;
@@ -163,13 +166,16 @@ Nullable!PackageDescription parse(const string absNormPath, const string inExt)
 			? nullable(jsonToPackageDescription(input))
 			: nullable(sdlToPackageDescription(input));
 	} catch(DudPkgDescriptionException e) {
+		() @trusted {
+			tracef(opts.vverbose, "%s %s", e.toString(), e.info);
+		}();
 		printExceptionChain(e);
 	}
 	return ret;
 }
 
 int writeOutput(PackageDescription pkg, const string absOutputFilename,
-		const string ext)
+		const string ext, const ref CommonOptions opts)
 {
 	import std.json;
 	auto f = File(absOutputFilename, "w");
@@ -182,6 +188,9 @@ int writeOutput(PackageDescription pkg, const string absOutputFilename,
 			toSDL(pkg, f.lockingTextWriter());
 		}
 	} catch(DudPkgDescriptionException e) {
+		() @trusted {
+			tracef(opts.vverbose, "%s %s", e.toString(), e.info);
+		}();
 		printExceptionChain(e);
 		return 1;
 	}
@@ -190,7 +199,7 @@ int writeOutput(PackageDescription pkg, const string absOutputFilename,
 
 void printExceptionChain(Throwable it) @trusted {
 	while(it !is null) {
-		writeln(it.toString());
+		writefln(it.msg);
 		it = it.next();
 	}
 }

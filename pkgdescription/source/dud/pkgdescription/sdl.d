@@ -202,7 +202,7 @@ void sGetString(Tag t, string key, ref string ret,
 }
 
 void sGetString(ValueRange v, string key, ref string ret) {
-	Token f = expectedSingleValue(v);
+	Token f = expectedSingleValue(v, key);
 	typeCheck(f, [ ValueType.str ]);
 	ret = f.value.get!string();
 }
@@ -478,7 +478,7 @@ void pathsToS(Out)(auto ref Out o, const string key, const Paths ps,
 
 void sGetPath(Tag t, const string key, ref Path ret) {
 	auto v = t.values();
-	Token f = expectedSingleValue(v);
+	Token f = expectedSingleValue(v, key);
 	typeCheck(f, [ ValueType.str ]);
 	string s = f.value.get!string();
 	PathPlatform pp;
@@ -677,19 +677,20 @@ void typeCheck(const Token got, const ValueType[] exp,
 	}
 }
 
-Token expectedSingleValue(ValueRange vr, string filename = __FILE__,
-		size_t line = __LINE__)
+Token expectedSingleValue(ValueRange vr, const string key,
+		string filename = __FILE__, size_t line = __LINE__)
 {
 	if(vr.empty) {
-		throw new SingleElement("ValueRange was incorrectly empty",
-			filename, line);
+		throw new SingleElement(format(
+			"ValueRange for key '%s' was incorrectly empty", key
+			), filename, line);
 	}
 	Token ret = vr.front;
 	vr.popFront();
 	if(!vr.empty) {
-		throw new SingleElement(
-			"ValueRange incorrectly contains more than one element",
-			Location("", vr.front.line, vr.front.column), filename, line);
+		throw new SingleElement(format(
+			"ValueRange for key '%s' incorrectly contains more than one element",
+			key), Location("", vr.front.line, vr.front.column), filename, line);
 	}
 	return ret;
 }
