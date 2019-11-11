@@ -75,7 +75,7 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
 		ves = ves[1..$].expandVersion;
 		ret.versionA = SemVer(ves);
 		ret.versionB = SemVer(bumpIncompatibleVersion(ves) ~ "-0");
-	} else if (ves[0] == SemVer.branchPrefix) {
+	} else if (ves[0] == SemVer.BranchPrefix) {
 		ret.inclusiveA = true;
 		ret.inclusiveB = true;
 		ret.versionA = ret.versionB = SemVer(ves);
@@ -88,14 +88,14 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
 		size_t idx2 = std.string.indexOf(ves, " ");
 		if (idx2 == -1) {
 			if (cmpa == "<=" || cmpa == "<") {
-				ret.versionA = SemVer.minRelease;
+				ret.versionA = SemVer.MinRelease;
 				ret.inclusiveA = true;
 				ret.versionB = SemVer(ves);
 				ret.inclusiveB = cmpa == "<=";
 			} else if (cmpa == ">=" || cmpa == ">") {
 				ret.versionA = SemVer(ves);
 				ret.inclusiveA = cmpa == ">=";
-				ret.versionB = SemVer.maxRelease;
+				ret.versionB = SemVer.MaxRelease;
 				ret.inclusiveB = true;
 			} else {
 				// Converts "==" to ">=a&&<=a", which makes merging easier
@@ -124,9 +124,7 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
 private string skipComp(ref string c) {
 	import std.ascii : isDigit;
 	size_t idx = 0;
-	while (idx < c.length && !isDigit(c[idx])
-			&& c[idx] != SemVer.branchPrefix)
-	{
+	while (idx < c.length && !isDigit(c[idx]) && c[idx] != SemVer.BranchPrefix) {
 		idx++;
 	}
 	enforce(idx < c.length, "Expected version number in version spec: "~c);

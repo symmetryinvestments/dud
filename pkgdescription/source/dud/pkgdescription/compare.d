@@ -17,11 +17,18 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 
 		static if(is(aMemType == const(string))
 				|| is(aMemType == const(TargetType))
-				|| is(aMemType == const(SemVer))
 				|| is(aMemType == const(string[]))
 			)
 		{
 			if(__traits(getMember, a, mem) != __traits(getMember, b, mem)) {
+				return false;
+			}
+		} else static if(is(aMemType == const(SemVer))) {
+			auto aSem = __traits(getMember, a, mem);
+			auto bSem = __traits(getMember, b, mem);
+			if(aSem.isUnknown() || bSem.isUnknown()) {
+				return aSem.isUnknown() == bSem.isUnknown();
+			} else if(aSem != bSem) {
 				return false;
 			}
 		} else static if(is(aMemType == const(Dependency[]))
