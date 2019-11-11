@@ -106,7 +106,7 @@ Platform[] jGetPlatforms(ref JSONValue jv) {
 		.array;
 }
 
-JSONValue platformsToJ(Platform[] plts) {
+JSONValue platformsToJ(const Platform[] plts) {
 	return plts.empty
 		? JSONValue.init
 		: JSONValue(plts.map!(plt => to!string(plt)).array);
@@ -116,7 +116,7 @@ JSONValue platformsToJ(Platform[] plts) {
 // SemVer
 //
 
-JSONValue semVerToJ(SemVer v) {
+JSONValue semVerToJ(const SemVer v) {
 	return v.toString().empty
 		? JSONValue.init
 		: JSONValue(v.toString());
@@ -136,7 +136,7 @@ string jGetString(ref JSONValue jv) {
 	return jv.str();
 }
 
-JSONValue stringToJ(string s) {
+JSONValue stringToJ(const string s) {
 	return s.empty ? JSONValue.init : JSONValue(s);
 }
 
@@ -154,10 +154,12 @@ void jGetStringsPlatform(ref JSONValue jv, string key, ref Strings output) {
 	output.platforms ~= ret;
 }
 
-void stringsPlatformToJ(Strings s, string key, ref JSONValue output) {
+void stringsPlatformToJ(const Strings s, const string key,
+		ref JSONValue output)
+{
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
-	s.platforms.each!(delegate(StringsPlatform it) pure @safe {
+	s.platforms.each!(delegate(const(StringsPlatform) it) pure @safe {
 		string nKey = platformKeyToS(key, it.platforms);
 		if(output.type == JSONType.object && nKey in output) {
 			throw new ConflictingOutput(format(
@@ -184,7 +186,7 @@ void jGetStringPlatform(ref JSONValue jv, string key, ref String output) {
 	output.platforms ~= ret;
 }
 
-void stringPlatformToJ(String s, string key, ref JSONValue output) {
+void stringPlatformToJ(const String s, const string key, ref JSONValue output) {
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
@@ -200,7 +202,7 @@ string[] jGetStrings(ref JSONValue jv) {
 	return jv.arrayNoRef().map!(it => jGetString(it)).array;
 }
 
-JSONValue stringsToJ(string[] ss) {
+JSONValue stringsToJ(const string[] ss) {
 	return ss.empty
 		? JSONValue.init
 		: JSONValue(ss.map!(s => s).array);
@@ -219,7 +221,7 @@ void jGetPath(ref JSONValue jv, string key, ref Path output) {
 	output.platforms ~= ret;
 }
 
-void pathToJ(Path s, string key, ref JSONValue output) {
+void pathToJ(const Path s, const string key, ref JSONValue output) {
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	s.platforms.each!(it => output[platformKeyToS(key, it.platforms)] =
@@ -242,7 +244,7 @@ void jGetPaths(ref JSONValue jv, string key, ref Paths output) {
 	output.platforms ~= tmp;
 }
 
-void pathsToJ(Paths ss, string key, ref JSONValue output) {
+void pathsToJ(const Paths ss, const string key, ref JSONValue output) {
 	typeCheck(output, [JSONType.object, JSONType.null_]);
 
 	ss.platforms
@@ -334,7 +336,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 		.array;
 }
 
-void dependenciesToJ(Dependency[] deps, string key, ref JSONValue jv) {
+void dependenciesToJ(const Dependency[] deps, string key, ref JSONValue jv) {
 	JSONValue[string][string] tmp;
 	deps.each!(dep => tmp[platformKeyToS(key, dep.platforms)][dep.name] =
 		dependencyToJ(dep));
@@ -343,7 +345,7 @@ void dependenciesToJ(Dependency[] deps, string key, ref JSONValue jv) {
 	}
 }
 
-JSONValue dependencyToJ(Dependency dep) {
+JSONValue dependencyToJ(const Dependency dep) {
 	import dud.pkgdescription.helper;
 
 	bool isShortFrom(const Dependency d) pure {
@@ -417,7 +419,7 @@ SubPackage[] jGetSubPackages(ref JSONValue jv) {
 	return jv.arrayNoRef().map!(it => jGetSubPackage(it)).array;
 }
 
-JSONValue subPackagesToJ(SubPackage[] sps) {
+JSONValue subPackagesToJ(const SubPackage[] sps) {
 	if(sps.empty) {
 		return JSONValue.init;
 	}
@@ -456,7 +458,7 @@ void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
 	}
 }
 
-void buildTypesToJ(BuildType[] bts, string key, ref JSONValue ret) {
+void buildTypesToJ(const BuildType[] bts, const string key, ref JSONValue ret) {
 	typeCheck(ret, [JSONType.object, JSONType.null_]);
 	if(bts.empty) {
 		return;
@@ -491,7 +493,9 @@ void jGetBuildOptions(ref JSONValue jv, string key, ref BuildOptions bos) {
 	}
 }
 
-void buildOptionsToJ(BuildOptions bos, string key, ref JSONValue ret) {
+void buildOptionsToJ(const BuildOptions bos, const string key,
+		ref JSONValue ret)
+{
 	if(!bos.unspecifiedPlatform.empty) {
 		JSONValue j = JSONValue(
 			bos.unspecifiedPlatform.map!(bo => to!string(bo)).array);
@@ -514,7 +518,7 @@ TargetType jGetTargetType(ref JSONValue jv) {
 	return to!TargetType(s);
 }
 
-JSONValue targetTypeToJ(TargetType t) {
+JSONValue targetTypeToJ(const TargetType t) {
 	return t == TargetType.autodetect ? JSONValue.init : JSONValue(to!string(t));
 }
 
@@ -572,7 +576,7 @@ PackageDescription jGetPackageDescription(JSONValue js) {
 	return ret;
 }
 
-JSONValue packageDescriptionToJ(PackageDescription pkg) {
+JSONValue packageDescriptionToJ(const PackageDescription pkg) {
 	JSONValue ret;
 	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		enum Mem = JSONName!mem;
@@ -599,7 +603,7 @@ JSONValue packageDescriptionToJ(PackageDescription pkg) {
 	return ret;
 }
 
-JSONValue packageDescriptionsToJ(PackageDescription[] pkgs) {
+JSONValue packageDescriptionsToJ(const PackageDescription[] pkgs) {
 	return pkgs.empty
 		? JSONValue.init
 		: JSONValue(pkgs.map!(it => packageDescriptionToJ(it)).array);
@@ -619,7 +623,7 @@ BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
 	return jv.arrayNoRef().map!(it => jGetBuildRequirement(it)).array;
 }
 
-JSONValue buildRequirementsToJ(BuildRequirement[] brs) {
+JSONValue buildRequirementsToJ(const BuildRequirement[] brs) {
 	return brs.empty
 		? JSONValue.init
 		: JSONValue(brs.map!(br => to!string(br)).array);
@@ -646,7 +650,7 @@ void jGetStringAA(ref JSONValue jv, string key, ref SubConfigs ret) {
 	}
 }
 
-void stringAAToJ(SubConfigs aa, string key, ref JSONValue ret) {
+void stringAAToJ(const SubConfigs aa, const string key, ref JSONValue ret) {
 	JSONValue unspecific;
 	aa.unspecifiedPlatform.byKeyValue()
 		.each!(it => unspecific[it.key] = it.value);

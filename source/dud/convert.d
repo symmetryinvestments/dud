@@ -68,6 +68,14 @@ int convert(ref string[] args) {
 	tracef(opts.common.vverbose, "Absolute normalized output file name '%s'",
 		outFilename);
 
+	if(absNormOutputPath.empty
+			&& opts.options.outputTargetType == ConvertTargetFormat.undefined)
+	{
+		writefln("Could determine output file name as target format was "
+				~ "undefined");
+		return 1;
+	}
+
 	if(!opts.options.override_ && exists(absNormOutputPath)) {
 		writefln("The given output file '%s' exists and no option were set"
 			~ " to override the file", absNormOutputPath);
@@ -91,6 +99,7 @@ int convert(ref string[] args) {
 
 	PackageDescription nnParse = nParse.get();
 
+	tracef(opts.common.vverbose, "Write output to '%s'", absNormOutputPath);
 	int writeRslt = writeOutput(nnParse, absNormOutputPath, outExt);
 	if(writeRslt != 0) {
 		writefln("Failed to copy the PackageDescription into file '%s'",
