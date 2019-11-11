@@ -56,14 +56,14 @@ void sGetPackageDescription(TagAccessor ts, string key,
 	}
 }
 
-void packageDescriptionsToS(Out)(auto ref Out o, string key,
-		PackageDescription[] pkgs, const size_t indent)
+void packageDescriptionsToS(Out)(auto ref Out o, const string key,
+		const PackageDescription[] pkgs, const size_t indent)
 {
 	pkgs.each!(it => packageDescriptionToS(o, it.name, it, indent + 1));
 }
 
-void packageDescriptionToS(Out)(auto ref Out o, string key,
-		PackageDescription pkg, const size_t indent)
+void packageDescriptionToS(Out)(auto ref Out o, const string key,
+		const PackageDescription pkg, const size_t indent)
 {
 	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		enum Mem = SDLName!mem;
@@ -79,14 +79,14 @@ void packageDescriptionToS(Out)(auto ref Out o, string key,
 	}}
 }
 
-void configurationsToS(Out)(auto ref Out o, string key,
-		PackageDescription[] pkgs, const size_t indent)
+void configurationsToS(Out)(auto ref Out o, const string key,
+		const PackageDescription[] pkgs, const size_t indent)
 {
 	pkgs.each!(pkg => configurationToS(o, key, pkg, indent));
 }
 
-void configurationToS(Out)(auto ref Out o, string key,
-		PackageDescription pkg, const size_t indent)
+void configurationToS(Out)(auto ref Out o, const string key,
+		const PackageDescription pkg, const size_t indent)
 {
 	formattedWrite(o, "configuration \"%s\" {\n", pkg.name);
 	packageDescriptionToS(o, pkg.name, pkg, indent + 1);
@@ -130,7 +130,7 @@ void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
 		"No attributes expected for platforms key");
 }
 
-void platformsToS(Out)(auto ref Out o, string key, Platform[] plts,
+void platformsToS(Out)(auto ref Out o, const string key, const Platform[] plts,
 		const size_t indent)
 {
 	if(!plts.empty) {
@@ -151,8 +151,8 @@ void sGetStringsPlatform(Tag t, string key, ref Strings ret) {
 	ret.platforms ~= tmp;
 }
 
-void stringsPlatformToS(Out)(auto ref Out o, string key, Strings value,
-		const size_t indent)
+void stringsPlatformToS(Out)(auto ref Out o, const string key,
+		const Strings value, const size_t indent)
 {
 	value.platforms.each!(s =>
 		formatIndent(o, indent,
@@ -176,8 +176,8 @@ void sGetStringPlatform(Tag t, string key, ref String ret) {
 	ret.platforms ~= tmp;
 }
 
-void stringPlatformToS(Out)(auto ref Out o, string key, String value,
-		const size_t indent)
+void stringPlatformToS(Out)(auto ref Out o, const string key,
+		const String value, const size_t indent)
 {
 	value.platforms.each!(s =>
 		formatIndent(o, indent,
@@ -207,7 +207,7 @@ void sGetString(ValueRange v, string key, ref string ret) {
 	ret = f.value.get!string();
 }
 
-void stringToSName(Out)(auto ref Out o, string key, string value,
+void stringToSName(Out)(auto ref Out o, const string key, const string value,
 		const size_t indent)
 {
 	if(!value.empty) {
@@ -215,7 +215,7 @@ void stringToSName(Out)(auto ref Out o, string key, string value,
 	}
 }
 
-void stringToS(Out)(auto ref Out o, string key, string value,
+void stringToS(Out)(auto ref Out o, const string key, const string value,
 		const size_t indent)
 {
 	if(!value.empty) {
@@ -242,7 +242,7 @@ void sGetStrings(ValueRange v, string key, ref string[] ret) {
 		.each!(it => ret ~= it.value.get!string());
 }
 
-void stringsToS(Out)(auto ref Out o, string key, string[] values,
+void stringsToS(Out)(auto ref Out o, const string key, const string[] values,
 		const size_t indent)
 {
 	if(!values.empty) {
@@ -272,8 +272,8 @@ void sGetSubPackage(Tag t, string key, ref SubPackage[] ret) {
 	ret ~= tmp;
 }
 
-void subPackagesToS(Out)(auto ref Out o, string key, SubPackage[] sps,
-		const size_t indent)
+void subPackagesToS(Out)(auto ref Out o, const string key,
+		const SubPackage[] sps, const size_t indent)
 {
 	foreach(sp; sps) {
 		if(!sp.path.platforms.empty) {
@@ -307,7 +307,7 @@ void sGetSemVer(ValueRange v, string key, ref SemVer ver) {
 	ver = nullable(SemVer(s));
 }
 
-void semVerToS(Out)(auto ref Out o, string key, SemVer sv,
+void semVerToS(Out)(auto ref Out o, const string key, const SemVer sv,
 		const size_t indent)
 {
 	string s = sv.toString();
@@ -336,8 +336,8 @@ void sGetBuildOptions(Tag t, string key, ref BuildOptions ret) {
 	}
 }
 
-void buildOptionsToS(Out)(auto ref Out o, string key, BuildOptions bos,
-		const size_t indent)
+void buildOptionsToS(Out)(auto ref Out o, const string key,
+		const BuildOptions bos, const size_t indent)
 {
 	if(!bos.unspecifiedPlatform.empty) {
 		formatIndent(o, indent, "%s %(%s %)\n", key,
@@ -365,7 +365,7 @@ void sGetTargetType(ValueRange v, string key, ref TargetType p) {
 	p = to!TargetType(s);
 }
 
-void targetTypeToS(Out)(auto ref Out o, string key, TargetType p,
+void targetTypeToS(Out)(auto ref Out o, const string key, const TargetType p,
 		const size_t indent)
 {
 	if(p != TargetType.autodetect) {
@@ -386,8 +386,8 @@ void sGetBuildRequirements(ValueRange v, string key, ref BuildRequirement[] p) {
 	v.map!(it => it.value.get!string()).each!(s => p ~= to!BuildRequirement(s));
 }
 
-void buildRequirementsToS(Out)(auto ref Out o, string key,
-		BuildRequirement[] ps, const size_t indent)
+void buildRequirementsToS(Out)(auto ref Out o, const string key,
+		const BuildRequirement[] ps, const size_t indent)
 {
 	if(!ps.empty) {
 		formatIndent(o, indent, "%s %(%s %)\n", key,
@@ -426,8 +426,8 @@ void sGetSubConfig(Tag t, string key, ref SubConfigs ret) {
 	}
 }
 
-void subConfigsToS(Out)(auto ref Out o, string key,
-		SubConfigs scf, const size_t indent)
+void subConfigsToS(Out)(auto ref Out o, const string key,
+		const SubConfigs scf, const size_t indent)
 {
 	scf.unspecifiedPlatform.byKeyValue()
 		.each!(sc =>
@@ -462,7 +462,7 @@ void sGetPaths(Tag t, string key, ref Paths ret) {
 	ret.platforms ~= pp;
 }
 
-void pathsToS(Out)(auto ref Out o, string key, Paths ps,
+void pathsToS(Out)(auto ref Out o, const string key, const Paths ps,
 		const size_t indent)
 {
 	ps.platforms.each!(p =>
@@ -476,7 +476,7 @@ void pathsToS(Out)(auto ref Out o, string key, Paths ps,
 // path
 //
 
-void sGetPath(Tag t, string key, ref Path ret) {
+void sGetPath(Tag t, const string key, ref Path ret) {
 	auto v = t.values();
 	Token f = expectedSingleValue(v);
 	typeCheck(f, [ ValueType.str ]);
@@ -487,7 +487,7 @@ void sGetPath(Tag t, string key, ref Path ret) {
 	ret.platforms ~= pp;
 }
 
-void pathToS(Out)(auto ref Out o, string key, Path p,
+void pathToS(Out)(auto ref Out o, const string key, const Path p,
 		const size_t indent)
 {
 	p.platforms.each!(plt =>
@@ -523,7 +523,7 @@ void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
 	bts ~= bt;
 }
 
-void buildTypeToS(Out)(auto ref Out o, string key, ref BuildType bt,
+void buildTypeToS(Out)(auto ref Out o, const string key, const BuildType bt,
 		const size_t indent)
 {
 	formatIndent(o, indent, "debugType \"%s\" {\n", bt.name);
@@ -531,8 +531,8 @@ void buildTypeToS(Out)(auto ref Out o, string key, ref BuildType bt,
 	formatIndent(o, indent, "}\n");
 }
 
-void buildTypesToS(Out)(auto ref Out o, string key, ref BuildType[] bts,
-		const size_t indent)
+void buildTypesToS(Out)(auto ref Out o, const string key,
+		const BuildType[] bts, const size_t indent)
 {
 	bts.each!(bt => buildTypeToS(o, key, bt, indent));
 }
@@ -618,8 +618,8 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 	deps ~= ret;
 }
 
-void dependenciesToS(Out)(auto ref Out o, string key, Dependency[] deps,
-		const size_t indent)
+void dependenciesToS(Out)(auto ref Out o, const string key,
+		const Dependency[] deps, const size_t indent)
 {
 	foreach(value; deps) {
 		formatIndent(o, indent, "dependency \"%s\"", value.name);
