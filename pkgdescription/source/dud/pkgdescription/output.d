@@ -19,16 +19,16 @@ import dud.pkgdescription.sdl;
 
 @safe:
 
-JSONValue toJSON(PackageDescription pkg) pure {
+JSONValue toJSON(const PackageDescription pkg) pure {
 	return packageDescriptionToJ(pkg);
 }
 
-string toSDL(PackageDescription pkg) {
+string toSDL(const PackageDescription pkg) {
 	auto app = appender!string();
 	toSDL(pkg, app);
 	return app.data;
 }
 
-void toSDL(Out)(PackageDescription pkg, auto ref Out o) {
+void toSDL(Out)(const PackageDescription pkg, auto ref Out o) {
 	packageDescriptionToS(o, pkg.name, pkg, 0);
 }
