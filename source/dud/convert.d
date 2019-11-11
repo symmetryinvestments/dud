@@ -102,7 +102,8 @@ int convert(ref string[] args) {
 	PackageDescription nnParse = nParse.get();
 
 	tracef(opts.common.vverbose, "Write output to '%s'", absNormOutputPath);
-	int writeRslt = writeOutput(nnParse, absNormOutputPath, outExt, opts.common);
+	const int writeRslt = writeOutput(nnParse, absNormOutputPath, outExt,
+			opts.common);
 	if(writeRslt != 0) {
 		writefln("Failed to copy the PackageDescription into file '%s'",
 			absNormOutputPath);
