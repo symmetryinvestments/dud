@@ -12,9 +12,6 @@ script:
   - cd exception
   - dub test --compiler=${DC}
   - cd ..
-  - cd path
-  - dub test --compiler=${DC}
-  - cd ..
   - cd semver
   - dub test --compiler=${DC}
   - cd ..
