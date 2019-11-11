@@ -1,6 +1,6 @@
 # dud: A build and dependency tool for the D programming language
 
-[![Build Status](https://travis-ci.org/burner/dud.svg?branch=master)](https://travis-ci.org/burner/dud)
+[![Build Status](https://travis-ci.org/symmetryinvestments/dud.svg?branch=master)](https://travis-ci.org/symmetryinvestments/dud)
 
 Dud is meant to be a reasonable drop in replacement for
 [dub](https://github.com/dlang/dub).
