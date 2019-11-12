@@ -434,3 +434,27 @@ unittest {
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
 }
+
+unittest {
+	string toParse = `
+{
+	"toolchainRequirements" : {
+		"dud" : "> 1.0"
+	}
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}
