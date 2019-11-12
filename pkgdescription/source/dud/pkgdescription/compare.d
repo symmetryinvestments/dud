@@ -43,6 +43,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(SubConfigs))
 				|| is(aMemType == const(BuildType[]))
 				|| is(aMemType == const(Platform[]))
+				|| is(aMemType == const(ToolchainRequirement[Toolchain]))
 				|| is(aMemType == const(BuildOptions))
 			)
 		{
@@ -56,6 +57,24 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 		}
 	}}
 	return true;
+}
+
+//
+// ToolchainRequirement
+//
+
+bool areEqual(const ToolchainRequirement as, const ToolchainRequirement bs) {
+	return as.no == bs.no && as.version_ == bs.version_;
+}
+
+bool areEqual(const ToolchainRequirement[Toolchain] as,
+		const ToolchainRequirement[Toolchain] bs)
+{
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	return aaCmp!simpleCmp(as, bs);
 }
 
 //

@@ -11,7 +11,7 @@ import std.json;
 import std.range : tee;
 import std.stdio;
 import std.string : indexOf;
-import std.typecons : nullable, Nullable;
+import std.typecons : nullable, Nullable, tuple;
 import std.traits : FieldNameTuple;
 
 import dud.pkgdescription.exception;
@@ -540,6 +540,7 @@ template isPlatfromDependend(T) {
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)
 		|| is(T == BuildType[])
+		|| is(T == ToolchainRequirement[Toolchain])
 		|| is(T == Paths);
 }
 
@@ -668,6 +669,47 @@ void stringAAToJ(const SubConfigs aa, const string key, ref JSONValue ret) {
 			string k = platformKeyToS("subConfigurations", plt);
 			ret[k] = tmp;
 		}
+	}
+}
+
+//
+// ToolchainRequirement
+//
+
+Toolchain jGetToolchain(string s) {
+	return to!Toolchain(s);
+}
+
+ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
+	typeCheck(jv, [JSONType.string]);
+	const string s = jv.str;
+	return s == "no"
+		? ToolchainRequirement(true, VersionSpecifier.init)
+		: ToolchainRequirement(false, parseVersionSpecifier(s));
+}
+
+void jGetToolchainRequirement(ref JSONValue jv, string key,
+		ref ToolchainRequirement[Toolchain] ret)
+{
+	typeCheck(jv, [JSONType.object]);
+	jv.objectNoRef()
+		.byKeyValue()
+		.map!(it => tuple(it.key.jGetToolchain(),
+					jGetToolchainRequirement(it.value)))
+		.tee!(tup => enforce!ConflictingInput(tup[0] !in ret))
+		.each!(tup => ret[tup[0]] = tup[1]);
+}
+
+string toolchainToString(const ToolchainRequirement tcr) {
+	return tcr.no ? "no" : tcr.version_.orig;
+}
+
+void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
+		const string key, ref JSONValue ret)
+{
+	typeCheck(ret, [JSONType.object, JSONType.null_]);
+	foreach(key, value; tcrs) {
+		ret[to!string(key)] = toolchainToString(value);
 	}
 }
 

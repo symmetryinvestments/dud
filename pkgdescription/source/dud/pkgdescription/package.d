@@ -210,6 +210,10 @@ struct PackageDescription {
 	@SDL!(sGetPlatforms, platformsToS)("")
 	Platform[] platforms;
 
+	@JSON!(jGetToolchainRequirement, toolchainRequirementToJ)("")
+	@SDL!(sGetToolchainRequirement, toolchainRequirementToS)("")
+	ToolchainRequirement[Toolchain] toolchainRequirements;
+
 	bool opEquals(const PackageDescription other) const {
 		import dud.pkgdescription.compare : areEqual;
 		return areEqual(this, other);
@@ -341,4 +345,18 @@ struct StringsPlatform {
 
 struct Strings {
 	StringsPlatform[] platforms;
+}
+
+enum Toolchain {
+	dub,
+	dud,
+	frontend,
+	dmd,
+	ldc,
+	gdc
+}
+
+struct ToolchainRequirement {
+	bool no;
+	VersionSpecifier version_;
 }

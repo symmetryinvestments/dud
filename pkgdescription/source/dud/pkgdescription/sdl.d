@@ -10,7 +10,7 @@ import std.format : format, formattedWrite;
 import std.range : tee;
 import std.stdio;
 import std.traits : FieldNameTuple;
-import std.typecons : nullable, Nullable;
+import std.typecons : nullable, Nullable, tuple;
 
 import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
@@ -501,6 +501,50 @@ void pathToS(Out)(auto ref Out o, const string key, const Path p,
 }
 
 //
+// ToolchainRequirement
+//
+
+void toolchainRequirementToS(Out)(auto ref Out o, const string key,
+		const ToolchainRequirement[Toolchain] tcrs, const size_t indent)
+{
+	if(!tcrs.empty) {
+		formatIndent(o, indent,
+			"toolchainRequirements %-(%s %)\n",
+				tcrs.byKeyValue().map!(kv =>
+					format("%s=\"%s\"", kv.key,
+						kv.value.no ? "no" : kv.value.version_.orig))
+		);
+	}
+}
+
+ToolchainRequirement sGetToolchainRequirement(const ref Token f) {
+	typeCheck(f, [ ValueType.str ]);
+	const string s = f.value.get!string();
+	return s == "no"
+		? ToolchainRequirement(true, VersionSpecifier.init)
+		: ToolchainRequirement(false, parseVersionSpecifier(s));
+}
+
+void sGetToolchainRequirement(Tag t, string key,
+		ref ToolchainRequirement[Toolchain] bts)
+{
+	static string[] tc = ["dmd", "ldc", "gdc", "frontend", "dub", "dud"];
+	checkEmptyAttributes(t.attributes(), key, tc);
+	t.attributes()
+		.tee!(attr => typeCheck(attr.value, [ ValueType.str ]))
+		.tee!(attr => sdlEnforce!UnsupportedAttributes(
+				!canFind(tc, attr.identifier()),
+					format("'%s' is an unsupported Toolchain", attr.identifier()),
+					Location("", attr.id.cur.line, attr.id.cur.column)))
+		.map!(attr => tuple(to!Toolchain(attr.identifier()), attr))
+		.tee!(tup => sdlEnforce!ConflictingInput(tup[0] !in bts,
+				format("'%s' is already in the toolchain requirements", tup[0]),
+				Location("", tup[1].id.cur.line, tup[1].id.cur.column)))
+		.map!(tup => tuple(tup[0], sGetToolchainRequirement(tup[1].value)))
+		.each!(tup => bts[tup[0]] = tup[1]);
+}
+
+//
 // BuildTypes
 //
 
@@ -707,5 +751,13 @@ void checkEmptyAttributes(AttributeAccessor ars, string key, string[] toIgnore) 
 		throw new UnsupportedAttributes(format(
 			"The key '%s' does not support attributes [%(%s, %)]",
 				key, attrs));
+	}
+}
+
+void sdlEnforce(E)(bool cond, string msg, const Location loc,
+		const string file = __FILE__, const size_t line = __LINE__)
+{
+	if(!cond) {
+		throw new E(msg, loc, file, line);
 	}
 }
