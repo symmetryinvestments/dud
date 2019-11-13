@@ -54,7 +54,8 @@ PackageDescription expandConfiguration(const PackageDescription pkg, string conf
 			, isMem!"copyFiles" , isMem!"preGenerateCommands"
 			, isMem!"postGenerateCommands" , isMem!"preBuildCommands"
 			, isMem!"postBuildCommands" , isMem!"preRunCommands"
-			, isMem!"postRunCommands", isMem!"libs"
+			, isMem!"postRunCommands", isMem!"libs", isMem!"versionFilters"
+			, isMem!"debugVersionFilters", isMem!"debugVersions"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
