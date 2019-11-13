@@ -333,3 +333,37 @@ name "animated" foobar="args"
 
 	assertThrown!UnsupportedAttributes(sdlToPackageDescription(toParse));
 }
+
+unittest {
+	string toParse = `
+name "eventcore"
+libs "ws2_32" "user32" platform="windows"
+libs "anl" platform="linux"
+configuration "epoll" {
+	platforms "linux"
+	targetType "library"
+	versions "EventcoreEpollDriver"
+}
+configuration "kqueue" {
+	platforms "osx" "freebsd"
+	targetType "library"
+	versions "EventcoreKqueueDriver"
+}
+configuration "winapi" {
+	platforms "windows-x86_64" "windows-x86_mscoff"
+	targetType "library"
+	versions "EventcoreWinAPIDriver"
+}
+configuration "select" {
+	platforms "posix" "windows-x86_64" "windows-x86_mscoff"
+	targetType "library"
+	versions "EventcoreSelectDriver"
+}
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkgReParse = sdlToPackageDescription(output);
+	string output2 = toSDL(pkgReParse);
+	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+}

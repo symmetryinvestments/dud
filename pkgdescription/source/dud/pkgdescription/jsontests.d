@@ -458,3 +458,57 @@ unittest {
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
 }
+
+
+
+unittest {
+	string toParse = `
+{
+    "configurations": [
+        {
+            "name": "epoll",
+            "platforms": [
+                "linux"
+            ],
+            "targetType": "library",
+            "versions": [
+                "EventcoreEpollDriver"
+            ]
+        },
+        {
+            "name": "winapi",
+            "platforms": [
+                "windows-x86_64",
+                "windows-x86_mscoff"
+            ],
+            "targetType": "library",
+            "versions": [
+                "EventcoreWinAPIDriver"
+            ]
+        },
+        {
+            "name": "select",
+            "platforms": [
+                "posix",
+                "windows-x86_64",
+                "windows-x86_mscoff"
+            ]
+		}
+	]
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+}

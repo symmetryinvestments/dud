@@ -96,20 +96,27 @@ string platformKeyToS(string key, const(Platform)[] p) {
 	return app.data;
 }
 
-Platform[] jGetPlatforms(ref JSONValue jv) {
+Platform[][] jGetPlatforms(ref JSONValue jv) {
 	typeCheck(jv, [JSONType.array]);
 
 	return jv.arrayNoRef()
 		.tee!(it => typeCheck(it, [JSONType.string]))
 		.map!(it => it.str())
-		.map!(s => to!Platform(s))
+		.map!(it => it.splitter("-").map!(s => to!Platform(s)).array)
 		.array;
 }
 
-JSONValue platformsToJ(const Platform[] plts) {
+JSONValue platformsToJ(const Platform[][] plts) {
 	return plts.empty
 		? JSONValue.init
-		: JSONValue(plts.map!(plt => to!string(plt)).array);
+		: JSONValue(
+				plts
+					.map!(plt => plt
+						.map!(p => to!string(p))
+						.joiner("-")
+						.array)
+					.array
+			);
 }
 
 //

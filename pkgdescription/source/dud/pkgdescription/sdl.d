@@ -111,16 +111,14 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	pls = tmp.sort.uniq.array;
 }
 
-void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
+void sGetPlatforms(Tag t, string key, ref Platform[][] ret) {
 	auto vals = t.values();
 	enforce!EmptyInput(!vals.empty,
 		"The platforms must not by empty");
 	ret = vals
 		.tee!(val => typeCheck(val, [ ValueType.str ]))
 		.map!(val => val.value.get!string())
-		.map!(s => s.splitter("-"))
-		.joiner
-		.map!(s => to!Platform(s))
+		.map!(s => s.splitter("-").map!(s => to!Platform(s)).array)
 		.array
 		.sort
 		.uniq
@@ -130,12 +128,12 @@ void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
 		"No attributes expected for platforms key");
 }
 
-void platformsToS(Out)(auto ref Out o, const string key, const Platform[] plts,
-		const size_t indent)
+void platformsToS(Out)(auto ref Out o, const string key,
+		const Platform[][] plts, const size_t indent)
 {
 	if(!plts.empty) {
 		formatIndent(o, indent, "platforms %-(\"%s\"%| %)\n",
-			plts.map!(plt => to!string(plt)));
+			plts.map!(plt => plt.map!(it => to!string(it)).joiner("-")));
 	}
 }
 

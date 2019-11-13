@@ -208,7 +208,7 @@ struct PackageDescription {
 
 	@JSON!(jGetPlatforms, platformsToJ)("")
 	@SDL!(sGetPlatforms, platformsToS)("")
-	Platform[] platforms;
+	Platform[][] platforms;
 
 	@JSON!(jGetToolchainRequirement, toolchainRequirementToJ)("")
 	@SDL!(sGetToolchainRequirement, toolchainRequirementToS)("")

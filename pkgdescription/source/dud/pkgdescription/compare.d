@@ -43,6 +43,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(SubConfigs))
 				|| is(aMemType == const(BuildType[]))
 				|| is(aMemType == const(Platform[]))
+				|| is(aMemType == const(Platform[][]))
 				|| is(aMemType == const(ToolchainRequirement[Toolchain]))
 				|| is(aMemType == const(BuildOptions))
 			)
@@ -430,6 +431,17 @@ unittest {
 //
 // Platform
 //
+
+bool areEqual(const Platform[][] a, const Platform[][] b) {
+	if(a.length != b.length) {
+		return false;
+	} else if(a.length == 0) {
+		return true;
+	}
+	auto cmp = (const(Platform)[] a, const(Platform)[] b) => areEqual(a, b);
+	return a.all!(it => canFind!cmp(b, it)) && b.all!(it => canFind!cmp(a, it));
+}
+
 
 bool areEqual(const Platform[] a, const Platform[] b) {
 	if(a.length != b.length) {
