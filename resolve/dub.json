@@ -1,0 +1,22 @@
+{
+	"dependencies": {
+		"testdata": {
+			"path": "../testdata",
+			"version": ">=0.0.0"
+		},
+		"pkgdescription": {
+			"path": "../pkgdescription",
+			"version": ">=0.0.0"
+		},
+		"exception": {
+			"path": "../exception",
+			"version": ">=0.0.0"
+		},
+		"utils" : {
+			"path": "../utils",
+			"version": ">=0.0.0"
+		}
+	},
+	"name": "resolve",
+	"targetType": "library"
+}
