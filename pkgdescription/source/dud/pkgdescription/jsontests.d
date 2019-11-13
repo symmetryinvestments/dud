@@ -439,7 +439,7 @@ unittest {
 	string toParse = `
 {
 	"toolchainRequirements" : {
-		"dud" : "> 1.0"
+		"dud" : ">=1.0.0"
 	}
 }
 `;

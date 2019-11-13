@@ -688,6 +688,14 @@ ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
 		: ToolchainRequirement(false, parseVersionSpecifier(s));
 }
 
+void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
+		ref ToolchainRequirement[Toolchain] ret)
+{
+	enforce!ConflictingInput(tc !in ret, format(
+			"'%s' is already in '%s'", tc, ret));
+	ret[tc] = tcr;
+}
+
 void jGetToolchainRequirement(ref JSONValue jv, string key,
 		ref ToolchainRequirement[Toolchain] ret)
 {
@@ -696,8 +704,7 @@ void jGetToolchainRequirement(ref JSONValue jv, string key,
 		.byKeyValue()
 		.map!(it => tuple(it.key.jGetToolchain(),
 					jGetToolchainRequirement(it.value)))
-		.tee!(tup => enforce!ConflictingInput(tup[0] !in ret))
-		.each!(tup => ret[tup[0]] = tup[1]);
+		.each!(tup => insertInto(tup[0], tup[1], ret));
 }
 
 string toolchainToString(const ToolchainRequirement tcr) {
@@ -707,10 +714,16 @@ string toolchainToString(const ToolchainRequirement tcr) {
 void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
 		const string key, ref JSONValue ret)
 {
-	typeCheck(ret, [JSONType.object, JSONType.null_]);
-	foreach(key, value; tcrs) {
-		ret[to!string(key)] = toolchainToString(value);
+	if(tcrs.empty) {
+		return;
 	}
+	typeCheck(ret, [JSONType.object, JSONType.null_]);
+
+	JSONValue[string] map;
+	foreach(key, value; tcrs) {
+		map[to!string(key)] = toolchainToString(value);
+	}
+	ret["toolchainRequirements"] = map;
 }
 
 //

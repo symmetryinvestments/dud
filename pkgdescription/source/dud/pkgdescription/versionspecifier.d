@@ -140,3 +140,8 @@ private string skipComp(ref string c) {
 		case "==": return cmp;
 	}
 }
+
+unittest {
+	string tt = ">=1.0.0";
+	auto v = parseVersionSpecifier(tt);
+}
