@@ -82,10 +82,6 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("")
 	String targetName;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("")
-	String targetFileName;
-
 	@JSON!(jGetPath, pathToJ)("")
 	@SDL!(sGetPath, pathToS)("")
 	Path workingDirectory;
@@ -109,10 +105,6 @@ struct PackageDescription {
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
 	Paths copyFiles; /// Files to copy to the target directory
-
-	@JSON!(jGetPaths, pathsToJ)("")
-	@SDL!(sGetPaths, pathsToS)("")
-	Paths extraDependencyFiles; /// Files to check for rebuild dub project
 
 	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
 	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
