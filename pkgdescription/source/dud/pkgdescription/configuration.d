@@ -41,7 +41,8 @@ PackageDescription expandConfiguration(const PackageDescription pkg, string conf
 		static if(canFind(
 			[ isMem!"targetPath", isMem!"targetName", isMem!"mainSourceFile"
 			, isMem!"workingDirectory", isMem!"targetType"
-			, isMem!"systemDependencies", isMem!"ddoxTool"
+			, isMem!"systemDependencies", isMem!"ddoxTool", isMem!"platforms"
+			, isMem!"buildOptions"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
@@ -56,6 +57,7 @@ PackageDescription expandConfiguration(const PackageDescription pkg, string conf
 			, isMem!"postBuildCommands" , isMem!"preRunCommands"
 			, isMem!"postRunCommands", isMem!"libs", isMem!"versionFilters"
 			, isMem!"debugVersionFilters", isMem!"debugVersions"
+			, isMem!"toolchainRequirements"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
