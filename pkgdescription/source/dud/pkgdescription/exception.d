@@ -69,3 +69,5 @@ mixin(exceptionClassBuilder("ConflictingInput", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("ConflictingOutput", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("UnsupportedAttributes", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("UnknownConfiguration", "DudPkgDescriptionException"));
+mixin(exceptionClassBuilder("ValidationException", "DudPkgDescriptionException"));
+mixin(exceptionClassBuilder("BuildTypeException", "ValidationException"));
