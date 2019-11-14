@@ -99,10 +99,6 @@ unittest {
 		[ "pkgdescription" : "confC2", "someStrangeThing" : "args" ];
 
 	assert(posix == posixExp, format("\nexp: %s\ngot: %s", posixExp, posix));
-
-	writefln("%s", foo);
-
-
 }
 
 Dependency depBuild(string n, string pa,
