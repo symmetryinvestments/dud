@@ -61,7 +61,7 @@ PackageDescription expandConfiguration(ref const PackageDescription pkg,
 			, isMem!"postRunCommands", isMem!"libs", isMem!"versionFilters"
 			, isMem!"debugVersionFilters", isMem!"debugVersions"
 			, isMem!"toolchainRequirements", isMem!"dependencies"
-			, isMem!"subConfigurations"
+			, isMem!"subConfigurations", isMem!"buildTypes"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
@@ -99,7 +99,7 @@ SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
 		.filter!(kv => kv.key !in ret.unspecifiedPlatform)
 		.each!(kv => ret.unspecifiedPlatform[kv.key] = kv.value);
 
-	foreach(key, value; b.configs) {
+	foreach(key, value; a.configs) {
 		if(key !in ret.configs) {
 			ret.configs[key] = string[string].init;
 		}
@@ -112,19 +112,21 @@ SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
 	return ret;
 }
 
+BuildType[] join(const(BuildType[]) a, const(BuildType[]) b) {
+	BuildType[] ret = b.ddup();
+	a.filter!(bt =>
+			canFind!((g, h) => g.name == h.name
+				&& g.platforms == h.platforms)(ret, bt))
+		.each!(bt => ret ~= bt.ddup());
+	return ret;
+}
+
 Dependency[] join(const(Dependency[]) a, const(Dependency[]) b) {
 	Dependency[] ret = b.ddup();
-	foreach(dep; a) {
-		if(!canFind!((g, h) => g.name == h.name
+	a.filter!(dep =>
+			!canFind!((g, h) => g.name == h.name
 				&& g.platforms == h.platforms)(ret, dep))
-		{
-			ret ~= dep.ddup();
-		}
-	}
-	//a.filter!(dep =>
-	//		canFind!((g, h) => g.name == h.name
-	//			&& g.platform == h.platform)(b, dep))
-	//	.each!(dep => ret ~= dep.ddup());
+		.each!(dep => ret ~= dep.ddup());
 	return ret;
 }
 
