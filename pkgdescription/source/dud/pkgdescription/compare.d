@@ -247,6 +247,14 @@ unittest {
 }
 
 //
+// VersionSpecifier
+//
+
+bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
+	return a.orig == b.orig;
+}
+
+//
 // Path
 //
 

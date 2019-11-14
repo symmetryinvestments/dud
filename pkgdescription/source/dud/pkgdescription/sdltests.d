@@ -15,6 +15,7 @@ import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 import dud.pkgdescription.exception;
 import dud.semver : SemVer;
+import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
 	string input = `
@@ -78,6 +79,9 @@ configuration "test" {
 	PackageDescription fromJ = jsonToPackageDescription(j);
 	fromJ.dependencies.sort!((a,b) => a.name < b.name);
 	assert(fromJ == pkg, format("\nexp:\n%s\ngot:\n%s", pkg, fromJ));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -89,6 +93,9 @@ configuration "testing" {
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 
@@ -106,6 +113,9 @@ unittest {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -119,6 +129,9 @@ unittest {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -131,6 +144,9 @@ unittest {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -145,6 +161,9 @@ unittest {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -164,6 +183,9 @@ x:ddoxFilterArgs "dfa1" "dfa2"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -187,6 +209,9 @@ subPackage {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -201,6 +226,9 @@ libs "advapi32" platform="windows"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -216,6 +244,9 @@ configuration "libevent" {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -232,6 +263,9 @@ configuration "windows-mscoff" {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -245,6 +279,9 @@ x:debugVersionFilters "dDaughter" "dParent"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -257,6 +294,9 @@ subPackage "../common"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -269,6 +309,9 @@ description "A basic \"Hello, World\" program."
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -283,6 +326,9 @@ auto data = text("module openssl_version;\nenum OPENSSL_VERSION=\"", opensslVers
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -303,6 +349,9 @@ configuration "unittest" {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -324,6 +373,9 @@ targetPath "bin\\"
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -366,4 +418,7 @@ configuration "select" {
 	PackageDescription pkgReParse = sdlToPackageDescription(output);
 	string output2 = toSDL(pkgReParse);
 	assert(pkg == pkgReParse, format("\nexp:\n%s\ngot:\n%s", pkg, pkgReParse));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }

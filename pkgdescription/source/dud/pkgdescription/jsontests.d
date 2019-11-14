@@ -12,6 +12,7 @@ import dud.pkgdescription.output;
 import dud.pkgdescription.helper;
 import dud.semver : SemVer;
 import dud.pkgdescription;
+import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
 	string toParse = `
@@ -63,6 +64,9 @@ unittest {
 
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -89,6 +93,9 @@ unittest {
 	JSONValue n = pkg.toJSON();
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -116,6 +123,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -142,6 +152,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -173,6 +186,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -193,6 +209,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -215,6 +234,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -250,6 +272,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -410,6 +435,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -433,6 +461,9 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
 
 unittest {
@@ -457,9 +488,10 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
-
-
 
 unittest {
 	string toParse = `
@@ -511,4 +543,23 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+}
+
+unittest {
+	string toParse = `
+{
+    "toolchainRequirements": {
+        "ldc": ">=1.15.0"
+    },
+    "version": "~master"
+}
+
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }

@@ -7,6 +7,7 @@ import std.algorithm.iteration : uniq, filter, each;
 import std.exception : enforce;
 import std.format : format;
 import std.traits : FieldNameTuple;
+import std.typecons : nullable, Nullable;
 
 import dud.pkgdescription;
 import dud.pkgdescription.exception;
@@ -31,7 +32,7 @@ unittest {
 
 PackageDescription expandConfiguration(const PackageDescription pkg, string confName)
 {
-	PackageDescription ret = pkg.dup;
+	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
 	ret.configurations = [];
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
@@ -57,7 +58,7 @@ PackageDescription expandConfiguration(const PackageDescription pkg, string conf
 			, isMem!"postBuildCommands" , isMem!"preRunCommands"
 			, isMem!"postRunCommands", isMem!"libs", isMem!"versionFilters"
 			, isMem!"debugVersionFilters", isMem!"debugVersions"
-			, isMem!"toolchainRequirements"
+			, isMem!"toolchainRequirements", isMem!"dependencies"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
@@ -89,21 +90,56 @@ const(PackageDescription) findConfiguration(const PackageDescription pkg,
 	return ret.front;
 }
 
+Dependency dup(const(Dependency) old) {
+	Dependency ret;
+	ret.name = dud.pkgdescription.duplicate.dup(old.name);
+	if(!old.version_.isNull()) {
+		ret.version_ = nullable(
+			dud.pkgdescription.duplicate.dup(old.version_.get()));
+	}
+	ret.platforms = dud.pkgdescription.duplicate.dup(old.platforms);
+	ret.path = dud.pkgdescription.duplicate.dup(old.path);
+	if(!old.default_.isNull()) {
+		ret.default_ = nullable(old.default_.get());
+	}
+	if(!old.optional.isNull()) {
+		ret.optional = nullable(old.optional.get());
+	}
+	return ret;
+}
+
+Dependency[] join(const(Dependency[]) a, const(Dependency[]) b) {
+	Dependency[] ret;
+	a.filter!(dep => !canFind!((g, h) => g.name == h)(b, dep.name))
+		.each!(dep => ret ~= dud.pkgdescription.duplicate.dup(dep));
+	return ret;
+}
+
+ToolchainRequirement[Toolchain] join(const(ToolchainRequirement[Toolchain]) a,
+		const(ToolchainRequirement[Toolchain]) b)
+{
+	ToolchainRequirement[Toolchain] ret = dud.pkgdescription.duplicate.dup(a);
+	b.byKeyValue()
+		.each!(it => ret[it.key] =
+				dud.pkgdescription.duplicate.dup(it.value));
+	return ret;
+}
+
 Paths join(const(Paths) a, const(Paths) b) {
-	Paths ret = a.dup;
+	Paths ret = dud.pkgdescription.duplicate.dup(a);
 	b.platforms
 		.filter!(it =>
 				!canFind!((g, h) => areEqual(g, h))(a.platforms, it))
-		.each!(it => ret.platforms ~= it.dup());
+		.each!(it => ret.platforms ~= dud.pkgdescription.duplicate.dup(it));
 	return ret;
 }
 
 Strings join(const(Strings) a, const(Strings) b) {
-	Strings ret = a.dup;
+	Strings ret = dud.pkgdescription.duplicate.dup(a);
 	b.platforms
 		.filter!(it =>
 				!canFind!((g, h) => areEqual(g, h))(a.platforms, it))
-		.each!(it => ret.platforms ~= it.dup());
+		.each!(it => ret.platforms ~= dud.pkgdescription.duplicate.dup(it));
 	return ret;
 }
 

@@ -30,12 +30,12 @@
 		{ "name" : "ExcessiveSDLTests"
 		, "versions" : ["ExcessivSDLTests"]
 		, "targetType" : "executable"
-		, "dflags" : ["-unittest", "-main"]
+		, "dflags" : ["-unittest", "-main", "-cov"]
 		},
 		{ "name" : "ExcessiveJSONTests"
 		, "versions" : ["ExcessivJSONTests"]
 		, "targetType" : "executable"
-		, "dflags" : ["-unittest", "-main"]
+		, "dflags" : ["-unittest", "-main", "-cov"]
 		},
 		{ "name" : "ExcessiveConvTests"
 		, "versions" : ["ExcessivConvTests"]

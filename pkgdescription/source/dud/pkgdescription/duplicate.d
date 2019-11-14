@@ -1,5 +1,6 @@
 module dud.pkgdescription.duplicate;
 
+import std.array : empty;
 import std.algorithm.iteration : each;
 import std.traits : FieldNameTuple;
 import std.typecons : nullable;
@@ -10,7 +11,7 @@ import dud.pkgdescription;
 
 @safe:
 
-PackageDescription dup(const PackageDescription pkg) {
+PackageDescription dup(const ref PackageDescription pkg) {
 	PackageDescription ret;
 
 	static foreach(mem; FieldNameTuple!(PackageDescription)) {{
@@ -48,9 +49,36 @@ PackageDescription dup(const PackageDescription pkg) {
 	return ret;
 }
 
-ToolchainRequirement[Toolchain] dup(const(ToolchainRequirement[Toolchain]) old)
+//
+// ToolchainRequirement
+//
+
+VersionSpecifier dup(const ref VersionSpecifier old) {
+	VersionSpecifier ret = parseVersionSpecifier(old.orig);
+	return ret;
+}
+
+unittest {
+	import dud.pkgdescription.compare;
+	auto old = parseVersionSpecifier(">=1.15.0");
+	assert(!old.isNull());
+
+	VersionSpecifier d = dup(old.get());
+	assert(areEqual(old.get(), d));
+}
+
+ToolchainRequirement dup(const ref ToolchainRequirement old) {
+	ToolchainRequirement ret;
+	ret.no = old.no;
+	ret.version_ = old.version_.dup();
+	return ret;
+}
+
+ToolchainRequirement[Toolchain] dup(
+		ref const(ToolchainRequirement[Toolchain]) old)
 {
 	ToolchainRequirement[Toolchain] ret;
+	old.byKeyValue().each!(it => ret[it.key] = it.value.dup());
 	return ret;
 }
 
@@ -67,9 +95,10 @@ TargetType dup(const(TargetType) old) {
 // SemVer
 //
 
-SemVer dup(const(SemVer) old) {
-	SemVer ret = SemVer(old.m_version.dup);
-	return ret;
+SemVer dup(ref const(SemVer) old) {
+	return old.m_version.empty
+		? SemVer.init
+		: SemVer(old.m_version.dup);
 }
 
 SemVer[] dup(const(SemVer[]) old) {
@@ -88,7 +117,7 @@ BuildOption[] dup(const(BuildOption[]) old) {
 	return ret;
 }
 
-BuildOptions dup(const(BuildOptions) old) {
+BuildOptions dup(ref const(BuildOptions) old) {
 	BuildOptions ret;
 	ret.unspecifiedPlatform = old.unspecifiedPlatform.dup();
 	foreach(key, value; old.platforms) {
@@ -101,7 +130,7 @@ BuildOptions dup(const(BuildOptions) old) {
 // SubConfig
 //
 
-SubConfigs dup(const(SubConfigs) old) {
+SubConfigs dup(ref const(SubConfigs) old) {
 	SubConfigs ret;
 	old.unspecifiedPlatform
 		.byKeyValue
@@ -155,7 +184,7 @@ PackageDescription[] dup(const(PackageDescription[]) old) {
 	return ret;
 }
 
-SubPackage dup(const(SubPackage) old) {
+SubPackage dup(ref const(SubPackage) old) {
 	SubPackage ret;
 	ret.path = old.path.dup();
 	if(!old.inlinePkg.isNull()) {
@@ -174,7 +203,7 @@ SubPackage[] dup(const(SubPackage[]) old) {
 // Dependency
 //
 
-Dependency dup(const(Dependency) old) {
+Dependency dup(ref const(Dependency) old) {
 	Dependency ret;
 	ret.name = old.name;
 	ret.platforms = old.platforms.dup();
@@ -203,14 +232,14 @@ Dependency[] dup(const(Dependency[]) old) {
 // String
 //
 
-StringsPlatform dup(const(StringsPlatform) old) {
+StringsPlatform dup(ref const(StringsPlatform) old) {
 	StringsPlatform ret;
 	ret.strs = old.strs.dup();
 	ret.platforms = old.platforms.dup();
 	return ret;
 }
 
-Strings dup(const(Strings) old) {
+Strings dup(ref const(Strings) old) {
 	Strings ret;
 	old.platforms.each!(p => ret.platforms ~= p.dup());
 	return ret;
@@ -220,14 +249,14 @@ Strings dup(const(Strings) old) {
 // String
 //
 
-StringPlatform dup(const(StringPlatform) old) {
+StringPlatform dup(ref const(StringPlatform) old) {
 	StringPlatform ret;
 	ret.str = old.str.dup();
 	ret.platforms = old.platforms.dup();
 	return ret;
 }
 
-String dup(const(String) old) {
+String dup(ref const(String) old) {
 	String ret;
 	old.platforms.each!(p => ret.platforms ~= p.dup());
 	return ret;
@@ -237,7 +266,7 @@ String dup(const(String) old) {
 // Paths
 //
 
-Paths dup(const(Paths) old) {
+Paths dup(ref const(Paths) old) {
 	Paths ret;
 	old.platforms.each!(p => ret.platforms ~= p.dup());
 	return ret;
@@ -247,7 +276,7 @@ Paths dup(const(Paths) old) {
 // Path
 //
 
-PathPlatform dup(const(PathPlatform) old) {
+PathPlatform dup(ref const(PathPlatform) old) {
 	PathPlatform ret;
 	ret.path = UnprocessedPath(old.path.path);
 	ret.platforms = old.platforms.dup();
@@ -260,11 +289,11 @@ PathPlatform[] dup(const(PathPlatform[]) old) {
 	return ret;
 }
 
-UnprocessedPath dup(const(UnprocessedPath) old) {
+UnprocessedPath dup(ref const(UnprocessedPath) old) {
 	return UnprocessedPath(old.path.dup());
 }
 
-PathsPlatform dup(const(PathsPlatform) old) {
+PathsPlatform dup(ref const(PathsPlatform) old) {
 	PathsPlatform ret;
 	old.paths.each!(it => ret.paths ~= it.dup());
 	ret.platforms = old.platforms.dup();
@@ -277,7 +306,7 @@ PathsPlatform[] dup(const(PathsPlatform[]) old) {
 	return ret;
 }
 
-Path dup(const(Path) old) {
+Path dup(ref const(Path) old) {
 	Path ret;
 	old.platforms.each!(p => ret.platforms ~= p.dup());
 	return ret;

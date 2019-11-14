@@ -12,6 +12,7 @@ import dud.pkgdescription;
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
 import dud.pkgdescription.testhelper;
+import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
 	string[] dubs = () @trusted { return allDubJSONFiles(); }();
@@ -44,6 +45,9 @@ unittest {
 			unRollException(e, f);
 			++failCnt;
 		}
+
+		PackageDescription copy = ddup(pkg);
+		assert(pkg == copy, format("%s\nexp:\n%s\ngot:\n%s", f, pkg, copy));
 	}
 	writefln("%6u of %6u failed", failCnt, dubs.length);
 }
