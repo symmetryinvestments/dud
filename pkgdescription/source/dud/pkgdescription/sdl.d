@@ -520,7 +520,7 @@ ToolchainRequirement sGetToolchainRequirement(const ref Token f) {
 	const string s = f.value.get!string();
 	return s == "no"
 		? ToolchainRequirement(true, VersionSpecifier.init)
-		: ToolchainRequirement(false, parseVersionSpecifier(s));
+		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
 }
 
 void sGetToolchainRequirement(Tag t, string key,

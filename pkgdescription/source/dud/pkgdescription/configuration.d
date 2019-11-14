@@ -7,12 +7,13 @@ import std.algorithm.iteration : uniq, filter, each;
 import std.exception : enforce;
 import std.format : format;
 import std.traits : FieldNameTuple;
-import std.typecons : nullable, Nullable;
+import std.typecons : nullable, Nullable, apply;
 
 import dud.pkgdescription;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.compare;
 import dud.pkgdescription.duplicate;
+import dud.pkgdescription.duplicate : ddup = dup;
 
 @safe:
 
@@ -30,7 +31,8 @@ unittest {
 	static assert( __traits(compiles, isMem!"name"));
 }
 
-PackageDescription expandConfiguration(const PackageDescription pkg, string confName)
+PackageDescription expandConfiguration(ref const PackageDescription pkg,
+		string confName)
 {
 	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
 	ret.configurations = [];
@@ -59,6 +61,7 @@ PackageDescription expandConfiguration(const PackageDescription pkg, string conf
 			, isMem!"postRunCommands", isMem!"libs", isMem!"versionFilters"
 			, isMem!"debugVersionFilters", isMem!"debugVersions"
 			, isMem!"toolchainRequirements", isMem!"dependencies"
+			, isMem!"subConfigurations"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
@@ -90,28 +93,38 @@ const(PackageDescription) findConfiguration(const PackageDescription pkg,
 	return ret.front;
 }
 
-Dependency dup(const(Dependency) old) {
-	Dependency ret;
-	ret.name = dud.pkgdescription.duplicate.dup(old.name);
-	if(!old.version_.isNull()) {
-		ret.version_ = nullable(
-			dud.pkgdescription.duplicate.dup(old.version_.get()));
-	}
-	ret.platforms = dud.pkgdescription.duplicate.dup(old.platforms);
-	ret.path = dud.pkgdescription.duplicate.dup(old.path);
-	if(!old.default_.isNull()) {
-		ret.default_ = nullable(old.default_.get());
-	}
-	if(!old.optional.isNull()) {
-		ret.optional = nullable(old.optional.get());
+SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
+	SubConfigs ret = b.ddup();
+	a.unspecifiedPlatform.byKeyValue()
+		.filter!(kv => kv.key !in ret.unspecifiedPlatform)
+		.each!(kv => ret.unspecifiedPlatform[kv.key] = kv.value);
+
+	foreach(key, value; b.configs) {
+		if(key !in ret.configs) {
+			ret.configs[key] = string[string].init;
+		}
+		foreach(key2, value2; value) {
+			if(key2 !in ret.configs[key]) {
+				ret.configs[key][key2] = value2.ddup();
+			}
+		}
 	}
 	return ret;
 }
 
 Dependency[] join(const(Dependency[]) a, const(Dependency[]) b) {
-	Dependency[] ret;
-	a.filter!(dep => !canFind!((g, h) => g.name == h)(b, dep.name))
-		.each!(dep => ret ~= dud.pkgdescription.duplicate.dup(dep));
+	Dependency[] ret = b.ddup();
+	foreach(dep; a) {
+		if(!canFind!((g, h) => g.name == h.name
+				&& g.platforms == h.platforms)(ret, dep))
+		{
+			ret ~= dep.ddup();
+		}
+	}
+	//a.filter!(dep =>
+	//		canFind!((g, h) => g.name == h.name
+	//			&& g.platform == h.platform)(b, dep))
+	//	.each!(dep => ret ~= dep.ddup());
 	return ret;
 }
 
