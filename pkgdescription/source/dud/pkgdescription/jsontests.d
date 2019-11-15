@@ -12,6 +12,7 @@ import dud.pkgdescription.output;
 import dud.pkgdescription.helper;
 import dud.semver : SemVer;
 import dud.pkgdescription;
+import dud.pkgdescription.validation;
 import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
@@ -67,6 +68,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -96,6 +99,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -126,6 +131,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -155,6 +162,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -189,6 +198,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -212,6 +223,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -237,6 +250,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -275,6 +290,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -438,6 +455,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -464,6 +483,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -491,6 +512,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -546,6 +569,8 @@ unittest {
 
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -562,4 +587,6 @@ unittest {
 	PackageDescription pkg = jsonToPackageDescription(toParse);
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
