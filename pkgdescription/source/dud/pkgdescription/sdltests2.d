@@ -41,7 +41,7 @@ unittest {
 			assert(pkg == nPkg, format("\nexp:\n%s\ngot:\n%s", pkg, nPkg));
 		} catch(Exception e) {
 			unRollException(e, f);
-			incrementFailCnt(failCnt, TestFailKind.fromSDLOrig);
+			incrementFailCnt(failCnt, TestFailKind.fromSDLCopy);
 		}
 
 		PackageDescription copy = ddupTest(pkg, f, failCnt);

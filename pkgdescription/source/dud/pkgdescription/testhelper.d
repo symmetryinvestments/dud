@@ -13,7 +13,8 @@ enum TestFailKind {
 	toSDL,
 	fromJsonCopy,
 	fromSDLCopy,
-	validate
+	validate,
+	cmp
 }
 
 package void unRollException(Exception e, string f) {
