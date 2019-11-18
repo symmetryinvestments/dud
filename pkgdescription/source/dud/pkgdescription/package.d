@@ -82,10 +82,6 @@ struct PackageDescription {
 	@SDL!(sGetStringPlatform, stringPlatformToS)("")
 	String targetName;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("")
-	String targetFileName;
-
 	@JSON!(jGetPath, pathToJ)("")
 	@SDL!(sGetPath, pathToS)("")
 	Path workingDirectory;
@@ -109,10 +105,6 @@ struct PackageDescription {
 	@JSON!(jGetPaths, pathsToJ)("")
 	@SDL!(sGetPaths, pathsToS)("")
 	Paths copyFiles; /// Files to copy to the target directory
-
-	@JSON!(jGetPaths, pathsToJ)("")
-	@SDL!(sGetPaths, pathsToS)("")
-	Paths extraDependencyFiles; /// Files to check for rebuild dub project
 
 	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
 	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")
@@ -168,7 +160,7 @@ struct PackageDescription {
 
 	@JSON!(jGetPackageDescriptions, packageDescriptionsToJ)("")
 	@SDL!(sGetPackageDescriptions, configurationsToS)("configuration")
-	PackageDescription[] configurations;
+	PackageDescription[string] configurations;
 
 	@JSON!(jGetStrings, stringsToJ)("-ddoxFilterArgs")
 	@SDL!(sGetStrings, stringsToS)("x:ddoxFilterArgs")
@@ -200,7 +192,7 @@ struct PackageDescription {
 
 	@JSON!(jGetBuildTypes, buildTypesToJ)("")
 	@SDL!(sGetBuildTypes, buildTypesToS)("buildType")
-	BuildType[] buildTypes;
+	BuildType[string] buildTypes;
 
 	@JSON!(jGetBuildOptions, buildOptionsToJ)("")
 	@SDL!(sGetBuildOptions, buildOptionsToS)("")
@@ -208,7 +200,11 @@ struct PackageDescription {
 
 	@JSON!(jGetPlatforms, platformsToJ)("")
 	@SDL!(sGetPlatforms, platformsToS)("")
-	Platform[] platforms;
+	Platform[][] platforms;
+
+	@JSON!(jGetToolchainRequirement, toolchainRequirementToJ)("")
+	@SDL!(sGetToolchainRequirement, toolchainRequirementToS)("")
+	ToolchainRequirement[Toolchain] toolchainRequirements;
 
 	bool opEquals(const PackageDescription other) const {
 		import dud.pkgdescription.compare : areEqual;
@@ -287,7 +283,6 @@ struct SubConfigs {
 
 struct BuildType {
 	string name;
-	Platform[] platforms;
 	PackageDescription pkg;
 }
 
@@ -341,4 +336,18 @@ struct StringsPlatform {
 
 struct Strings {
 	StringsPlatform[] platforms;
+}
+
+enum Toolchain {
+	dub,
+	dud,
+	frontend,
+	dmd,
+	ldc,
+	gdc
+}
+
+struct ToolchainRequirement {
+	bool no;
+	VersionSpecifier version_;
 }

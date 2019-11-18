@@ -10,7 +10,7 @@ import std.format : format, formattedWrite;
 import std.range : tee;
 import std.stdio;
 import std.traits : FieldNameTuple;
-import std.typecons : nullable, Nullable;
+import std.typecons : nullable, Nullable, tuple;
 
 import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
@@ -57,9 +57,12 @@ void sGetPackageDescription(TagAccessor ts, string key,
 }
 
 void packageDescriptionsToS(Out)(auto ref Out o, const string key,
-		const PackageDescription[] pkgs, const size_t indent)
+		const PackageDescription[string] pkgs, const size_t indent)
 {
-	pkgs.each!(it => packageDescriptionToS(o, it.name, it, indent + 1));
+	pkgs.byKeyValue()
+		.each!(it =>
+			packageDescriptionToS(o, it.value.name, it.value, indent + 1)
+		);
 }
 
 void packageDescriptionToS(Out)(auto ref Out o, const string key,
@@ -80,9 +83,10 @@ void packageDescriptionToS(Out)(auto ref Out o, const string key,
 }
 
 void configurationsToS(Out)(auto ref Out o, const string key,
-		const PackageDescription[] pkgs, const size_t indent)
+		const PackageDescription[string] pkgs, const size_t indent)
 {
-	pkgs.each!(pkg => configurationToS(o, key, pkg, indent));
+	pkgs.byKeyValue()
+		.each!(pkg => configurationToS(o, key, pkg.value, indent));
 }
 
 void configurationToS(Out)(auto ref Out o, const string key,
@@ -111,16 +115,14 @@ void sGetPlatform(AttributeAccessor aa, ref Platform[] pls) {
 	pls = tmp.sort.uniq.array;
 }
 
-void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
+void sGetPlatforms(Tag t, string key, ref Platform[][] ret) {
 	auto vals = t.values();
 	enforce!EmptyInput(!vals.empty,
 		"The platforms must not by empty");
 	ret = vals
 		.tee!(val => typeCheck(val, [ ValueType.str ]))
 		.map!(val => val.value.get!string())
-		.map!(s => s.splitter("-"))
-		.joiner
-		.map!(s => to!Platform(s))
+		.map!(s => s.splitter("-").map!(s => to!Platform(s)).array)
 		.array
 		.sort
 		.uniq
@@ -130,12 +132,12 @@ void sGetPlatforms(Tag t, string key, ref Platform[] ret) {
 		"No attributes expected for platforms key");
 }
 
-void platformsToS(Out)(auto ref Out o, const string key, const Platform[] plts,
-		const size_t indent)
+void platformsToS(Out)(auto ref Out o, const string key,
+		const Platform[][] plts, const size_t indent)
 {
 	if(!plts.empty) {
 		formatIndent(o, indent, "platforms %-(\"%s\"%| %)\n",
-			plts.map!(plt => to!string(plt)));
+			plts.map!(plt => plt.map!(it => to!string(it)).joiner("-")));
 	}
 }
 
@@ -501,40 +503,79 @@ void pathToS(Out)(auto ref Out o, const string key, const Path p,
 }
 
 //
+// ToolchainRequirement
+//
+
+void toolchainRequirementToS(Out)(auto ref Out o, const string key,
+		const ToolchainRequirement[Toolchain] tcrs, const size_t indent)
+{
+	if(!tcrs.empty) {
+		formatIndent(o, indent,
+			"toolchainRequirements %-(%s %)\n",
+				tcrs.byKeyValue().map!(kv =>
+					format("%s=\"%s\"", kv.key,
+						kv.value.no ? "no" : kv.value.version_.orig))
+		);
+	}
+}
+
+ToolchainRequirement sGetToolchainRequirement(const ref Token f) {
+	typeCheck(f, [ ValueType.str ]);
+	const string s = f.value.get!string();
+	return s == "no"
+		? ToolchainRequirement(true, VersionSpecifier.init)
+		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
+}
+
+void sGetToolchainRequirement(Tag t, string key,
+		ref ToolchainRequirement[Toolchain] bts)
+{
+	static string[] tc = ["dmd", "ldc", "gdc", "frontend", "dub", "dud"];
+	checkEmptyAttributes(t.attributes(), key, tc);
+	t.attributes()
+		.tee!(attr => typeCheck(attr.value, [ ValueType.str ]))
+		.tee!(attr => sdlEnforce!UnsupportedAttributes(
+				!canFind(tc, attr.identifier()),
+					format("'%s' is an unsupported Toolchain", attr.identifier()),
+					Location("", attr.id.cur.line, attr.id.cur.column)))
+		.map!(attr => tuple(to!Toolchain(attr.identifier()), attr))
+		.tee!(tup => sdlEnforce!ConflictingInput(tup[0] !in bts,
+				format("'%s' is already in the toolchain requirements", tup[0]),
+				Location("", tup[1].id.cur.line, tup[1].id.cur.column)))
+		.map!(tup => tuple(tup[0], sGetToolchainRequirement(tup[1].value)))
+		.each!(tup => bts[tup[0]] = tup[1]);
+}
+
+//
 // BuildTypes
 //
 
-void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
+void sGetBuildTypes(Tag t, string key, ref BuildType[string] bts) {
 	string buildTypesName;
-	sGetString(t, "name", buildTypesName, [ "platform" ]);
+	sGetString(t, "name", buildTypesName);
 
-	Platform[] plts;
-	sGetPlatform(t.attributes(), plts);
-
-	//PackageDescription* pkgDesc = new PackageDescription;
 	PackageDescription pkgDesc;
 	sGetPackageDescription(tags(t.oc), "buildTypes", pkgDesc);
 
 	BuildType bt;
 	bt.name = buildTypesName;
-	bt.platforms = plts;
 	bt.pkg = pkgDesc;
 
-	bts ~= bt;
+	bts[buildTypesName] = bt;
 }
 
 void buildTypeToS(Out)(auto ref Out o, const string key, const BuildType bt,
 		const size_t indent)
 {
-	formatIndent(o, indent, "debugType \"%s\" {\n", bt.name);
+	formatIndent(o, indent, "buildType \"%s\" {\n", bt.name);
 	packageDescriptionToS(o, "", bt.pkg, indent);
 	formatIndent(o, indent, "}\n");
 }
 
 void buildTypesToS(Out)(auto ref Out o, const string key,
-		const BuildType[] bts, const size_t indent)
+		const BuildType[string] bts, const size_t indent)
 {
-	bts.each!(bt => buildTypeToS(o, key, bt, indent));
+	bts.byValue().each!(bt => buildTypeToS(o, key, bt, indent));
 }
 
 //
@@ -542,7 +583,7 @@ void buildTypesToS(Out)(auto ref Out o, const string key,
 //
 
 void sGetPackageDescriptions(Tag t, string key,
-		ref PackageDescription[] ret) @safe
+		ref PackageDescription[string] ret) @safe
 {
 	string n;
 	sGetString(t, "name", n);
@@ -556,7 +597,7 @@ void sGetPackageDescriptions(Tag t, string key,
 			Location("", t.id.cur.line, t.id.cur.column)
 		);
 	}
-	ret ~= tmp;
+	ret[tmp.name] = tmp;
 }
 
 //
@@ -707,5 +748,13 @@ void checkEmptyAttributes(AttributeAccessor ars, string key, string[] toIgnore) 
 		throw new UnsupportedAttributes(format(
 			"The key '%s' does not support attributes [%(%s, %)]",
 				key, attrs));
+	}
+}
+
+void sdlEnforce(E)(bool cond, string msg, const Location loc,
+		const string file = __FILE__, const size_t line = __LINE__)
+{
+	if(!cond) {
+		throw new E(msg, loc, file, line);
 	}
 }

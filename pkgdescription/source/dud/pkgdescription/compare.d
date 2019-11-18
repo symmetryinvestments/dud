@@ -37,12 +37,14 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(Path))
 				|| is(aMemType == const(Paths))
 				|| is(aMemType == const(PackageDescription))
-				|| is(aMemType == const(PackageDescription[]))
+				|| is(aMemType == const(PackageDescription[string]))
 				|| is(aMemType == const(SubPackage[]))
 				|| is(aMemType == const(BuildRequirement[]))
 				|| is(aMemType == const(SubConfigs))
-				|| is(aMemType == const(BuildType[]))
+				|| is(aMemType == const(BuildType[string]))
 				|| is(aMemType == const(Platform[]))
+				|| is(aMemType == const(Platform[][]))
+				|| is(aMemType == const(ToolchainRequirement[Toolchain]))
 				|| is(aMemType == const(BuildOptions))
 			)
 		{
@@ -56,6 +58,24 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 		}
 	}}
 	return true;
+}
+
+//
+// ToolchainRequirement
+//
+
+bool areEqual(const ToolchainRequirement as, const ToolchainRequirement bs) {
+	return as.no == bs.no && as.version_ == bs.version_;
+}
+
+bool areEqual(const ToolchainRequirement[Toolchain] as,
+		const ToolchainRequirement[Toolchain] bs)
+{
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	return aaCmp!simpleCmp(as, bs);
 }
 
 //
@@ -95,17 +115,13 @@ bool areEqual(const BuildOptions[] as, const BuildOptions[] bs) {
 //
 
 bool areEqual(const BuildType as, const BuildType bs) {
-	return areEqual(as.platforms, bs.platforms)
-		&& as.name == bs.name
+	return as.name == bs.name
 		&& areEqual(as.pkg, bs.pkg);
 }
 
-bool areEqual(const BuildType[] as, const BuildType[] bs) {
-	if(as.length != bs.length) {
-		return false;
-	}
-
-	return as.all!(a => canFind(bs, a)) && bs.all!(a => canFind(as, a));
+bool areEqual(const BuildType[string] as, const BuildType[string] bs) {
+	return aaCmp!((const(BuildType) a, const(BuildType) b) => areEqual(a, b))
+		(as, bs);
 }
 
 //
@@ -168,13 +184,10 @@ bool areEqual(const SubPackage[] as, const SubPackage[] bs) {
 // PackageDescription[]
 //
 
-bool areEqual(const PackageDescription[] as, const PackageDescription[] bs) {
-	if(as.length != bs.length) {
-		return false;
-	}
-
-	return as.all!(a => canFind!areEqual(bs, a))
-		&& bs.all!(a => canFind!areEqual(as, a));
+bool areEqual(const PackageDescription[string] as,
+		const PackageDescription[string] bs)
+{
+	return aaCmp!(simpleCmp)(as, bs);
 }
 
 //
@@ -224,6 +237,14 @@ unittest {
 	assert( areEqual(Paths([s5]), Paths([s5])));
 	assert( areEqual(Paths([s6]), Paths([s6])));
 	assert(!areEqual(Paths([s5]), Paths([s6])));
+}
+
+//
+// VersionSpecifier
+//
+
+bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
+	return a.orig == b.orig;
 }
 
 //
@@ -411,6 +432,17 @@ unittest {
 //
 // Platform
 //
+
+bool areEqual(const Platform[][] a, const Platform[][] b) {
+	if(a.length != b.length) {
+		return false;
+	} else if(a.length == 0) {
+		return true;
+	}
+	auto cmp = (const(Platform)[] a, const(Platform)[] b) => areEqual(a, b);
+	return a.all!(it => canFind!cmp(b, it)) && b.all!(it => canFind!cmp(a, it));
+}
+
 
 bool areEqual(const Platform[] a, const Platform[] b) {
 	if(a.length != b.length) {

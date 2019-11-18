@@ -15,6 +15,17 @@ struct VersionSpecifier {
 	bool inclusiveB;
 	SemVer versionA;
 	SemVer versionB;
+
+	this(string input) pure {
+		Nullable!VersionSpecifier s = parseVersionSpecifier(input);
+		enforce(!s.isNull());
+		VersionSpecifier snn = s.get();
+		this = snn;
+	}
+}
+
+unittest {
+	VersionSpecifier s = VersionSpecifier("1.0.0");
 }
 
 /** Sets/gets the matching version range as a specification string.
@@ -139,4 +150,9 @@ private string skipComp(ref string c) {
 		case "<=": goto case; case "<": goto case;
 		case "==": return cmp;
 	}
+}
+
+unittest {
+	string tt = ">=1.0.0";
+	auto v = parseVersionSpecifier(tt);
 }

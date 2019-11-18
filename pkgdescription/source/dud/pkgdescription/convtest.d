@@ -30,12 +30,14 @@ configuration "windows-release" {
 }
 };
 	PackageDescription a = sdlToPackageDescription(input);
-	assert(a.configurations.front.preBuildCommands.platforms[0].platforms
+	assert(a.configurations["windows-release"]
+			.preBuildCommands.platforms[0].platforms
 			== [ Platform.windows, Platform.x86_64],
-		format("%s", a.configurations.front.preBuildCommands));
-	assert(a.configurations.front.preBuildCommands.platforms[1].platforms
+		format("%s", a.configurations["windows-release"].preBuildCommands));
+	assert(a.configurations["windows-release"]
+			.preBuildCommands.platforms[1].platforms
 			== [ Platform.windows, Platform.x86_mscoff],
-		format("%s", a.configurations.front.preBuildCommands));
+		format("%s", a.configurations["windows-release"].preBuildCommands));
 	JSONValue j = a.toJSON();
 	PackageDescription b = jsonToPackageDescription(j);
 
@@ -62,33 +64,46 @@ unittest {
 	size_t idx;
 	size_t failed;
 	size_t worked;
+	size_t[TestFailKind] failCnt;
 	foreach(it; all) {
 		//writefln("%s %s", idx, it[0]);
 		try {
 			PackageDescription a = it[1];
-			JSONValue js = a.toJSON();
+			JSONValue js = testToJson(a, it[0], failCnt);
+			if(js == JSONValue.init) {
+				incrementFailCnt(failCnt, TestFailKind.toJson);
+				continue;
+			}
 			PackageDescription b = jsonToPackageDescription(js);
 			if(b != a) {
 				writefln("%5d %s\nb == a failed\n%s", idx, it[0],
 						pkgCompare(b, a));
-				++failed;
+				incrementFailCnt(failCnt, TestFailKind.fromJsonCopy);
 				continue;
 			}
 
-			string sdlOut = toSDL(a);
+
+			string sdlOut = testToSDL(a, it[0], failCnt);
 			//writefln("%s:\n%s", it[0], sdlOut);
-			PackageDescription c = sdlToPackageDescription(sdlOut);
-			if(c != a) {
-				writefln("%5d %s\nc == a failed\n%s", idx, it[0],
-						pkgCompare(c, a));
-				++failed;
+			PackageDescription c;
+			try {
+				c = sdlToPackageDescription(sdlOut);
+				assert(a == c,
+					() @trusted {
+						return format("\nexp:\n%s\ngot:\n%s", a, c);
+					}());
+			} catch(Exception e) {
+				unRollException(e, it[0]);
+				incrementFailCnt(failCnt, TestFailKind.fromSDLCopy);
 				continue;
 			}
+
+			PackageDescription copy = ddupTest(a, it[0], failCnt);
 
 			if(b != c) {
 				writefln("%5d %s\nb == c failed\n%s", idx, it[0],
 						pkgCompare(b, c));
-				++failed;
+				incrementFailCnt(failCnt, TestFailKind.cmp);
 				continue;
 			}
 
@@ -99,5 +114,5 @@ unittest {
 
 		++idx;
 	}
-	writefln("%d failed, %d worked", failed, worked);
+	writefln("fails %s, %d worked", failCnt, worked);
 }

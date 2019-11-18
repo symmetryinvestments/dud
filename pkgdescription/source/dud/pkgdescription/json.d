@@ -11,7 +11,7 @@ import std.json;
 import std.range : tee;
 import std.stdio;
 import std.string : indexOf;
-import std.typecons : nullable, Nullable;
+import std.typecons : nullable, Nullable, tuple;
 import std.traits : FieldNameTuple;
 
 import dud.pkgdescription.exception;
@@ -96,20 +96,27 @@ string platformKeyToS(string key, const(Platform)[] p) {
 	return app.data;
 }
 
-Platform[] jGetPlatforms(ref JSONValue jv) {
+Platform[][] jGetPlatforms(ref JSONValue jv) {
 	typeCheck(jv, [JSONType.array]);
 
 	return jv.arrayNoRef()
 		.tee!(it => typeCheck(it, [JSONType.string]))
 		.map!(it => it.str())
-		.map!(s => to!Platform(s))
+		.map!(it => it.splitter("-").map!(s => to!Platform(s)).array)
 		.array;
 }
 
-JSONValue platformsToJ(const Platform[] plts) {
+JSONValue platformsToJ(const Platform[][] plts) {
 	return plts.empty
 		? JSONValue.init
-		: JSONValue(plts.map!(plt => to!string(plt)).array);
+		: JSONValue(
+				plts
+					.map!(plt => plt
+						.map!(p => to!string(p))
+						.joiner("-")
+						.array)
+					.array
+			);
 }
 
 //
@@ -444,31 +451,31 @@ JSONValue subPackagesToJ(const SubPackage[] sps) {
 void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 	const string noPlatform = splitOutKey(key);
 
-	bt.platforms = keyToPlatform(key);
 	bt.name = noPlatform;
 	bt.pkg = jGetPackageDescription(jv);
 }
 
-void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
+void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[string] bts) {
 	typeCheck(jv, [JSONType.object]);
 	foreach(key, value; jv.objectNoRef()) {
 		BuildType tmp;
 		jGetBuildType(value, key, tmp);
-		bts ~= tmp;
+		bts[key] = tmp;
 	}
 }
 
-void buildTypesToJ(const BuildType[] bts, const string key, ref JSONValue ret) {
+void buildTypesToJ(const BuildType[string] bts, const string key,
+		ref JSONValue ret)
+{
 	typeCheck(ret, [JSONType.object, JSONType.null_]);
 	if(bts.empty) {
 		return;
 	}
 
 	JSONValue[string] map;
-	foreach(value; bts) {
-		string name = platformKeyToS(value.name, value.platforms);
+	foreach(key, value; bts) {
 		JSONValue tmp = packageDescriptionToJ(value.pkg);
-		map[name] = tmp;
+		map[key] = tmp;
 	}
 	ret["buildTypes"] = map;
 }
@@ -526,9 +533,15 @@ JSONValue targetTypeToJ(const TargetType t) {
 // PackageDescription
 //
 
-PackageDescription[] jGetPackageDescriptions(JSONValue js) {
+PackageDescription[string] jGetPackageDescriptions(JSONValue js) {
 	typeCheck(js, [JSONType.array]);
-	return js.arrayNoRef().map!(it => jGetPackageDescription(it)).array;
+	PackageDescription[string] ret;
+	js.arrayNoRef()
+		.each!((JSONValue it) {
+			PackageDescription tmp = jGetPackageDescription(it);
+			ret[tmp.name] = tmp;
+		});
+	return ret;
 }
 
 template isPlatfromDependend(T) {
@@ -539,14 +552,18 @@ template isPlatfromDependend(T) {
 		|| is(T == Path)
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)
-		|| is(T == BuildType[])
+		|| is(T == BuildType[string])
+		|| is(T == ToolchainRequirement[Toolchain])
 		|| is(T == Paths);
 }
 
 PackageDescription jGetPackageDescription(JSONValue js) {
-	typeCheck(js, [JSONType.object]);
+	typeCheck(js, [JSONType.object, JSONType.null_]);
 
 	PackageDescription ret;
+	if(js.type == JSONType.null_) {
+		return ret;
+	}
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
 		const string noPlatform = splitOutKey(key);
@@ -603,10 +620,10 @@ JSONValue packageDescriptionToJ(const PackageDescription pkg) {
 	return ret;
 }
 
-JSONValue packageDescriptionsToJ(const PackageDescription[] pkgs) {
+JSONValue packageDescriptionsToJ(const PackageDescription[string] pkgs) {
 	return pkgs.empty
 		? JSONValue.init
-		: JSONValue(pkgs.map!(it => packageDescriptionToJ(it)).array);
+		: JSONValue(pkgs.byValue().map!(it => packageDescriptionToJ(it)).array);
 }
 
 //
@@ -669,6 +686,60 @@ void stringAAToJ(const SubConfigs aa, const string key, ref JSONValue ret) {
 			ret[k] = tmp;
 		}
 	}
+}
+
+//
+// ToolchainRequirement
+//
+
+Toolchain jGetToolchain(string s) {
+	return to!Toolchain(s);
+}
+
+ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
+	typeCheck(jv, [JSONType.string]);
+	const string s = jv.str;
+	return s == "no"
+		? ToolchainRequirement(true, VersionSpecifier.init)
+		: ToolchainRequirement(false, parseVersionSpecifier(s));
+}
+
+void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
+		ref ToolchainRequirement[Toolchain] ret)
+{
+	enforce!ConflictingInput(tc !in ret, format(
+			"'%s' is already in '%s'", tc, ret));
+	ret[tc] = tcr;
+}
+
+void jGetToolchainRequirement(ref JSONValue jv, string key,
+		ref ToolchainRequirement[Toolchain] ret)
+{
+	typeCheck(jv, [JSONType.object]);
+	jv.objectNoRef()
+		.byKeyValue()
+		.map!(it => tuple(it.key.jGetToolchain(),
+					jGetToolchainRequirement(it.value)))
+		.each!(tup => insertInto(tup[0], tup[1], ret));
+}
+
+string toolchainToString(const ToolchainRequirement tcr) {
+	return tcr.no ? "no" : tcr.version_.orig;
+}
+
+void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
+		const string key, ref JSONValue ret)
+{
+	if(tcrs.empty) {
+		return;
+	}
+	typeCheck(ret, [JSONType.object, JSONType.null_]);
+
+	JSONValue[string] map;
+	foreach(key, value; tcrs) {
+		map[to!string(key)] = toolchainToString(value);
+	}
+	ret["toolchainRequirements"] = map;
 }
 
 //

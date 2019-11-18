@@ -12,6 +12,8 @@ import dud.pkgdescription.output;
 import dud.pkgdescription.helper;
 import dud.semver : SemVer;
 import dud.pkgdescription;
+import dud.pkgdescription.validation;
+import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
 	string toParse = `
@@ -63,12 +65,18 @@ unittest {
 
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	import dud.semver : SemVer;
 	string toParse = `
 {
+	"name" : "Foo",
 	"authors": [
 		"Robert burner Schadek"
 	],
@@ -89,11 +97,17 @@ unittest {
 	JSONValue n = pkg.toJSON();
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
 	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s", pkg, pkgFromJ));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"dependencies" : {
 		"semver": { "path" : "../semver", "optional": false, "version" : ">=0.0.1" },
 		"path": { "path" : "../path", "default": true },
@@ -116,11 +130,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"postBuildCommands-windows" : [
 		"format C:",
 		"install linux"
@@ -142,11 +162,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"subConfigurations" : {
 		"semver": "that",
 		"path": "this"
@@ -173,11 +199,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"buildRequirements" : [ "allowWarnings", "disallowDeprecations" ]
 }
 `;
@@ -193,11 +225,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"buildOptions" : [ "verbose" ],
 	"buildOptions-posix" : [ "inline", "property"],
 	"buildOptions-windows" : ["betterC" ]
@@ -215,11 +253,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"subPackages" : [
 		{
 			"name" : "sub1"
@@ -250,6 +294,11 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
@@ -410,11 +459,17 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
 }
 
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"-ddoxTool" : "ddoxFoo"
 }
 `;
@@ -433,4 +488,130 @@ unittest {
 	JSONValue n2 = pkgFromJ.toJSON();
 	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
 		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
+}
+
+unittest {
+	string toParse = `
+{
+	"name" : "Foo",
+	"toolchainRequirements" : {
+		"dud" : ">=1.0.0"
+	}
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue n = toJSON(pkg);
+	JSONValue o = parseJSON(toParse);
+	assert(n == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n.toPrettyString()));
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
+	JSONValue n2 = pkgFromJ.toJSON();
+	assert(n2 == o, format("\nexp:\n%s\ngot:\n%s", o.toPrettyString(),
+		n2.toPrettyString()));
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
+}
+
+unittest {
+	string toParse = `
+{
+	"name" : "Foo",
+    "configurations": [
+        {
+            "name": "winapi",
+            "platforms": [
+                "windows-x86_64",
+                "windows-x86_mscoff"
+            ],
+            "targetType": "library",
+            "versions": [
+                "EventcoreWinAPIDriver"
+            ]
+        },
+        {
+            "name": "select",
+            "platforms": [
+                "posix",
+                "windows-x86_64",
+                "windows-x86_mscoff"
+            ]
+		},
+        {
+            "name": "epoll",
+            "platforms": [
+                "linux"
+            ],
+            "targetType": "library",
+            "versions": [
+                "EventcoreEpollDriver"
+            ]
+        }
+	]
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue n = toJSON(pkg);
+	//JSONValue o = parseJSON(toParse);
+
+	PackageDescription pkgFromJ = jsonToPackageDescription(n);
+	assert(pkg == pkgFromJ, format("\nexp:\n%s\ngot:\n%s\n\n%s", pkg, pkgFromJ,
+		pkgCompare(pkg, pkgFromJ)
+	));
+	JSONValue n2 = pkgFromJ.toJSON();
+
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
+}
+
+unittest {
+	string toParse = `
+{
+	"name" : "Foo",
+    "toolchainRequirements": {
+        "ldc": ">=1.15.0"
+    },
+    "version": "~master"
+}
+
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	PackageDescription copy = ddup(pkg);
+	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(copy);
+}
+
+unittest {
+	string toParse = `
+{
+	"name" : "Foo",
+    "buildTypes": {
+        "release": {}
+    }
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue copy = toJSON(pkg);
+	PackageDescription pkg2 = jsonToPackageDescription(copy);
+	assert(pkg == pkg2, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(pkg2);
 }
