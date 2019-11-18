@@ -558,9 +558,12 @@ template isPlatfromDependend(T) {
 }
 
 PackageDescription jGetPackageDescription(JSONValue js) {
-	typeCheck(js, [JSONType.object]);
+	typeCheck(js, [JSONType.object, JSONType.null_]);
 
 	PackageDescription ret;
+	if(js.type == JSONType.null_) {
+		return ret;
+	}
 
 	foreach(string key, ref JSONValue value; js.objectNoRef()) {
 		const string noPlatform = splitOutKey(key);

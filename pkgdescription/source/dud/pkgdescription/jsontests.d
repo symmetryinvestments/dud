@@ -586,3 +586,20 @@ unittest {
 
 	validate(copy);
 }
+
+unittest {
+	string toParse = `
+{
+    "buildTypes": {
+        "release": {}
+    }
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	JSONValue copy = toJSON(pkg);
+	PackageDescription pkg2 = jsonToPackageDescription(copy);
+	assert(pkg == pkg2, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
+
+	validate(pkg2);
+}

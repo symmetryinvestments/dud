@@ -1,6 +1,7 @@
 module dud.pkgdescription.testhelper;
 
 import std.json;
+import std.stdio;
 import std.format;
 import dud.pkgdescription;
 
@@ -62,6 +63,7 @@ bool fromJsonTest(JSONValue js, ref const(PackageDescription) pkg,
 	} catch(Exception e) {
 		unRollException(e, f);
 		incrementFailCnt(failCnt, TestFailKind.fromJsonCopy);
+		writefln("\n\n\n%s\n\n\n", f);
 	}
 	return false;
 }
