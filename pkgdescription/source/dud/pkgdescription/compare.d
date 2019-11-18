@@ -21,23 +21,14 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 			)
 		{
 			if(__traits(getMember, a, mem) != __traits(getMember, b, mem)) {
-				debug writefln("%s %s %s %s %s", __LINE__, mem,
-					aMemType.stringof,
-					__traits(getMember, a, mem), __traits(getMember, b, mem));
 				return false;
 			}
 		} else static if(is(aMemType == const(SemVer))) {
 			auto aSem = __traits(getMember, a, mem);
 			auto bSem = __traits(getMember, b, mem);
 			if(aSem.isUnknown() || bSem.isUnknown()) {
-				if(aSem.isUnknown() != bSem.isUnknown()) {
-					debug writefln("%s %s %s %s %s", __LINE__, mem,
-							aMemType.stringof, aSem.isUnknown(),
-							bSem.isUnknown());
-					return false;
-				}
+				return aSem.isUnknown() == bSem.isUnknown();
 			} else if(aSem != bSem) {
-				debug writefln("%s %s %s", __LINE__, mem, aMemType.stringof);
 				return false;
 			}
 		} else static if(is(aMemType == const(Dependency[]))
@@ -60,7 +51,6 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 			if(!areEqual(__traits(getMember, a, mem),
 					__traits(getMember, b, mem)))
 			{
-				debug writefln("%s %s %s", __LINE__, mem, aMemType.stringof);
 				return false;
 			}
 		} else {
@@ -197,21 +187,7 @@ bool areEqual(const SubPackage[] as, const SubPackage[] bs) {
 bool areEqual(const PackageDescription[string] as,
 		const PackageDescription[string] bs)
 {
-	/*return aaCmp!(
-		(const(PackageDescription) a, const(PackageDescription) b)
-			=> areEqual(a, b))
-		(as, bs);
-	*/
-	//return aaCmp!(simpleCmp)(as, bs);
-	foreach(key, value; as) {
-		const(PackageDescription)* b = key in bs;
-		if(b is null) {
-			return false;
-		} else if(!areEqual(value, *b)) {
-			return false;
-		}
-	}
-	return true;
+	return aaCmp!(simpleCmp)(as, bs);
 }
 
 //
