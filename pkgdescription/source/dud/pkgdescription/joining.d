@@ -17,21 +17,7 @@ import dud.pkgdescription.duplicate : ddup = dup;
 
 @safe:
 
-private template isMem(string name) {
-	static if(__traits(hasMember, PackageDescription, name)) {
-		enum isMem = name;
-	} else {
-		static assert(false,
-			format("'%s' is not a member of PackageDescription", name));
-	}
-}
-
-unittest {
-	static assert(!__traits(compiles, isMem!"foo"));
-	static assert( __traits(compiles, isMem!"name"));
-}
-
-PackageDescription expandConfiguration(ref const PackageDescription pkg,
+PackageDescription expandConfiguration(ref const(PackageDescription) pkg,
 		string confName)
 {
 	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
@@ -39,6 +25,15 @@ PackageDescription expandConfiguration(ref const PackageDescription pkg,
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
 	joinPackageDescription(ret, pkg, conf);
+	return ret;
+}
+
+PackageDescription expandBuildType(ref const(PackageDescription) pkg,
+		string buildTypeName)
+{
+	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
+	const(BuildType) buildType = findBuildType(pkg, buildTypeName);
+	joinPackageDescription(ret, pkg, buildType.pkg);
 	return ret;
 }
 
@@ -86,15 +81,6 @@ void joinPackageDescription(ref PackageDescription ret,
 			pragma(msg, mem);
 		}
 	}
-}
-
-const(PackageDescription) findConfiguration(const PackageDescription pkg,
-	string confName)
-{
-	auto ret = find!((a, b) => a.name == b)(pkg.configurations, confName);
-	enforce!UnknownConfiguration(!ret.empty,
-		format("'%s' is a unknown configuration of package '%s'", pkg.name));
-	return ret.front;
 }
 
 SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
@@ -167,4 +153,41 @@ string[] join(const(string[]) a, const(string[]) b) {
 	string[] ret = (dud.pkgdescription.duplicate.dup(a)
 			~ dud.pkgdescription.duplicate.dup(b)).sort.uniq.array;
 	return ret;
+}
+
+//
+// Helper
+//
+
+const(BuildType) findBuildType(const PackageDescription pkg,
+	string buildTypeName)
+{
+	const(BuildType)* ret = buildTypeName in pkg.buildTypes;
+	enforce!UnknownBuildType(ret !is null,
+		format("'%s' is a unknown buildType of package '%s'", pkg.name));
+	return *ret;
+}
+
+const(PackageDescription) findConfiguration(const PackageDescription pkg,
+	string confName)
+{
+	auto ret = find!((a, b) => a.name == b)(pkg.configurations, confName);
+	enforce!UnknownConfiguration(!ret.empty,
+		format("'%s' is a unknown configuration of package '%s'", pkg.name));
+	return ret.front;
+}
+
+
+private template isMem(string name) {
+	static if(__traits(hasMember, PackageDescription, name)) {
+		enum isMem = name;
+	} else {
+		static assert(false,
+			format("'%s' is not a member of PackageDescription", name));
+	}
+}
+
+unittest {
+	static assert(!__traits(compiles, isMem!"foo"));
+	static assert( __traits(compiles, isMem!"name"));
 }
