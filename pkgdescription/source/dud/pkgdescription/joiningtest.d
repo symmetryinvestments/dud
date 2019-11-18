@@ -1,4 +1,4 @@
-module dud.pkgdescription.configurationtest;
+module dud.pkgdescription.joiningtest;
 
 import std.algorithm.searching : canFind;
 import std.stdio;
@@ -7,7 +7,7 @@ import std.typecons : nullable, Nullable;
 
 import dud.pkgdescription;
 import dud.pkgdescription.compare;
-import dud.pkgdescription.configuration;
+import dud.pkgdescription.joining;
 
 unittest {
 	string toParse = `

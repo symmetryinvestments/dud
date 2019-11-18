@@ -1,4 +1,4 @@
-module dud.pkgdescription.configuration;
+module dud.pkgdescription.joining;
 
 import std.array : array, empty, front;
 import std.algorithm.searching : canFind, find;
@@ -38,7 +38,13 @@ PackageDescription expandConfiguration(ref const PackageDescription pkg,
 	ret.configurations = [];
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
+	joinPackageDescription(ret, conf);
+	return ret;
+}
 
+void joinPackageDescription(ref PackageDescription ret,
+		ref const(PackageDescription) conf)
+{
 	static foreach(mem; FieldNameTuple!PackageDescription) {
 		// override with conf
 		static if(canFind(
@@ -80,8 +86,6 @@ PackageDescription expandConfiguration(ref const PackageDescription pkg,
 			pragma(msg, mem);
 		}
 	}
-
-	return ret;
 }
 
 const(PackageDescription) findConfiguration(const PackageDescription pkg,
