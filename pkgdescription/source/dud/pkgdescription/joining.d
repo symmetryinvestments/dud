@@ -20,7 +20,7 @@ import dud.pkgdescription.duplicate : ddup = dup;
 PackageDescription expandConfiguration(ref const(PackageDescription) pkg,
 		string confName)
 {
-	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
+	PackageDescription ret = pkg.ddup();
 	() @trusted { ret.configurations.clear(); }();
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
@@ -31,7 +31,7 @@ PackageDescription expandConfiguration(ref const(PackageDescription) pkg,
 PackageDescription expandBuildType(ref const(PackageDescription) pkg,
 		string buildTypeName)
 {
-	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
+	PackageDescription ret = pkg.ddup();
 	const(BuildType) buildType = findBuildType(pkg, buildTypeName);
 	joinPackageDescription(ret, pkg, buildType.pkg);
 	return ret;
