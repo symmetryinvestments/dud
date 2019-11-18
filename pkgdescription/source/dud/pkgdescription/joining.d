@@ -21,7 +21,7 @@ PackageDescription expandConfiguration(ref const(PackageDescription) pkg,
 		string confName)
 {
 	PackageDescription ret = dud.pkgdescription.duplicate.dup(pkg);
-	ret.configurations = [];
+	() @trusted { ret.configurations.clear(); }();
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
 	joinPackageDescription(ret, pkg, conf);
@@ -171,12 +171,11 @@ const(BuildType) findBuildType(const PackageDescription pkg,
 const(PackageDescription) findConfiguration(const PackageDescription pkg,
 	string confName)
 {
-	auto ret = find!((a, b) => a.name == b)(pkg.configurations, confName);
-	enforce!UnknownConfiguration(!ret.empty,
+	const(PackageDescription)* ret = confName in pkg.configurations;
+	enforce!UnknownConfiguration(ret !is null,
 		format("'%s' is a unknown configuration of package '%s'", pkg.name));
-	return ret.front;
+	return *ret;
 }
-
 
 private template isMem(string name) {
 	static if(__traits(hasMember, PackageDescription, name)) {

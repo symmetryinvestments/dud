@@ -57,9 +57,12 @@ void sGetPackageDescription(TagAccessor ts, string key,
 }
 
 void packageDescriptionsToS(Out)(auto ref Out o, const string key,
-		const PackageDescription[] pkgs, const size_t indent)
+		const PackageDescription[string] pkgs, const size_t indent)
 {
-	pkgs.each!(it => packageDescriptionToS(o, it.name, it, indent + 1));
+	pkgs.byKeyValue()
+		.each!(it =>
+			packageDescriptionToS(o, it.value.name, it.value, indent + 1)
+		);
 }
 
 void packageDescriptionToS(Out)(auto ref Out o, const string key,
@@ -80,9 +83,10 @@ void packageDescriptionToS(Out)(auto ref Out o, const string key,
 }
 
 void configurationsToS(Out)(auto ref Out o, const string key,
-		const PackageDescription[] pkgs, const size_t indent)
+		const PackageDescription[string] pkgs, const size_t indent)
 {
-	pkgs.each!(pkg => configurationToS(o, key, pkg, indent));
+	pkgs.byKeyValue()
+		.each!(pkg => configurationToS(o, key, pkg.value, indent));
 }
 
 void configurationToS(Out)(auto ref Out o, const string key,
@@ -579,7 +583,7 @@ void buildTypesToS(Out)(auto ref Out o, const string key,
 //
 
 void sGetPackageDescriptions(Tag t, string key,
-		ref PackageDescription[] ret) @safe
+		ref PackageDescription[string] ret) @safe
 {
 	string n;
 	sGetString(t, "name", n);
@@ -593,7 +597,7 @@ void sGetPackageDescriptions(Tag t, string key,
 			Location("", t.id.cur.line, t.id.cur.column)
 		);
 	}
-	ret ~= tmp;
+	ret[tmp.name] = tmp;
 }
 
 //

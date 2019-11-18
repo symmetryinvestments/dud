@@ -160,7 +160,7 @@ struct PackageDescription {
 
 	@JSON!(jGetPackageDescriptions, packageDescriptionsToJ)("")
 	@SDL!(sGetPackageDescriptions, configurationsToS)("configuration")
-	PackageDescription[] configurations;
+	PackageDescription[string] configurations;
 
 	@JSON!(jGetStrings, stringsToJ)("-ddoxFilterArgs")
 	@SDL!(sGetStrings, stringsToS)("x:ddoxFilterArgs")

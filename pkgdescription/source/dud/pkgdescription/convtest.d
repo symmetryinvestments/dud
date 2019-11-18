@@ -30,12 +30,14 @@ configuration "windows-release" {
 }
 };
 	PackageDescription a = sdlToPackageDescription(input);
-	assert(a.configurations.front.preBuildCommands.platforms[0].platforms
+	assert(a.configurations["windows-release"]
+			.preBuildCommands.platforms[0].platforms
 			== [ Platform.windows, Platform.x86_64],
-		format("%s", a.configurations.front.preBuildCommands));
-	assert(a.configurations.front.preBuildCommands.platforms[1].platforms
+		format("%s", a.configurations["windows-release"].preBuildCommands));
+	assert(a.configurations["windows-release"]
+			.preBuildCommands.platforms[1].platforms
 			== [ Platform.windows, Platform.x86_mscoff],
-		format("%s", a.configurations.front.preBuildCommands));
+		format("%s", a.configurations["windows-release"].preBuildCommands));
 	JSONValue j = a.toJSON();
 	PackageDescription b = jsonToPackageDescription(j);
 

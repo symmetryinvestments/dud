@@ -533,9 +533,15 @@ JSONValue targetTypeToJ(const TargetType t) {
 // PackageDescription
 //
 
-PackageDescription[] jGetPackageDescriptions(JSONValue js) {
+PackageDescription[string] jGetPackageDescriptions(JSONValue js) {
 	typeCheck(js, [JSONType.array]);
-	return js.arrayNoRef().map!(it => jGetPackageDescription(it)).array;
+	PackageDescription[string] ret;
+	js.arrayNoRef()
+		.each!((JSONValue it) {
+			PackageDescription tmp = jGetPackageDescription(it);
+			ret[tmp.name] = tmp;
+		});
+	return ret;
 }
 
 template isPlatfromDependend(T) {
@@ -611,10 +617,10 @@ JSONValue packageDescriptionToJ(const PackageDescription pkg) {
 	return ret;
 }
 
-JSONValue packageDescriptionsToJ(const PackageDescription[] pkgs) {
+JSONValue packageDescriptionsToJ(const PackageDescription[string] pkgs) {
 	return pkgs.empty
 		? JSONValue.init
-		: JSONValue(pkgs.map!(it => packageDescriptionToJ(it)).array);
+		: JSONValue(pkgs.byValue().map!(it => packageDescriptionToJ(it)).array);
 }
 
 //
