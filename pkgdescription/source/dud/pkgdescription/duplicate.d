@@ -24,7 +24,7 @@ PackageDescription dup(const ref PackageDescription pkg) {
 				|| is(MemType == Dependency[])
 				|| is(MemType == Platform[][])
 				|| is(MemType == SubPackage[])
-				|| is(MemType == BuildType[])
+				|| is(MemType == BuildType[string])
 				|| is(MemType == ToolchainRequirement[Toolchain])
 				|| is(MemType == SubConfigs)
 				|| is(MemType == BuildRequirement[])
@@ -160,15 +160,14 @@ Platform[][] dup(const(Platform[][]) old) {
 
 BuildType dup(const(BuildType) old) {
 	BuildType ret;
-	old.platforms.each!(it => ret.platforms ~= it);
 	ret.pkg = old.pkg.dup();
 	ret.name = old.name;
 	return ret;
 }
 
-BuildType[] dup(const(BuildType[]) old) {
-	BuildType[] ret;
-	old.each!(it => ret ~= it.dup());
+BuildType[string] dup(const(BuildType[string]) old) {
+	BuildType[string] ret;
+	old.byKeyValue().each!(it => ret[it.key] = it.value.dup());
 	return ret;
 }
 

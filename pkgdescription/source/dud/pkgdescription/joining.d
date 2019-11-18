@@ -38,12 +38,12 @@ PackageDescription expandConfiguration(ref const PackageDescription pkg,
 	ret.configurations = [];
 
 	const(PackageDescription) conf = findConfiguration(pkg, confName);
-	joinPackageDescription(ret, conf);
+	joinPackageDescription(ret, pkg, conf);
 	return ret;
 }
 
 void joinPackageDescription(ref PackageDescription ret,
-		ref const(PackageDescription) conf)
+		ref const(PackageDescription) orig, ref const(PackageDescription) conf)
 {
 	static foreach(mem; FieldNameTuple!PackageDescription) {
 		// override with conf
@@ -71,7 +71,7 @@ void joinPackageDescription(ref PackageDescription ret,
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
-				join(__traits(getMember, pkg, mem),
+				join(__traits(getMember, orig, mem),
 						__traits(getMember, conf, mem));
 		} else static if(canFind(
 			[ isMem!"name", isMem!"description", isMem!"homepage"
@@ -116,12 +116,13 @@ SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
 	return ret;
 }
 
-BuildType[] join(const(BuildType[]) a, const(BuildType[]) b) {
-	BuildType[] ret = b.ddup();
-	a.filter!(bt =>
-			canFind!((g, h) => g.name == h.name
-				&& g.platforms == h.platforms)(ret, bt))
-		.each!(bt => ret ~= bt.ddup());
+BuildType[string] join(const(BuildType[string]) a,
+		const(BuildType[string]) b)
+{
+	BuildType[string] ret = b.ddup();
+	a.byKeyValue()
+		.filter!(it => it.key !in ret)
+		.each!(bt => ret[bt.key] = bt.value.ddup());
 	return ret;
 }
 

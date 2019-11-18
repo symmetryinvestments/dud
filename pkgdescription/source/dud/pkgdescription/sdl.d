@@ -546,37 +546,32 @@ void sGetToolchainRequirement(Tag t, string key,
 // BuildTypes
 //
 
-void sGetBuildTypes(Tag t, string key, ref BuildType[] bts) {
+void sGetBuildTypes(Tag t, string key, ref BuildType[string] bts) {
 	string buildTypesName;
-	sGetString(t, "name", buildTypesName, [ "platform" ]);
+	sGetString(t, "name", buildTypesName);
 
-	Platform[] plts;
-	sGetPlatform(t.attributes(), plts);
-
-	//PackageDescription* pkgDesc = new PackageDescription;
 	PackageDescription pkgDesc;
 	sGetPackageDescription(tags(t.oc), "buildTypes", pkgDesc);
 
 	BuildType bt;
 	bt.name = buildTypesName;
-	bt.platforms = plts;
 	bt.pkg = pkgDesc;
 
-	bts ~= bt;
+	bts[buildTypesName] = bt;
 }
 
 void buildTypeToS(Out)(auto ref Out o, const string key, const BuildType bt,
 		const size_t indent)
 {
-	formatIndent(o, indent, "debugType \"%s\" {\n", bt.name);
+	formatIndent(o, indent, "buildType \"%s\" {\n", bt.name);
 	packageDescriptionToS(o, "", bt.pkg, indent);
 	formatIndent(o, indent, "}\n");
 }
 
 void buildTypesToS(Out)(auto ref Out o, const string key,
-		const BuildType[] bts, const size_t indent)
+		const BuildType[string] bts, const size_t indent)
 {
-	bts.each!(bt => buildTypeToS(o, key, bt, indent));
+	bts.byValue().each!(bt => buildTypeToS(o, key, bt, indent));
 }
 
 //

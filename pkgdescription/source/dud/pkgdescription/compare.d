@@ -41,7 +41,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(SubPackage[]))
 				|| is(aMemType == const(BuildRequirement[]))
 				|| is(aMemType == const(SubConfigs))
-				|| is(aMemType == const(BuildType[]))
+				|| is(aMemType == const(BuildType[string]))
 				|| is(aMemType == const(Platform[]))
 				|| is(aMemType == const(Platform[][]))
 				|| is(aMemType == const(ToolchainRequirement[Toolchain]))
@@ -115,17 +115,13 @@ bool areEqual(const BuildOptions[] as, const BuildOptions[] bs) {
 //
 
 bool areEqual(const BuildType as, const BuildType bs) {
-	return areEqual(as.platforms, bs.platforms)
-		&& as.name == bs.name
+	return as.name == bs.name
 		&& areEqual(as.pkg, bs.pkg);
 }
 
-bool areEqual(const BuildType[] as, const BuildType[] bs) {
-	if(as.length != bs.length) {
-		return false;
-	}
-
-	return as.all!(a => canFind(bs, a)) && bs.all!(a => canFind(as, a));
+bool areEqual(const BuildType[string] as, const BuildType[string] bs) {
+	return aaCmp!((const(BuildType) a, const(BuildType) b) => areEqual(a, b))
+		(as, bs);
 }
 
 //

@@ -192,7 +192,7 @@ struct PackageDescription {
 
 	@JSON!(jGetBuildTypes, buildTypesToJ)("")
 	@SDL!(sGetBuildTypes, buildTypesToS)("buildType")
-	BuildType[] buildTypes;
+	BuildType[string] buildTypes;
 
 	@JSON!(jGetBuildOptions, buildOptionsToJ)("")
 	@SDL!(sGetBuildOptions, buildOptionsToS)("")
@@ -283,7 +283,6 @@ struct SubConfigs {
 
 struct BuildType {
 	string name;
-	Platform[] platforms;
 	PackageDescription pkg;
 }
 

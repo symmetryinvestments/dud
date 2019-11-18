@@ -13,8 +13,8 @@ void validate(ref const(PackageDescription) pkg) {
 	pkg.buildTypes.validate();
 }
 
-void validate(const(BuildType[]) bts) {
-	bts.each!(bt => validate(bt));
+void validate(const(BuildType[string]) bts) {
+	bts.byValue().each!(bt => validate(bt));
 }
 
 void validate(ref const(BuildType) bts) {

@@ -451,31 +451,31 @@ JSONValue subPackagesToJ(const SubPackage[] sps) {
 void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 	const string noPlatform = splitOutKey(key);
 
-	bt.platforms = keyToPlatform(key);
 	bt.name = noPlatform;
 	bt.pkg = jGetPackageDescription(jv);
 }
 
-void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[] bts) {
+void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[string] bts) {
 	typeCheck(jv, [JSONType.object]);
 	foreach(key, value; jv.objectNoRef()) {
 		BuildType tmp;
 		jGetBuildType(value, key, tmp);
-		bts ~= tmp;
+		bts[key] = tmp;
 	}
 }
 
-void buildTypesToJ(const BuildType[] bts, const string key, ref JSONValue ret) {
+void buildTypesToJ(const BuildType[string] bts, const string key,
+		ref JSONValue ret)
+{
 	typeCheck(ret, [JSONType.object, JSONType.null_]);
 	if(bts.empty) {
 		return;
 	}
 
 	JSONValue[string] map;
-	foreach(value; bts) {
-		string name = platformKeyToS(value.name, value.platforms);
+	foreach(key, value; bts) {
 		JSONValue tmp = packageDescriptionToJ(value.pkg);
-		map[name] = tmp;
+		map[key] = tmp;
 	}
 	ret["buildTypes"] = map;
 }
@@ -546,7 +546,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Path)
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)
-		|| is(T == BuildType[])
+		|| is(T == BuildType[string])
 		|| is(T == ToolchainRequirement[Toolchain])
 		|| is(T == Paths);
 }
