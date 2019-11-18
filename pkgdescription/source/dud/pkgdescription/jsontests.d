@@ -76,6 +76,7 @@ unittest {
 	import dud.semver : SemVer;
 	string toParse = `
 {
+	"name" : "Foo",
 	"authors": [
 		"Robert burner Schadek"
 	],
@@ -106,6 +107,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"dependencies" : {
 		"semver": { "path" : "../semver", "optional": false, "version" : ">=0.0.1" },
 		"path": { "path" : "../path", "default": true },
@@ -138,6 +140,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"postBuildCommands-windows" : [
 		"format C:",
 		"install linux"
@@ -169,6 +172,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"subConfigurations" : {
 		"semver": "that",
 		"path": "this"
@@ -205,6 +209,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"buildRequirements" : [ "allowWarnings", "disallowDeprecations" ]
 }
 `;
@@ -230,6 +235,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"buildOptions" : [ "verbose" ],
 	"buildOptions-posix" : [ "inline", "property"],
 	"buildOptions-windows" : ["betterC" ]
@@ -257,6 +263,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"subPackages" : [
 		{
 			"name" : "sub1"
@@ -462,6 +469,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"-ddoxTool" : "ddoxFoo"
 }
 `;
@@ -490,6 +498,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
 	"toolchainRequirements" : {
 		"dud" : ">=1.0.0"
 	}
@@ -519,6 +528,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
     "configurations": [
         {
             "name": "winapi",
@@ -572,6 +582,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
     "toolchainRequirements": {
         "ldc": ">=1.15.0"
     },
@@ -590,6 +601,7 @@ unittest {
 unittest {
 	string toParse = `
 {
+	"name" : "Foo",
     "buildTypes": {
         "release": {}
     }

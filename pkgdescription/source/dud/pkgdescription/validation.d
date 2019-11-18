@@ -10,7 +10,10 @@ import dud.pkgdescription.exception;
 @safe:
 
 void validate(ref const(PackageDescription) pkg) {
+	enforce!EmptyNameException(!pkg.name.empty,
+		"The name must not be empty");
 	pkg.buildTypes.validate();
+	pkg.configurations.each!(conf => validate(conf));
 }
 
 void validate(const(BuildType[string]) bts) {

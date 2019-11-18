@@ -72,3 +72,4 @@ mixin(exceptionClassBuilder("UnknownConfiguration", "DudPkgDescriptionException"
 mixin(exceptionClassBuilder("UnknownBuildType", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("ValidationException", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("BuildTypeException", "ValidationException"));
+mixin(exceptionClassBuilder("EmptyNameException", "ValidationException"));
