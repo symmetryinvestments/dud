@@ -1,5 +1,6 @@
 module dud.pkgdescription.helper;
 
+import std.format;
 import dud.pkgdescription : PackageDescription;
 
 @safe:
@@ -17,7 +18,6 @@ string pkgCompare(const PackageDescription a, const PackageDescription b)
 		@trusted
 {
 	import std.typecons : Nullable;
-	import std.format : formattedWrite;
 	import std.array : appender;
 	import std.traits : isArray, FieldNameTuple;
 

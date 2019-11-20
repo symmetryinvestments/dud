@@ -21,6 +21,9 @@ script:
   - cd pkgdescription
   - dub test --compiler=${DC}
   - cd ..
+  - cd resolve
+  - dub test --compiler=${DC}
+  - cd ..
 
 notifications:
   email: false
