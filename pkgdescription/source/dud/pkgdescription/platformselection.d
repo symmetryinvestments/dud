@@ -4,6 +4,7 @@ import std.typecons : Nullable;
 
 import dud.pkgdescription;
 import dud.pkgdescription.path;
+import dud.semver;
 import dud.pkgdescription.exception;
 
 struct PackageDescriptionNoPlatform {

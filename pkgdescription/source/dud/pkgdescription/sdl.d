@@ -20,7 +20,7 @@ import dud.semver : SemVer;
 
 import dud.sdlang;
 
-@safe:
+@safe pure:
 
 //
 // PackageDescription
@@ -527,10 +527,11 @@ ToolchainRequirement sGetToolchainRequirement(const ref Token f) {
 		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
 }
 
+private immutable string[] tc = ["dmd", "ldc", "gdc", "frontend", "dub", "dud"];
+
 void sGetToolchainRequirement(Tag t, string key,
 		ref ToolchainRequirement[Toolchain] bts)
 {
-	static string[] tc = ["dmd", "ldc", "gdc", "frontend", "dub", "dud"];
 	checkEmptyAttributes(t.attributes(), key, tc);
 	t.attributes()
 		.tee!(attr => typeCheck(attr.value, [ ValueType.str ]))
@@ -736,11 +737,13 @@ Token expectedSingleValue(ValueRange vr, const string key,
 	return ret;
 }
 
-void checkEmptyAttributes(Tag t, string key, string[] toIgnore) {
+void checkEmptyAttributes(Tag t, string key, const string[] toIgnore) {
 	checkEmptyAttributes(t.attributes(), key, toIgnore);
 }
 
-void checkEmptyAttributes(AttributeAccessor ars, string key, string[] toIgnore) {
+void checkEmptyAttributes(AttributeAccessor ars, string key,
+		const string[] toIgnore)
+{
 	auto attrs = ars
 		.map!(attr => attr.identifier())
 		.filter!(s => !canFind(toIgnore, s));
