@@ -14,8 +14,15 @@ dependency "path" path="../path" platform="windows"
 dependency "sdlang" path="../sdlang"
 dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
+targetName "foobar" platform="posix"
+targetName "barfoo" platform="windows"
+targetName "should_be_foobar_or_barfoo"
+preGenerateCommands "rm -rf /" "install windows" platform="posix"
+preGenerateCommands "format C:" "install linux" platform="windows"
 targetPath "outDir" platform="posix"
-importPaths "source" "source1" "source2"
+importPaths "source" "source1" "source2" platform="windows"
+importPaths "source_pos" "source1_pos" "source2" platform="posix"
+importPaths "source_pos" "source1_pos" "source2" platform="posix-x86"
 license "LGPL3"
 version "1.0.0"
 configuration "test" {
@@ -25,7 +32,9 @@ configuration "test" {
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
-	PackageDescriptionNoPlatform np = selectPlatform(pkg, [ Platform.posix ]);
+	PackageDescriptionNoPlatform posix = selectPlatform(pkg, [ Platform.posix ]);
+	writeln(posix);
 
-	writeln(np);
+	PackageDescriptionNoPlatform win = selectPlatform(pkg, [ Platform.windows ]);
+	writeln(win);
 }

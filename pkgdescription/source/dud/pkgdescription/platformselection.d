@@ -1,6 +1,7 @@
 module dud.pkgdescription.platformselection;
 
-import std.array : empty, front;
+import std.array : array, empty, front;
+import std.algorithm.iteration : each, map, filter;
 import std.algorithm.searching : canFind, all;
 import std.algorithm.sorting : sort;
 import std.typecons : Nullable;
@@ -132,6 +133,21 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 			], mem))
 		{
 			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));
+		} else static if(canFind(
+			[ isMem!"targetName", isMem!"ddoxTool"
+			, isMem!"preGenerateCommands"
+			, isMem!"postGenerateCommands", isMem!"preBuildCommands"
+			, isMem!"postBuildCommands", isMem!"preRunCommands"
+			, isMem!"postRunCommands", isMem!"dflags", isMem!"lflags"
+			, isMem!"libs", isMem!"versions", isMem!"targetPath"
+			, isMem!"workingDirectory", isMem!"mainSourceFile"
+			, isMem!"sourcePaths", isMem!"importPaths"
+			, isMem!"copyFiles", isMem!"excludedSourceFiles"
+			, isMem!"stringImportPaths", isMem!"sourceFiles"
+			], mem))
+		{
+			__traits(getMember, ret, mem) = select(
+				__traits(getMember, pkg, mem), platform);
 		} else {
 			pragma(msg, format("Unhandeled %s", mem));
 		}
@@ -139,12 +155,48 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 
 	return ret;
 }
+//
+// Path(s)
+//
+
+UnprocessedPath select(const(Path) path, const(Platform[]) platform) {
+	PathPlatform[] strs = path.platforms.map!(it => ddup(it)).array;
+	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	return superSets.empty
+		? UnprocessedPath.init
+		: superSets.front.path;
+}
+
+UnprocessedPath[] select(const(Paths) paths, const(Platform[]) platform) {
+	PathsPlatform[] strs = paths.platforms.map!(it => ddup(it)).array;
+	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	return superSets.empty
+		? []
+		: superSets.front.paths;
+}
+
+//
+// String(s)
+//
 
 string select(const(String) str, const(Platform[]) platform) {
-	StringPlatform[] strs = ddup(str.platforms);
-	strs.sort!((a, b) => a.platforms.length < b.platforms.length)();
-	String ret;
-	return ret;
+	StringPlatform[] strs = str.platforms.map!(it => ddup(it)).array;
+	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	return superSets.empty
+		? ""
+		: superSets.front.str;
+}
+
+string[] select(const(Strings) strs, const(Platform[]) platform) {
+	StringsPlatform[] strss = strs.platforms.map!(it => ddup(it)).array;
+	strss.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = strss.filter!(str => isSuperSet(str.platforms, platform));
+	return superSets.empty
+		? []
+		: superSets.front.strs;
 }
 
 int isSuperSet(const(Platform[]) a, const(Platform[]) b) {
