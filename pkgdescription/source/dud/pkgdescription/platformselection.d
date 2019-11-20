@@ -129,7 +129,7 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 			, isMem!"homepage", isMem!"authors", isMem!"copyright"
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
-			, isMem!"versionFilters"
+			, isMem!"versionFilters", isMem!"toolchainRequirements"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));

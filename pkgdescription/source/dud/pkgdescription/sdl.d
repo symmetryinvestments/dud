@@ -20,7 +20,7 @@ import dud.semver : SemVer;
 
 import dud.sdlang;
 
-@safe pure:
+@safe:
 
 //
 // PackageDescription
