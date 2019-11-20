@@ -32,9 +32,9 @@ configuration "test" {
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
-	PackageDescriptionNoPlatform posix = selectPlatform(pkg, [ Platform.posix ]);
+	PackageDescriptionNoPlatform posix = select(pkg, [ Platform.posix ]);
 	writeln(posix);
 
-	PackageDescriptionNoPlatform win = selectPlatform(pkg, [ Platform.windows ]);
+	PackageDescriptionNoPlatform win = select(pkg, [ Platform.windows ]);
 	writeln(win);
 }

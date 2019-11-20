@@ -4,7 +4,7 @@ import std.array : array, empty, front;
 import std.algorithm.iteration : each, map, filter;
 import std.algorithm.searching : canFind, all;
 import std.algorithm.sorting : sort;
-import std.typecons : Nullable;
+import std.typecons : Nullable, nullable;
 import std.traits : FieldNameTuple;
 import std.format;
 
@@ -14,10 +14,10 @@ import dud.semver;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.duplicate : ddup = dup;
 
-PackageDescriptionNoPlatform selectPlatform(const(PackageDescription) pkg,
+PackageDescriptionNoPlatform select(const(PackageDescription) pkg,
 		const(Platform[]) platform)
 {
-	return selectPlatformImpl(pkg, platform);
+	return selectImpl(pkg, platform);
 }
 
 struct PackageDescriptionNoPlatform {
@@ -90,7 +90,7 @@ struct PackageDescriptionNoPlatform {
 
 	string ddoxTool;
 
-	SubPackage[] subPackages;
+	SubPackageNoPlatform[] subPackages;
 
 	BuildRequirement[] buildRequirements;
 
@@ -101,6 +101,11 @@ struct PackageDescriptionNoPlatform {
 	BuildOptionsNoPlatform buildOptions;
 
 	ToolchainRequirement[Toolchain] toolchainRequirements;
+}
+
+struct SubPackageNoPlatform {
+	UnprocessedPath path;
+	Nullable!PackageDescriptionNoPlatform inlinePkg;
 }
 
 struct BuildOptionsNoPlatform {
@@ -116,7 +121,7 @@ struct DependencyNoPlatform {
 	Nullable!bool default_;
 }
 
-PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
+PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 		const(Platform[]) platform)
 {
 	import dud.pkgdescription.helper : isMem;
@@ -144,6 +149,7 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 			, isMem!"sourcePaths", isMem!"importPaths"
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
+			, isMem!"debugVersions", isMem!"subPackages"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = select(
@@ -155,6 +161,27 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 
 	return ret;
 }
+
+//
+// Subpackage(s)
+//
+
+SubPackageNoPlatform select(const(SubPackage) sp, const(Platform[]) platform) {
+	SubPackageNoPlatform ret;
+	if(!sp.inlinePkg.isNull()) {
+		ret.inlinePkg = nullable(select(sp.inlinePkg.get(), platform));
+	} else {
+		ret.path = select(sp.path, platform);
+	}
+	return ret;
+}
+
+SubPackageNoPlatform[] select(const(SubPackage[]) sps, const(Platform[]) platform)
+{
+	return sps.map!(sp => select(sp, platform)).array;
+
+}
+
 //
 // Path(s)
 //
