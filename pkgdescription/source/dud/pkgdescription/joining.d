@@ -40,6 +40,7 @@ PackageDescription expandBuildType(ref const(PackageDescription) pkg,
 void joinPackageDescription(ref PackageDescription ret,
 		ref const(PackageDescription) orig, ref const(PackageDescription) conf)
 {
+	import dud.pkgdescription.helper : isMem;
 	static foreach(mem; FieldNameTuple!PackageDescription) {
 		// override with conf
 		static if(canFind(
@@ -175,18 +176,4 @@ const(PackageDescription) findConfiguration(const PackageDescription pkg,
 	enforce!UnknownConfiguration(ret !is null,
 		format("'%s' is a unknown configuration of package '%s'", pkg.name));
 	return *ret;
-}
-
-private template isMem(string name) {
-	static if(__traits(hasMember, PackageDescription, name)) {
-		enum isMem = name;
-	} else {
-		static assert(false,
-			format("'%s' is not a member of PackageDescription", name));
-	}
-}
-
-unittest {
-	static assert(!__traits(compiles, isMem!"foo"));
-	static assert( __traits(compiles, isMem!"name"));
 }

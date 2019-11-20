@@ -1,17 +1,28 @@
 module dud.pkgdescription.platformselection;
 
+import std.array : empty, front;
+import std.algorithm.searching : canFind, all;
 import std.typecons : Nullable;
+import std.traits : FieldNameTuple;
+import std.format;
 
 import dud.pkgdescription;
 import dud.pkgdescription.path;
 import dud.semver;
 import dud.pkgdescription.exception;
+import dud.pkgdescription.duplicate : ddup = dup;
+
+PackageDescriptionNoPlatform selectPlatform(const(PackageDescription) pkg,
+		const(Platform[]) platform)
+{
+	return selectPlatformImpl(pkg, platform);
+}
 
 struct PackageDescriptionNoPlatform {
 @safe pure:
-	string name; /// Qualified name of the package
+	string name;
 
-	SemVer version_; /// Version of the package
+	SemVer version_;
 
 	string description;
 
@@ -101,4 +112,39 @@ struct DependencyNoPlatform {
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
+}
+
+PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
+		const(Platform[]) platform)
+{
+	import dud.pkgdescription.helper : isMem;
+	PackageDescriptionNoPlatform ret;
+
+	static foreach(mem; FieldNameTuple!PackageDescription) {{
+		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
+		static if(canFind(
+			[ isMem!"name", isMem!"version_", isMem!"description"
+			, isMem!"homepage", isMem!"authors", isMem!"copyright"
+			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
+			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
+			, isMem!"versionFilters"
+			], mem))
+		{
+			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));
+		} else {
+			pragma(msg, format("Unhandeled %s", mem));
+		}
+	}}
+
+	return ret;
+}
+
+String select(const(String) str, const(Platform[]) platform) {
+	//auto strPlts = str.platforms.filter!(it => it.platforms
+	String ret;
+	return ret;
+}
+
+int isSuperSet(const(Platform[]) a, const(Platform[]) b) {
+	return a.all!(p => canFind(b, p));
 }
