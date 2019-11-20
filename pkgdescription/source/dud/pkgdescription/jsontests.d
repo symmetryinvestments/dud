@@ -82,7 +82,7 @@ unittest {
 	],
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"targetName-posix": "dudposix",
-	"targetName-windows": "dudwindows",
+	"targetName-windows": "dudwindows"
 }`;
 
 	PackageDescription pkg = jsonToPackageDescription(toParse);
@@ -110,7 +110,7 @@ unittest {
 	"name" : "Foo",
 	"dependencies" : {
 		"semver": { "path" : "../semver", "optional": false, "version" : ">=0.0.1" },
-		"path": { "path" : "../path", "default": true },
+		"path": { "path" : "../path", "default": true }
 	},
 	"dependencies-posix" : {
 		"pkgdescription": { "path" : "../../pkgdescription" },

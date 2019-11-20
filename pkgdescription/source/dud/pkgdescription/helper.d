@@ -62,3 +62,17 @@ string pkgCompare(const PackageDescription a, const PackageDescription b)
 	formattedWrite(app, "}\n");
 	return app.data;
 }
+
+template isMem(string name) {
+	static if(__traits(hasMember, PackageDescription, name)) {
+		enum isMem = name;
+	} else {
+		static assert(false,
+			format("'%s' is not a member of PackageDescription", name));
+	}
+}
+
+unittest {
+	static assert(!__traits(compiles, isMem!"foo"));
+	static assert( __traits(compiles, isMem!"name"));
+}
