@@ -2,6 +2,7 @@ module dud.pkgdescription.platformselection;
 
 import std.array : empty, front;
 import std.algorithm.searching : canFind, all;
+import std.algorithm.sorting : sort;
 import std.typecons : Nullable;
 import std.traits : FieldNameTuple;
 import std.format;
@@ -139,8 +140,9 @@ PackageDescriptionNoPlatform selectPlatformImpl(const(PackageDescription) pkg,
 	return ret;
 }
 
-String select(const(String) str, const(Platform[]) platform) {
-	//auto strPlts = str.platforms.filter!(it => it.platforms
+string select(const(String) str, const(Platform[]) platform) {
+	StringPlatform[] strs = ddup(str.platforms);
+	strs.sort!((a, b) => a.platforms.length < b.platforms.length)();
 	String ret;
 	return ret;
 }
