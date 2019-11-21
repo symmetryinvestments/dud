@@ -90,7 +90,7 @@ unittest {
 				c = sdlToPackageDescription(sdlOut);
 				assert(a == c,
 					() @trusted {
-						return format("\nexp:\n%s\ngot:\n%s", a, c);
+						return format("f: %s\nexp:\n%s\ngot:\n%s", it[0], a, c);
 					}());
 			} catch(Exception e) {
 				unRollException(e, it[0]);

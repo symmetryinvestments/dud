@@ -5,6 +5,7 @@ import std.stdio;
 import dud.pkgdescription;
 import dud.pkgdescription.joining;
 import dud.pkgdescription.sdl;
+import dud.pkgdescription.output;
 import dud.pkgdescription.platformselection;
 
 unittest {
@@ -23,9 +24,11 @@ targetName "should_be_foobar_or_barfoo"
 preGenerateCommands "rm -rf /" "install windows" platform="posix"
 preGenerateCommands "format C:" "install linux" platform="windows"
 targetPath "outDir" platform="posix"
-importPaths "source" "source1" "source2" platform="windows"
-importPaths "source_pos" "source1_pos" "source2" platform="posix"
-importPaths "source_pos" "source1_pos" "source2" platform="posix-x86"
+importPaths "source_win" "source1_win" "source2_win" platform="windows"
+importPaths "source_pos86" "source1_pos86" "source2_pos86" platform="posix-x86"
+importPaths "source_pos" "source1_pos" "source2_pos" platform="posix"
+buildRequirements "allowWarnings" "disallowInlining" platform="windows"
+buildRequirements "allowWarnings" platform="posix"
 license "LGPL3"
 version "1.0.0"
 configuration "test-win" {
@@ -42,8 +45,10 @@ configuration "test-posix" {
 	PackageDescriptionNoPlatform posix =
 		pkg.expandConfiguration("test-posix").select([Platform.posix]);
 	writeln(posix);
+	//string output = toSDL(pkg);
+	//writeln(output);
 
 	PackageDescriptionNoPlatform win =
-		pkg.expandConfiguration("test-win").select([Platform.posix]);
+		pkg.expandConfiguration("test-win").select([Platform.windows]);
 	writeln(win);
 }

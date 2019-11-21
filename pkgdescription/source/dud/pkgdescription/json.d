@@ -449,9 +449,7 @@ JSONValue subPackagesToJ(const SubPackage[] sps) {
 //
 
 void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
-	const string noPlatform = splitOutKey(key);
-
-	bt.name = noPlatform;
+	bt.name = key;
 	bt.pkg = jGetPackageDescription(jv);
 }
 
@@ -550,6 +548,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Strings)
 		|| is(T == Dependency[])
 		|| is(T == Path)
+		|| is(T == BuildRequirements)
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)
 		|| is(T == BuildType[string])
@@ -635,15 +634,31 @@ BuildRequirement jGetBuildRequirement(ref JSONValue jv) {
 	return to!BuildRequirement(s);
 }
 
-BuildRequirement[] jGetBuildRequirements(ref JSONValue jv) {
+void jGetBuildRequirements(ref JSONValue jv, string key,
+		ref BuildRequirements requirements)
+{
 	typeCheck(jv, [JSONType.array]);
-	return jv.arrayNoRef().map!(it => jGetBuildRequirement(it)).array;
+
+	Platform[] platforms = keyToPlatform(key);
+	BuildRequirement[] tmp = jv.arrayNoRef()
+		.map!(it => jGetBuildRequirement(it))
+		.array;
+
+	requirements.platforms ~= BuildRequirementPlatform(tmp, platforms);
 }
 
-JSONValue buildRequirementsToJ(const BuildRequirement[] brs) {
-	return brs.empty
-		? JSONValue.init
-		: JSONValue(brs.map!(br => to!string(br)).array);
+void buildRequirementsToJ(const BuildRequirements brs, string key,
+		ref JSONValue ret)
+{
+	typeCheck(ret, [JSONType.object, JSONType.null_]);
+
+	if(brs.platforms.empty) {
+		return;
+	}
+
+	brs.platforms
+		.each!(br => ret[platformKeyToS(key, br.platforms)]
+				= JSONValue(br.requirements.map!(it => to!string(it)).array));
 }
 
 //

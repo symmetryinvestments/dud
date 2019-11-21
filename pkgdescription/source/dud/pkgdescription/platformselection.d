@@ -155,7 +155,7 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
 			, isMem!"debugVersions", isMem!"subPackages"
-			, isMem!"dependencies"
+			, isMem!"dependencies", isMem!"buildRequirements"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = select(
@@ -174,6 +174,20 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 	}}
 
 	return ret;
+}
+
+//
+// BuildRequirements
+//
+
+BuildRequirement[] select(const(BuildRequirements) brs,
+		const(Platform[]) platform)
+{
+	BuildRequirements brsC = ddup(brs);
+	brsC.platforms.sort!((a, b) => a.platforms > b.platforms)();
+
+	auto f = brsC.platforms.filter!(br => isSuperSet(br.platforms, platform));
+	return f.empty ? BuildRequirement[].init : f.front.requirements;
 }
 
 //
