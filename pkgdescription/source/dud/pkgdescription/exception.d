@@ -73,3 +73,7 @@ mixin(exceptionClassBuilder("UnknownBuildType", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("ValidationException", "DudPkgDescriptionException"));
 mixin(exceptionClassBuilder("BuildTypeException", "ValidationException"));
 mixin(exceptionClassBuilder("EmptyNameException", "ValidationException"));
+mixin(exceptionClassBuilder("PlatfromSelection", "DudPkgDescriptionException"));
+mixin(exceptionClassBuilder("DependecyAlreadyPresent", "PlatfromSelection"));
+mixin(exceptionClassBuilder("ToManyConfigurations", "PlatfromSelection"));
+mixin(exceptionClassBuilder("InvalidPlatfrom", "PlatfromSelection"));

@@ -422,3 +422,16 @@ configuration "select" {
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
+
+unittest {
+	string toParse = `
+dependency "semver" path="../semver"
+dependency "semver" path="../semver" version=">=1.0.0" platform="posix"
+dependency "semver" path="../semver" version=">=2.0.0" platform="android"
+
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	assert(pkg.dependencies.length == 3, format("dep.length %s",
+				pkg.dependencies.length));
+}
