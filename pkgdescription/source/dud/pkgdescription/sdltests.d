@@ -422,3 +422,49 @@ configuration "select" {
 	PackageDescription copy = ddup(pkg);
 	assert(pkg == copy, format("\nexp:\n%s\ngot:\n%s", pkg, copy));
 }
+
+unittest {
+	string toParse = `
+dependency "semver" path="../semver"
+dependency "semver" path="../semver" version=">=1.0.0" platform="posix"
+dependency "semver" path="../semver" version=">=2.0.0" platform="android"
+
+`;
+
+	PackageDescription pkg = sdlToPackageDescription(toParse);
+	assert(pkg.dependencies.length == 3, format("dep.length %s",
+				pkg.dependencies.length));
+}
+
+unittest {
+	import dud.pkgdescription.json : jsonToPackageDescription;
+	string toParse = `
+{
+    "buildTypes": {
+        "unittest-release": {
+            "buildOptions": [
+                "unittests",
+                "optimize",
+                "inline"
+            ]
+        }
+    },
+    "copyright": "Auburn Sounds 2016-2018",
+    "description": "The most practical D SIMD solution! Using SIMD intrinsics with Intel syntax with D.",
+    "importPaths": [
+        "source"
+    ],
+    "license": "BSL-1.0",
+    "name": "intel-intrinsics",
+    "sourcePaths": [
+        "source"
+    ],
+    "version": "1.0.30"
+}
+`;
+
+	PackageDescription pkg = jsonToPackageDescription(toParse);
+	string output = toSDL(pkg);
+	PackageDescription pkg2 = sdlToPackageDescription(output);
+	assert(pkg == pkg2, format("\nexp:\n%s\ngot:\n%s", pkg, pkg2));
+}

@@ -1,18 +1,21 @@
 module dud.pkgdescription.platformselection;
 
-import std.array : array, empty, front;
 import std.algorithm.iteration : each, map, filter;
-import std.algorithm.searching : canFind, all;
+import std.algorithm.searching : canFind, all, any;
 import std.algorithm.sorting : sort;
-import std.typecons : Nullable, nullable;
-import std.traits : FieldNameTuple;
+import std.array : array, empty, front;
+import std.exception : enforce;
 import std.format;
+import std.range : tee;
+import std.stdio;
+import std.traits : FieldNameTuple;
+import std.typecons : Nullable, apply, nullable;
 
-import dud.pkgdescription;
-import dud.pkgdescription.path;
-import dud.semver;
-import dud.pkgdescription.exception;
 import dud.pkgdescription.duplicate : ddup = dup;
+import dud.pkgdescription.exception;
+import dud.pkgdescription.path;
+import dud.pkgdescription;
+import dud.semver;
 
 PackageDescriptionNoPlatform select(const(PackageDescription) pkg,
 		const(Platform[]) platform)
@@ -38,7 +41,7 @@ struct PackageDescriptionNoPlatform {
 
 	string systemDependencies;
 
-	DependencyNoPlatform[] dependencies;
+	DependencyNoPlatform[string] dependencies;
 
 	TargetType targetType;
 
@@ -101,6 +104,8 @@ struct PackageDescriptionNoPlatform {
 	BuildOptionsNoPlatform buildOptions;
 
 	ToolchainRequirement[Toolchain] toolchainRequirements;
+
+	PackageDescriptionNoPlatform[] configurations;
 }
 
 struct SubPackageNoPlatform {
@@ -150,10 +155,19 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
 			, isMem!"debugVersions", isMem!"subPackages"
+			, isMem!"dependencies", isMem!"buildRequirements"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = select(
 				__traits(getMember, pkg, mem), platform);
+		} else static if(canFind(
+			[ isMem!"configurations" ],
+			mem))
+		{
+			if(!__traits(getMember, pkg, mem).empty) {
+				__traits(getMember, ret, mem) = select(
+					__traits(getMember, pkg, mem), platform);
+			}
 		} else {
 			pragma(msg, format("Unhandeled %s", mem));
 		}
@@ -163,7 +177,89 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 }
 
 //
-// Subpackage(s)
+// BuildRequirements
+//
+
+BuildRequirement[] select(const(BuildRequirements) brs,
+		const(Platform[]) platform)
+{
+	BuildRequirements brsC = ddup(brs);
+	brsC.platforms.sort!((a, b) => a.platforms > b.platforms)();
+
+	auto f = brsC.platforms.filter!(br => isSuperSet(br.platforms, platform));
+	return f.empty ? BuildRequirement[].init : f.front.requirements;
+}
+
+//
+// Dependencies
+//
+
+PackageDescriptionNoPlatform[] select(const(PackageDescription[string]) confs,
+		const(Platform[]) platform)
+{
+	import std.traits : fullyQualifiedName;
+	import dud.pkgdescription.joining : expandConfiguration;
+
+	// No configuration present, thats okay
+	assert(!confs.empty, "This should be called with no configurations"
+		~ " as this would mean infinite recursion");
+
+	enforce!ToManyConfigurations(confs.length == 1, format(
+		"During Platform resolution only one must be present not '%s'."
+		~ " Use the function '%s' to select a Configuration",
+		confs.length, fullyQualifiedName!expandConfiguration));
+
+	bool platformMatches = confs.byValue.front.platforms
+		.any!(plt => isSuperSet(plt, platform));
+
+	enforce!InvalidPlatfrom(platformMatches, format(
+		"Non of the platforms [%(%s|, %)] of configuration '%s'"
+		~ " matches specified platform [%(%s|, %)]",
+		confs.byValue.front.platforms, confs.byValue.front.name, platform));
+
+	return [select(confs.byValue.front, platform)];
+}
+
+//
+// Dependencies
+//
+
+DependencyNoPlatform select(const(Dependency) sp) {
+	DependencyNoPlatform ret;
+	ret.name = sp.name;
+	ret.path = ddup(sp.path);
+	sp.version_.apply!(v => ret.version_ = nullable(ddup(v)));
+	sp.optional.apply!((bool op) => ret.optional = nullable(op));
+	sp.default_.apply!((bool def) => ret.default_ = nullable(def));
+	return ret;
+}
+
+DependencyNoPlatform[string] select(const(Dependency[]) deps,
+		const(Platform[]) platform)
+{
+	Dependency[][string] sorted;
+	deps.filter!(dep => isSuperSet(dep.platforms, platform))
+		.each!((dep) {
+			auto d = ddup(dep);
+			if(dep.name in sorted) {
+				sorted[dep.name] ~= d;
+			} else {
+				sorted[dep.name] = [d];
+			}
+		});
+
+	DependencyNoPlatform[string] ret;
+	foreach(key, ref values; sorted) {
+		values.sort!((a, b) => a.platforms.length > b.platforms.length)();
+		enforce(!values.empty, "values was unexceptionally empty");
+		ret[key] = select(values.front);
+	}
+
+	return ret;
+}
+
+//
+// SubPackage(s)
 //
 
 SubPackageNoPlatform select(const(SubPackage) sp, const(Platform[]) platform) {

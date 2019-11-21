@@ -291,8 +291,8 @@ struct Lexer {
 			return;
 		}
 		throw new Exception(format(
-			"Unexpected character' %s' %d at Line:%d Column:%d", this.input,
-			this.input[0], this.line, this.column));
+			"Unexpected input: '%s' ascii: %d at Line:%d Column:%d",
+			this.input, this.input[0], this.line, this.column));
 	}
 
 	void parseNumber(size_t idx, size_t l, size_t c) @safe pure {

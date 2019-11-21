@@ -180,7 +180,7 @@ struct PackageDescription {
 
 	@JSON!(jGetBuildRequirements, buildRequirementsToJ)("")
 	@SDL!(sGetBuildRequirements, buildRequirementsToS)("")
-	BuildRequirement[] buildRequirements;
+	BuildRequirements buildRequirements;
 
 	@JSON!(jGetStringAA, stringAAToJ)("")
 	@SDL!(sGetSubConfig, subConfigsToS)("subConfiguration")
@@ -297,6 +297,15 @@ enum BuildRequirement {
 	requireContracts,
 	relaxProperties,
 	noDefaultFlags,
+}
+
+struct BuildRequirements {
+	BuildRequirementPlatform[] platforms;
+}
+
+struct BuildRequirementPlatform {
+	BuildRequirement[] requirements;
+	Platform[] platforms;
 }
 
 struct SubPackage {

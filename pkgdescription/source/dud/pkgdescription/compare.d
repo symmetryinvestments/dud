@@ -39,7 +39,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(PackageDescription))
 				|| is(aMemType == const(PackageDescription[string]))
 				|| is(aMemType == const(SubPackage[]))
-				|| is(aMemType == const(BuildRequirement[]))
+				|| is(aMemType == const(BuildRequirements))
 				|| is(aMemType == const(SubConfigs))
 				|| is(aMemType == const(BuildType[string]))
 				|| is(aMemType == const(Platform[]))
@@ -148,14 +148,26 @@ bool areEqual(const SubConfigs as, const SubConfigs bs) {
 // BuildRequirement
 //
 
-bool areEqual(const BuildRequirement[] as, const BuildRequirement[] bs) {
-	if(as.length != bs.length) {
+bool areEqual(const BuildRequirementPlatform as,
+		const BuildRequirementPlatform bs)
+{
+	return areEqual(as.platforms, bs.platforms)
+		&& as.requirements.all!(a => canFind(bs.requirements, a))
+		&& bs.requirements.all!(a => canFind(as.requirements, a));
+
+}
+
+bool areEqual(const BuildRequirements as, const BuildRequirements bs) {
+	if(as.platforms.length != bs.platforms.length) {
 		return false;
 	}
 
-	return as.all!(a => canFind(bs, a)) && bs.all!(a => canFind(as, a));
-}
+	alias cmp = (const BuildRequirementPlatform a,
+			const BuildRequirementPlatform b) { return areEqual(a, b); };
 
+	return as.platforms.all!(a => canFind!cmp(bs.platforms, a))
+		&& bs.platforms.all!(b => canFind!cmp(as.platforms, b));
+}
 
 //
 // SubPackage

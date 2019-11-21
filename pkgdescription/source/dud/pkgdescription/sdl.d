@@ -379,21 +379,25 @@ void targetTypeToS(Out)(auto ref Out o, const string key, const TargetType p,
 // BuildRequirements
 //
 
-void sGetBuildRequirements(Tag t, string key, ref BuildRequirement[] ret) {
-	sGetBuildRequirements(t.values(), key, ret);
-}
+void sGetBuildRequirements(Tag t, string key, ref BuildRequirements ret) {
+	Platform[] plts;
+	sGetPlatform(t.attributes(), plts);
+	BuildRequirement[] brs = t.values()
+		.map!(it => it.value.get!string())
+		.map!(s => to!BuildRequirement(s))
+		.array;
 
-void sGetBuildRequirements(ValueRange v, string key, ref BuildRequirement[] p) {
-	enforce!EmptyInput(!v.empty, "Can not get element of empty range");
-	v.map!(it => it.value.get!string()).each!(s => p ~= to!BuildRequirement(s));
+	ret.platforms ~= BuildRequirementPlatform(brs, plts);
 }
 
 void buildRequirementsToS(Out)(auto ref Out o, const string key,
-		const BuildRequirement[] ps, const size_t indent)
+		const BuildRequirements ps, const size_t indent)
 {
-	if(!ps.empty) {
-		formatIndent(o, indent, "%s %(%s %)\n", key,
-			ps.map!(it => to!string(it)));
+	if(!ps.platforms.empty) {
+		ps.platforms.each!(p =>
+			formatIndent(o, indent, "%s %(%s %) %(platform=%s %)\n", key,
+				p.requirements.map!(it => to!string(it)),
+				p.platforms.map!(it => to!string(it))));
 	}
 }
 
@@ -569,7 +573,7 @@ void buildTypeToS(Out)(auto ref Out o, const string key, const BuildType bt,
 		const size_t indent)
 {
 	formatIndent(o, indent, "buildType \"%s\" {\n", bt.name);
-	packageDescriptionToS(o, "", bt.pkg, indent);
+	packageDescriptionToS(o, "", bt.pkg, indent + 1);
 	formatIndent(o, indent, "}\n");
 }
 
