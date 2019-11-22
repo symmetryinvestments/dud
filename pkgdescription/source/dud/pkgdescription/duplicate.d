@@ -323,6 +323,10 @@ Path dup(ref const(Path) old) {
 	return ret;
 }
 
+//
+// string
+//
+
 string dup(const(string) old) {
 	return old;
 }
@@ -333,3 +337,8 @@ string[] dup(const(string[]) old) {
 	return ret;
 }
 
+string[string] dup(const(string[string]) old) {
+	string[string] ret;
+	old.byKeyValue.each!(kv => ret[kv.key.dup()] = kv.value.dup());
+	return ret;
+}

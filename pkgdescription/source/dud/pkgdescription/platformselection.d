@@ -97,24 +97,20 @@ struct PackageDescriptionNoPlatform {
 
 	BuildRequirement[] buildRequirements;
 
-	SubConfigs subConfigurations;
-
 	string[] versionFilters;
 
-	BuildOptionsNoPlatform buildOptions;
+	BuildOption[] buildOptions;
 
 	ToolchainRequirement[Toolchain] toolchainRequirements;
 
 	PackageDescriptionNoPlatform[] configurations;
+
+	string[string] subConfigurations;
 }
 
 struct SubPackageNoPlatform {
 	UnprocessedPath path;
 	Nullable!PackageDescriptionNoPlatform inlinePkg;
-}
-
-struct BuildOptionsNoPlatform {
-	BuildOption[] options;
 }
 
 struct DependencyNoPlatform {
@@ -156,22 +152,78 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
 			, isMem!"debugVersions", isMem!"subPackages"
 			, isMem!"dependencies", isMem!"buildRequirements"
+			, isMem!"subConfigurations", isMem!"buildOptions"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = select(
 				__traits(getMember, pkg, mem), platform);
 		} else static if(canFind(
-			[ isMem!"configurations" ],
-			mem))
+			[ isMem!"configurations", isMem!"buildTypes" ]
+			, mem))
 		{
-			if(!__traits(getMember, pkg, mem).empty) {
-				__traits(getMember, ret, mem) = select(
-					__traits(getMember, pkg, mem), platform);
-			}
+			enforce(__traits(getMember, pkg, mem).empty,
+				() @trusted {
+					return format("%s %s", mem, __traits(getMember, pkg, mem));
+				}());
+		} else static if(canFind([ isMem!"platforms" ] , mem)) {
+			// platforms are ignored
 		} else {
-			pragma(msg, format("Unhandeled %s", mem));
+			assert(false, format("Unhandeld '%s'", mem));
 		}
 	}}
+
+	return ret;
+}
+
+//
+// BuildOptions
+//
+
+BuildOption[] select(const(BuildOptions) buildOptions,
+		const(Platform[]) platform)
+{
+	auto keys = buildOptions.platforms.byKey()
+		.filter!(key => isSuperSet(key, platform))
+		.map!(key => ddup(key))
+		.array
+		.sort!((a, b) => a.length > b.length)();
+
+	BuildOption[] ret = keys.empty
+		? BuildOption[].init
+		: buildOptions.platforms[keys.front].ddup;
+
+	buildOptions.unspecifiedPlatform
+		.each!((op) {
+			if(!canFind(ret, op)) {
+				ret ~= op;
+			}
+		});
+
+	return ret;
+}
+//
+// SubConfigurations
+//
+
+string[string] select(const(SubConfigs) subConfs,
+		const(Platform[]) platform)
+{
+	auto keys = subConfs.configs.byKey()
+		.filter!(key => isSuperSet(key, platform))
+		.map!(key => ddup(key))
+		.array
+		.sort!((a, b) => a.length > b.length)();
+
+	string[string] ret = keys.empty
+		? string[string].init
+		: subConfs.configs[keys.front].ddup;
+
+	subConfs.unspecifiedPlatform.byKey()
+		.each!((key) {
+			if(key !in ret) {
+				ret[key] = subConfs.unspecifiedPlatform[key].ddup;
+			}
+		});
 
 	return ret;
 }
@@ -184,7 +236,7 @@ BuildRequirement[] select(const(BuildRequirements) brs,
 		const(Platform[]) platform)
 {
 	BuildRequirements brsC = ddup(brs);
-	brsC.platforms.sort!((a, b) => a.platforms > b.platforms)();
+	brsC.platforms.sort!((a, b) => a.platforms.length > b.platforms.length)();
 
 	auto f = brsC.platforms.filter!(br => isSuperSet(br.platforms, platform));
 	return f.empty ? BuildRequirement[].init : f.front.requirements;

@@ -29,6 +29,9 @@ importPaths "source_pos86" "source1_pos86" "source2_pos86" platform="posix-x86"
 importPaths "source_pos" "source1_pos" "source2_pos" platform="posix"
 buildRequirements "allowWarnings" "disallowInlining" platform="windows"
 buildRequirements "allowWarnings" platform="posix"
+subConfiguration "semver" "subConf_posix" platform="posix"
+subConfiguration "semver" "subConf_windows" platform="windows"
+subConfiguration "graphql" "the_fast_version"
 license "LGPL3"
 version "1.0.0"
 configuration "test-win" {
@@ -42,13 +45,15 @@ configuration "test-posix" {
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(input);
-	PackageDescriptionNoPlatform posix =
-		pkg.expandConfiguration("test-posix").select([Platform.posix]);
+	PackageDescriptionNoPlatform posix = pkg
+		.expandConfiguration("test-posix")
+		.select([Platform.posix]);
 	writeln(posix);
 	//string output = toSDL(pkg);
 	//writeln(output);
 
-	PackageDescriptionNoPlatform win =
-		pkg.expandConfiguration("test-win").select([Platform.windows]);
+	PackageDescriptionNoPlatform win = pkg
+		.expandConfiguration("test-win")
+		.select([Platform.windows]);
 	writeln(win);
 }
