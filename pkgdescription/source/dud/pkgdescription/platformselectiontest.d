@@ -20,9 +20,7 @@ dependency "path" path="../path" platform="windows"
 dependency "sdlang" path="../sdlang"
 dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
-targetName "foobar" platform="posix"
-targetName "barfoo" platform="windows"
-targetName "should_be_foobar_or_barfoo"
+targetName "foobar"
 preGenerateCommands "rm -rf /" "install windows" platform="posix"
 preGenerateCommands "format C:" "install linux" platform="windows"
 targetPath "outDir"
@@ -72,11 +70,11 @@ libs "glibc"
 	PackageDescription posixExp = sdlToPackageDescription(inputPosixExp);
 	PackageDescriptionNoPlatform posixExpNP = posixExp
 			.select([]);
+	string output = toSDL(afterExpands);
+	writeln(output);
 
 	assert(posix == posixExpNP,
 		format("\ngot:\n%s\nexp:\n%s", posix, posixExpNP));
-	//string output = toSDL(pkg);
-	//writeln(output);
 
 	//PackageDescriptionNoPlatform win = pkg
 	//	.expandConfiguration("test-win")

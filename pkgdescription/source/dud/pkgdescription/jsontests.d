@@ -81,18 +81,13 @@ unittest {
 		"Robert burner Schadek"
 	],
 	"copyright": "Copyright © 2019, Symmetry Investments",
-	"targetName-posix": "dudposix",
-	"targetName-windows": "dudwindows"
+	"targetName": "dudposix",
 }`;
 
 	PackageDescription pkg = jsonToPackageDescription(toParse);
-	assert(pkg.targetName.platforms.length == 2);
-	String s = String(
-			[ StringPlatform("dudposix", [Platform.posix])
-			, StringPlatform("dudwindows", [Platform.windows])
-			]);
-	assert(pkg.targetName == s,
-		format("\ngot:\n%s\nexp:\n%s", pkg.targetName, s));
+	assert(pkg.targetName);
+	assert(pkg.targetName == "dudposix",
+		format("\ngot:\n%s\nexp:\n%s", pkg.targetName, "dudposix"));
 
 	JSONValue n = pkg.toJSON();
 	PackageDescription pkgFromJ = jsonToPackageDescription(n);
@@ -183,7 +178,6 @@ unittest {
 	},
 
 	"workingDirectory" : "/root",
-	"workingDirectory-windows" : "C:"
 
 }`;
 

@@ -136,18 +136,18 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
 			, isMem!"versionFilters", isMem!"toolchainRequirements"
-			, isMem!"targetPath"
+			, isMem!"workingDirectory", isMem!"mainSourceFile"
+			, isMem!"targetPath", isMem!"targetName"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));
 		} else static if(canFind(
-			[ isMem!"targetName", isMem!"ddoxTool"
+			[ isMem!"ddoxTool"
 			, isMem!"preGenerateCommands"
 			, isMem!"postGenerateCommands", isMem!"preBuildCommands"
 			, isMem!"postBuildCommands", isMem!"preRunCommands"
 			, isMem!"postRunCommands", isMem!"dflags", isMem!"lflags"
 			, isMem!"libs", isMem!"versions"
-			, isMem!"workingDirectory", isMem!"mainSourceFile"
 			, isMem!"sourcePaths", isMem!"importPaths"
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
@@ -159,7 +159,7 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			__traits(getMember, ret, mem) = select(
 				__traits(getMember, pkg, mem), platform);
 		} else static if(canFind(
-			[ isMem!"configurations", isMem!"buildTypes" ]
+			[ isMem!"configurations", isMem!"buildTypes"]
 			, mem))
 		{
 			enforce(__traits(getMember, pkg, mem).empty,

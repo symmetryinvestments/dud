@@ -78,17 +78,17 @@ struct PackageDescription {
 	@SDL!(sGetUnprocessedPath, unprocessedPathToS)("")
 	UnprocessedPath targetPath;
 
-	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
-	@SDL!(sGetStringPlatform, stringPlatformToS)("")
-	String targetName;
+	@JSON!(jGetString, stringToJ)("")
+	@SDL!(sGetString, stringToS)("")
+	string targetName;
 
-	@JSON!(jGetPath, pathToJ)("")
-	@SDL!(sGetPath, pathToS)("")
-	Path workingDirectory;
+	@JSON!(jGetUnprocessedPath, unprocessedPathToJ)("")
+	@SDL!(sGetUnprocessedPath, unprocessedPathToS)("")
+	UnprocessedPath workingDirectory;
 
-	@JSON!(jGetPath, pathToJ)("")
-	@SDL!(sGetPath, pathToS)("")
-	Path mainSourceFile;
+	@JSON!(jGetUnprocessedPath, unprocessedPathToJ)("")
+	@SDL!(sGetUnprocessedPath, unprocessedPathToS)("")
+	UnprocessedPath mainSourceFile;
 
 	@JSON!(jGetStringsPlatform, stringsPlatformToJ)("")
 	@SDL!(sGetStringsPlatform, stringsPlatformToS)("")

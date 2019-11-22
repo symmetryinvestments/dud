@@ -104,7 +104,6 @@ unittest {
 	subConfiguration "pkg2" "slow"
 	subConfiguration "pkg3" "experimental" platform="posix"
 	workingDirectory "/root"
-	workingDirectory "C:" platform="windows"
 `;
 
 	PackageDescription pkg = sdlToPackageDescription(toParse);
