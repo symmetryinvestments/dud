@@ -246,36 +246,6 @@ BuildRequirement[] select(const(BuildRequirements) brs,
 // Dependencies
 //
 
-PackageDescriptionNoPlatform[] select(const(PackageDescription[string]) confs,
-		const(Platform[]) platform)
-{
-	import std.traits : fullyQualifiedName;
-	import dud.pkgdescription.joining : expandConfiguration;
-
-	// No configuration present, thats okay
-	assert(!confs.empty, "This should be called with no configurations"
-		~ " as this would mean infinite recursion");
-
-	enforce!ToManyConfigurations(confs.length == 1, format(
-		"During Platform resolution only one must be present not '%s'."
-		~ " Use the function '%s' to select a Configuration",
-		confs.length, fullyQualifiedName!expandConfiguration));
-
-	bool platformMatches = confs.byValue.front.platforms
-		.any!(plt => isSuperSet(plt, platform));
-
-	enforce!InvalidPlatfrom(platformMatches, format(
-		"Non of the platforms [%(%s|, %)] of configuration '%s'"
-		~ " matches specified platform [%(%s|, %)]",
-		confs.byValue.front.platforms, confs.byValue.front.name, platform));
-
-	return [select(confs.byValue.front, platform)];
-}
-
-//
-// Dependencies
-//
-
 DependencyNoPlatform select(const(Dependency) sp) {
 	DependencyNoPlatform ret;
 	ret.name = sp.name;
