@@ -19,6 +19,7 @@ PackageDescription dup(const ref PackageDescription pkg) {
 		static if(is(MemType == string)
 				|| is(MemType == SemVer)
 				|| is(MemType == Path)
+				|| is(MemType == UnprocessedPath)
 				|| is(MemType == Paths)
 				|| is(MemType == BuildOptions)
 				|| is(MemType == Dependency[])

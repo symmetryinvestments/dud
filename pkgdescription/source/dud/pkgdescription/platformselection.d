@@ -136,6 +136,7 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
 			, isMem!"versionFilters", isMem!"toolchainRequirements"
+			, isMem!"targetPath"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));
@@ -145,7 +146,7 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"postGenerateCommands", isMem!"preBuildCommands"
 			, isMem!"postBuildCommands", isMem!"preRunCommands"
 			, isMem!"postRunCommands", isMem!"dflags", isMem!"lflags"
-			, isMem!"libs", isMem!"versions", isMem!"targetPath"
+			, isMem!"libs", isMem!"versions"
 			, isMem!"workingDirectory", isMem!"mainSourceFile"
 			, isMem!"sourcePaths", isMem!"importPaths"
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"

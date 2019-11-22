@@ -219,6 +219,24 @@ JSONValue stringsToJ(const string[] ss) {
 // path
 //
 
+void jGetUnprocessedPath(ref JSONValue jv, string key,
+		ref UnprocessedPath output)
+{
+	typeCheck(jv, [JSONType.string]);
+
+	output = UnprocessedPath(jv.str());
+}
+
+void unprocessedPathToJ(const UnprocessedPath s, const string key,
+		ref JSONValue output)
+{
+	typeCheck(output, [JSONType.object, JSONType.null_]);
+
+	if(!s.path.empty) {
+		output[key] = JSONValue(s.path);
+	}
+}
+
 void jGetPath(ref JSONValue jv, string key, ref Path output) {
 	typeCheck(jv, [JSONType.string]);
 
@@ -548,6 +566,7 @@ template isPlatfromDependend(T) {
 		|| is(T == Strings)
 		|| is(T == Dependency[])
 		|| is(T == Path)
+		|| is(T == UnprocessedPath)
 		|| is(T == BuildRequirements)
 		|| is(T == SubConfigs)
 		|| is(T == BuildOptions)

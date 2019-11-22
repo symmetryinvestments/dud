@@ -45,7 +45,7 @@ unittest {
 	assert(pkg.description == "A dub replacement", pkg.description);
 	assert(pkg.license == "LGPL3", pkg.license);
 	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
-	assert(pkg.targetPath.platforms.front.path.path == "/bin/dud",
+	assert(pkg.targetPath.path == "/bin/dud",
 		format("%s", pkg.targetPath));
 	assert(pkg.configurations.length == 1);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));

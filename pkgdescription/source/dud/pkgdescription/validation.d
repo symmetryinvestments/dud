@@ -27,7 +27,7 @@ void validate(ref const(BuildType) bts) {
 		"TargetType must be not be set");
 	enforce!BuildTypeException(bts.pkg.targetName.platforms.empty,
 		"TargetName can not be changed");
-	enforce!BuildTypeException(bts.pkg.targetPath.platforms.empty,
+	enforce!BuildTypeException(bts.pkg.targetPath.path.empty,
 		"TargetPath can not be changed");
 	enforce!BuildTypeException(bts.pkg.workingDirectory.platforms.empty,
 		"WorkingDirectory can not be changed");

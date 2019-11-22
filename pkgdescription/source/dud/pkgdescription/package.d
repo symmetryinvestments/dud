@@ -74,9 +74,9 @@ struct PackageDescription {
 	@SDL!(sGetTargetType, targetTypeToS)("")
 	TargetType targetType;
 
-	@JSON!(jGetPath, pathToJ)("")
-	@SDL!(sGetPath, pathToS)("")
-	Path targetPath;
+	@JSON!(jGetUnprocessedPath, unprocessedPathToJ)("")
+	@SDL!(sGetUnprocessedPath, unprocessedPathToS)("")
+	UnprocessedPath targetPath;
 
 	@JSON!(jGetStringPlatform, stringPlatformToJ)("")
 	@SDL!(sGetStringPlatform, stringPlatformToS)("")
