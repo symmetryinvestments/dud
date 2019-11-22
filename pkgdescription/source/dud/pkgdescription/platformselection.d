@@ -238,7 +238,6 @@ BuildRequirement[] select(const(BuildRequirements) brs,
 {
 	BuildRequirements brsC = ddup(brs);
 	brsC.platforms.sort!((a, b) => a.platforms.length > b.platforms.length)();
-
 	auto f = brsC.platforms.filter!(br => isSuperSet(br.platforms, platform));
 	return f.empty ? BuildRequirement[].init : f.front.requirements;
 }
@@ -306,18 +305,16 @@ SubPackageNoPlatform[] select(const(SubPackage[]) sps, const(Platform[]) platfor
 //
 
 UnprocessedPath select(const(Path) path, const(Platform[]) platform) {
-	PathPlatform[] strs = path.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	PathPlatform[] pth = path.platforms.map!(it => ddup(it)).array;
+	auto superSets = selectLargestSuperset(pth, platform);
 	return superSets.empty
 		? UnprocessedPath.init
 		: superSets.front.path;
 }
 
 UnprocessedPath[] select(const(Paths) paths, const(Platform[]) platform) {
-	PathsPlatform[] strs = paths.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	PathsPlatform[] pths = paths.platforms.map!(it => ddup(it)).array;
+	auto superSets = selectLargestSuperset(pths, platform);
 	return superSets.empty
 		? []
 		: superSets.front.paths;
@@ -329,8 +326,7 @@ UnprocessedPath[] select(const(Paths) paths, const(Platform[]) platform) {
 
 string select(const(String) str, const(Platform[]) platform) {
 	StringPlatform[] strs = str.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	auto superSets = selectLargestSuperset(strs, platform);
 	return superSets.empty
 		? ""
 		: superSets.front.str;
@@ -338,13 +334,81 @@ string select(const(String) str, const(Platform[]) platform) {
 
 string[] select(const(Strings) strs, const(Platform[]) platform) {
 	StringsPlatform[] strss = strs.platforms.map!(it => ddup(it)).array;
-	strss.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strss.filter!(str => isSuperSet(str.platforms, platform));
+	auto superSets = selectLargestSuperset(strss, platform);
 	return superSets.empty
 		? []
 		: superSets.front.strs;
 }
 
-int isSuperSet(const(Platform[]) a, const(Platform[]) b) {
+//
+// Helper
+//
+
+auto selectLargestSuperset(T)(ref T ts,
+		const(Platform[]) platform)
+{
+	ts.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = ts.filter!(it => isSuperSet(it.platforms, platform));
+	return superSets;
+}
+
+unittest {
+	struct Test {
+		int value;
+		Platform[] platforms;
+	}
+
+	{
+		Test[] tests =
+			[ Test(0, []), Test(1, [Platform.posix]), Test(2, [Platform.windows])
+			, Test(3, [Platform.posix, Platform.x86_64, Platform.dmd])
+			, Test(4, [Platform.posix, Platform.x86_64, Platform.gdc])
+			];
+
+		auto a = selectLargestSuperset(tests, []);
+		assert(!a.empty);
+		assert(a.front.value == 0);
+
+		a = selectLargestSuperset(tests, [Platform.posix]);
+		assert(!a.empty);
+		assert(a.front.value == 1);
+	}
+	{
+		Test[] tests =
+			[ Test(1, [Platform.posix]), Test(2, [Platform.windows])
+			, Test(3, [Platform.posix, Platform.x86_64, Platform.dmd])
+			, Test(4, [Platform.posix, Platform.x86_64, Platform.gdc])
+			];
+
+		auto a = selectLargestSuperset(tests, [Platform.osx, Platform.x86_64]);
+		assert(a.empty, format("%s", a.front.value));
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.dmd]);
+		assert(!a.empty);
+		assert(a.front.value == 3);
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.gdc]);
+		assert(!a.empty);
+		assert(a.front.value == 4);
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.gdc, Platform.d_avx2]);
+		assert(!a.empty);
+		assert(a.front.value == 4);
+	}
+}
+
+bool isSuperSet(const(Platform[]) a, const(Platform[]) b) {
 	return a.all!(p => canFind(b, p));
 }
+
+unittest {
+	auto a = [ Platform.posix, Platform.x86_64 ];
+	auto b = [ Platform.posix, Platform.x86_64, Platform.d_avx2 ];
+
+	assert( isSuperSet(a, b));
+	assert(!isSuperSet(b, a));
+}
+
