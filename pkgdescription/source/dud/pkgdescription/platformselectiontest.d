@@ -1,6 +1,8 @@
 module dud.pkgdescription.platformselectiontest;
 
 import std.stdio;
+import std.range : tee;
+import std.format;
 
 import dud.pkgdescription;
 import dud.pkgdescription.joining;
@@ -18,17 +20,18 @@ dependency "path" path="../path" platform="windows"
 dependency "sdlang" path="../sdlang"
 dependency "graphqld" version=">=1.0.0" default=true optional=false
 targetType "library"
-targetName "foobar" platform="posix"
-targetName "barfoo" platform="windows"
-targetName "should_be_foobar_or_barfoo"
+targetName "foobar"
 preGenerateCommands "rm -rf /" "install windows" platform="posix"
 preGenerateCommands "format C:" "install linux" platform="windows"
-targetPath "outDir" platform="posix"
+targetPath "outDir"
 importPaths "source_win" "source1_win" "source2_win" platform="windows"
 importPaths "source_pos86" "source1_pos86" "source2_pos86" platform="posix-x86"
 importPaths "source_pos" "source1_pos" "source2_pos" platform="posix"
 buildRequirements "allowWarnings" "disallowInlining" platform="windows"
 buildRequirements "allowWarnings" platform="posix"
+subConfiguration "semver" "subConf_posix" platform="posix"
+subConfiguration "semver" "subConf_windows" platform="windows"
+subConfiguration "graphql" "the_fast_version"
 license "LGPL3"
 version "1.0.0"
 configuration "test-win" {
@@ -41,14 +44,40 @@ configuration "test-posix" {
 }
 `;
 
-	PackageDescription pkg = sdlToPackageDescription(input);
-	PackageDescriptionNoPlatform posix =
-		pkg.expandConfiguration("test-posix").select([Platform.posix]);
-	writeln(posix);
-	//string output = toSDL(pkg);
-	//writeln(output);
+	string inputPosixExp = `
+name "pkgdescription"
+dependency "semver" path="../semver" version=">=1.0.0"
+dependency "sdlang" path="../sdlang"
+dependency "graphqld" version=">=1.0.0" default=true optional=false
+targetType "library"
+targetName "foobar"
+preGenerateCommands "rm -rf /" "install windows"
+targetPath "outDir"
+importPaths "source_pos" "source1_pos" "source2_pos"
+buildRequirements "allowWarnings"
+subConfiguration "semver" "subConf_posix"
+subConfiguration "graphql" "the_fast_version"
+license "LGPL3"
+version "1.0.0"
+libs "glibc"
+`;
 
-	PackageDescriptionNoPlatform win =
-		pkg.expandConfiguration("test-win").select([Platform.windows]);
-	writeln(win);
+	PackageDescription pkg = sdlToPackageDescription(input);
+	PackageDescription afterExpands = pkg.expandConfiguration("test-posix");
+	PackageDescriptionNoPlatform posix = afterExpands.select([Platform.posix]);
+	writeln(afterExpands);
+
+	PackageDescription posixExp = sdlToPackageDescription(inputPosixExp);
+	PackageDescriptionNoPlatform posixExpNP = posixExp
+			.select([]);
+	string output = toSDL(afterExpands);
+	writeln(output);
+
+	assert(posix == posixExpNP,
+		format("\ngot:\n%s\nexp:\n%s", posix, posixExpNP));
+
+	//PackageDescriptionNoPlatform win = pkg
+	//	.expandConfiguration("test-win")
+	//	.select([Platform.windows]);
+	//writeln(win);
 }

@@ -25,11 +25,11 @@ void validate(ref const(BuildType) bts) {
 		"A BuiltType must not have dependencies");
 	enforce!BuildTypeException(bts.pkg.targetType == TargetType.autodetect,
 		"TargetType must be not be set");
-	enforce!BuildTypeException(bts.pkg.targetName.platforms.empty,
+	enforce!BuildTypeException(bts.pkg.targetName.empty,
 		"TargetName can not be changed");
-	enforce!BuildTypeException(bts.pkg.targetPath.platforms.empty,
+	enforce!BuildTypeException(bts.pkg.targetPath.path.empty,
 		"TargetPath can not be changed");
-	enforce!BuildTypeException(bts.pkg.workingDirectory.platforms.empty,
+	enforce!BuildTypeException(bts.pkg.workingDirectory.path.empty,
 		"WorkingDirectory can not be changed");
 	enforce!BuildTypeException(bts.pkg.subConfigurations.configs.empty
 			&& bts.pkg.subConfigurations.unspecifiedPlatform.empty,

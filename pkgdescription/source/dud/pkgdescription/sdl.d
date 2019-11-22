@@ -482,6 +482,21 @@ void pathsToS(Out)(auto ref Out o, const string key, const Paths ps,
 // path
 //
 
+void sGetUnprocessedPath(Tag t, const string key, ref UnprocessedPath ret) {
+	auto v = t.values();
+	Token f = expectedSingleValue(v, key);
+	typeCheck(f, [ ValueType.str ]);
+	checkEmptyAttributes(t, key, []);
+	string s = f.value.get!string();
+	ret = UnprocessedPath(s);
+}
+
+void unprocessedPathToS(Out)(auto ref Out o, const string key,
+		const UnprocessedPath p, const size_t indent)
+{
+	stringToS(o, key, p.path, indent);
+}
+
 void sGetPath(Tag t, const string key, ref Path ret) {
 	auto v = t.values();
 	Token f = expectedSingleValue(v, key);
@@ -741,11 +756,11 @@ Token expectedSingleValue(ValueRange vr, const string key,
 	return ret;
 }
 
-void checkEmptyAttributes(Tag t, string key, const string[] toIgnore) {
+void checkEmptyAttributes(Tag t, const string key, const string[] toIgnore) {
 	checkEmptyAttributes(t.attributes(), key, toIgnore);
 }
 
-void checkEmptyAttributes(AttributeAccessor ars, string key,
+void checkEmptyAttributes(AttributeAccessor ars, const string key,
 		const string[] toIgnore)
 {
 	auto attrs = ars

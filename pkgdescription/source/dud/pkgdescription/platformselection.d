@@ -97,24 +97,20 @@ struct PackageDescriptionNoPlatform {
 
 	BuildRequirement[] buildRequirements;
 
-	SubConfigs subConfigurations;
-
 	string[] versionFilters;
 
-	BuildOptionsNoPlatform buildOptions;
+	BuildOption[] buildOptions;
 
 	ToolchainRequirement[Toolchain] toolchainRequirements;
 
 	PackageDescriptionNoPlatform[] configurations;
+
+	string[string] subConfigurations;
 }
 
 struct SubPackageNoPlatform {
 	UnprocessedPath path;
 	Nullable!PackageDescriptionNoPlatform inlinePkg;
-}
-
-struct BuildOptionsNoPlatform {
-	BuildOption[] options;
 }
 
 struct DependencyNoPlatform {
@@ -140,38 +136,95 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
 			, isMem!"versionFilters", isMem!"toolchainRequirements"
+			, isMem!"workingDirectory", isMem!"mainSourceFile"
+			, isMem!"targetPath", isMem!"targetName"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = ddup(__traits(getMember, pkg, mem));
 		} else static if(canFind(
-			[ isMem!"targetName", isMem!"ddoxTool"
+			[ isMem!"ddoxTool"
 			, isMem!"preGenerateCommands"
 			, isMem!"postGenerateCommands", isMem!"preBuildCommands"
 			, isMem!"postBuildCommands", isMem!"preRunCommands"
 			, isMem!"postRunCommands", isMem!"dflags", isMem!"lflags"
-			, isMem!"libs", isMem!"versions", isMem!"targetPath"
-			, isMem!"workingDirectory", isMem!"mainSourceFile"
+			, isMem!"libs", isMem!"versions"
 			, isMem!"sourcePaths", isMem!"importPaths"
 			, isMem!"copyFiles", isMem!"excludedSourceFiles"
 			, isMem!"stringImportPaths", isMem!"sourceFiles"
 			, isMem!"debugVersions", isMem!"subPackages"
 			, isMem!"dependencies", isMem!"buildRequirements"
+			, isMem!"subConfigurations", isMem!"buildOptions"
 			], mem))
 		{
 			__traits(getMember, ret, mem) = select(
 				__traits(getMember, pkg, mem), platform);
 		} else static if(canFind(
-			[ isMem!"configurations" ],
-			mem))
+			[ isMem!"configurations", isMem!"buildTypes"]
+			, mem))
 		{
-			if(!__traits(getMember, pkg, mem).empty) {
-				__traits(getMember, ret, mem) = select(
-					__traits(getMember, pkg, mem), platform);
-			}
+			enforce(__traits(getMember, pkg, mem).empty,
+				() @trusted {
+					return format("%s %s", mem, __traits(getMember, pkg, mem));
+				}());
+		} else static if(canFind([ isMem!"platforms" ] , mem)) {
+			// platforms are ignored
 		} else {
-			pragma(msg, format("Unhandeled %s", mem));
+			assert(false, format("Unhandeld '%s'", mem));
 		}
 	}}
+
+	return ret;
+}
+
+//
+// BuildOptions
+//
+
+BuildOption[] select(const(BuildOptions) buildOptions,
+		const(Platform[]) platform)
+{
+	auto keys = buildOptions.platforms.byKey()
+		.filter!(key => isSuperSet(key, platform))
+		.map!(key => ddup(key))
+		.array
+		.sort!((a, b) => a.length > b.length)();
+
+	BuildOption[] ret = keys.empty
+		? BuildOption[].init
+		: buildOptions.platforms[keys.front].ddup;
+
+	buildOptions.unspecifiedPlatform
+		.each!((op) {
+			if(!canFind(ret, op)) {
+				ret ~= op;
+			}
+		});
+
+	return ret;
+}
+//
+// SubConfigurations
+//
+
+string[string] select(const(SubConfigs) subConfs,
+		const(Platform[]) platform)
+{
+	auto keys = subConfs.configs.byKey()
+		.filter!(key => isSuperSet(key, platform))
+		.map!(key => ddup(key))
+		.array
+		.sort!((a, b) => a.length > b.length)();
+
+	string[string] ret = keys.empty
+		? string[string].init
+		: subConfs.configs[keys.front].ddup;
+
+	subConfs.unspecifiedPlatform.byKey()
+		.each!((key) {
+			if(key !in ret) {
+				ret[key] = subConfs.unspecifiedPlatform[key].ddup;
+			}
+		});
 
 	return ret;
 }
@@ -184,40 +237,9 @@ BuildRequirement[] select(const(BuildRequirements) brs,
 		const(Platform[]) platform)
 {
 	BuildRequirements brsC = ddup(brs);
-	brsC.platforms.sort!((a, b) => a.platforms > b.platforms)();
-
+	brsC.platforms.sort!((a, b) => a.platforms.length > b.platforms.length)();
 	auto f = brsC.platforms.filter!(br => isSuperSet(br.platforms, platform));
 	return f.empty ? BuildRequirement[].init : f.front.requirements;
-}
-
-//
-// Dependencies
-//
-
-PackageDescriptionNoPlatform[] select(const(PackageDescription[string]) confs,
-		const(Platform[]) platform)
-{
-	import std.traits : fullyQualifiedName;
-	import dud.pkgdescription.joining : expandConfiguration;
-
-	// No configuration present, thats okay
-	assert(!confs.empty, "This should be called with no configurations"
-		~ " as this would mean infinite recursion");
-
-	enforce!ToManyConfigurations(confs.length == 1, format(
-		"During Platform resolution only one must be present not '%s'."
-		~ " Use the function '%s' to select a Configuration",
-		confs.length, fullyQualifiedName!expandConfiguration));
-
-	bool platformMatches = confs.byValue.front.platforms
-		.any!(plt => isSuperSet(plt, platform));
-
-	enforce!InvalidPlatfrom(platformMatches, format(
-		"Non of the platforms [%(%s|, %)] of configuration '%s'"
-		~ " matches specified platform [%(%s|, %)]",
-		confs.byValue.front.platforms, confs.byValue.front.name, platform));
-
-	return [select(confs.byValue.front, platform)];
 }
 
 //
@@ -283,18 +305,16 @@ SubPackageNoPlatform[] select(const(SubPackage[]) sps, const(Platform[]) platfor
 //
 
 UnprocessedPath select(const(Path) path, const(Platform[]) platform) {
-	PathPlatform[] strs = path.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	PathPlatform[] pth = path.platforms.map!(it => ddup(it)).array;
+	auto superSets = selectLargestSuperset(pth, platform);
 	return superSets.empty
 		? UnprocessedPath.init
 		: superSets.front.path;
 }
 
 UnprocessedPath[] select(const(Paths) paths, const(Platform[]) platform) {
-	PathsPlatform[] strs = paths.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	PathsPlatform[] pths = paths.platforms.map!(it => ddup(it)).array;
+	auto superSets = selectLargestSuperset(pths, platform);
 	return superSets.empty
 		? []
 		: superSets.front.paths;
@@ -306,8 +326,7 @@ UnprocessedPath[] select(const(Paths) paths, const(Platform[]) platform) {
 
 string select(const(String) str, const(Platform[]) platform) {
 	StringPlatform[] strs = str.platforms.map!(it => ddup(it)).array;
-	strs.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strs.filter!(str => isSuperSet(str.platforms, platform));
+	auto superSets = selectLargestSuperset(strs, platform);
 	return superSets.empty
 		? ""
 		: superSets.front.str;
@@ -315,13 +334,81 @@ string select(const(String) str, const(Platform[]) platform) {
 
 string[] select(const(Strings) strs, const(Platform[]) platform) {
 	StringsPlatform[] strss = strs.platforms.map!(it => ddup(it)).array;
-	strss.sort!((a, b) => a.platforms.length > b.platforms.length)();
-	auto superSets = strss.filter!(str => isSuperSet(str.platforms, platform));
+	auto superSets = selectLargestSuperset(strss, platform);
 	return superSets.empty
 		? []
 		: superSets.front.strs;
 }
 
-int isSuperSet(const(Platform[]) a, const(Platform[]) b) {
+//
+// Helper
+//
+
+auto selectLargestSuperset(T)(ref T ts,
+		const(Platform[]) platform)
+{
+	ts.sort!((a, b) => a.platforms.length > b.platforms.length)();
+	auto superSets = ts.filter!(it => isSuperSet(it.platforms, platform));
+	return superSets;
+}
+
+unittest {
+	struct Test {
+		int value;
+		Platform[] platforms;
+	}
+
+	{
+		Test[] tests =
+			[ Test(0, []), Test(1, [Platform.posix]), Test(2, [Platform.windows])
+			, Test(3, [Platform.posix, Platform.x86_64, Platform.dmd])
+			, Test(4, [Platform.posix, Platform.x86_64, Platform.gdc])
+			];
+
+		auto a = selectLargestSuperset(tests, []);
+		assert(!a.empty);
+		assert(a.front.value == 0);
+
+		a = selectLargestSuperset(tests, [Platform.posix]);
+		assert(!a.empty);
+		assert(a.front.value == 1);
+	}
+	{
+		Test[] tests =
+			[ Test(1, [Platform.posix]), Test(2, [Platform.windows])
+			, Test(3, [Platform.posix, Platform.x86_64, Platform.dmd])
+			, Test(4, [Platform.posix, Platform.x86_64, Platform.gdc])
+			];
+
+		auto a = selectLargestSuperset(tests, [Platform.osx, Platform.x86_64]);
+		assert(a.empty, format("%s", a.front.value));
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.dmd]);
+		assert(!a.empty);
+		assert(a.front.value == 3);
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.gdc]);
+		assert(!a.empty);
+		assert(a.front.value == 4);
+
+		a = selectLargestSuperset(tests,
+			[Platform.posix, Platform.x86_64, Platform.gdc, Platform.d_avx2]);
+		assert(!a.empty);
+		assert(a.front.value == 4);
+	}
+}
+
+bool isSuperSet(const(Platform[]) a, const(Platform[]) b) {
 	return a.all!(p => canFind(b, p));
 }
+
+unittest {
+	auto a = [ Platform.posix, Platform.x86_64 ];
+	auto b = [ Platform.posix, Platform.x86_64, Platform.d_avx2 ];
+
+	assert( isSuperSet(a, b));
+	assert(!isSuperSet(b, a));
+}
+

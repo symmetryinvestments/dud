@@ -35,6 +35,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 				|| is(aMemType == const(String))
 				|| is(aMemType == const(Strings))
 				|| is(aMemType == const(Path))
+				|| is(aMemType == const(UnprocessedPath))
 				|| is(aMemType == const(Paths))
 				|| is(aMemType == const(PackageDescription))
 				|| is(aMemType == const(PackageDescription[string]))
@@ -262,6 +263,10 @@ bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
 //
 // Path
 //
+
+bool areEqual(const UnprocessedPath a, const UnprocessedPath b) {
+	return a.path == b.path;
+}
 
 bool areEqual(const PathPlatform a, const PathPlatform b) {
 	return areEqual(a.platforms, b.platforms) && a.path == b.path;

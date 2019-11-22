@@ -44,15 +44,21 @@ void joinPackageDescription(ref PackageDescription ret,
 	static foreach(mem; FieldNameTuple!PackageDescription) {
 		// override with conf
 		static if(canFind(
-			[ isMem!"targetPath", isMem!"targetName", isMem!"mainSourceFile"
-			, isMem!"workingDirectory", isMem!"targetType"
-			, isMem!"systemDependencies", isMem!"ddoxTool", isMem!"platforms"
+			[ isMem!"systemDependencies", isMem!"ddoxTool", isMem!"platforms"
 			, isMem!"buildOptions"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
 				dud.pkgdescription.duplicate.dup(
 					__traits(getMember, conf, mem));
+		} else static if(canFind(
+			[ isMem!"targetPath", isMem!"targetName", isMem!"mainSourceFile"
+			, isMem!"workingDirectory"
+			], mem))
+		{
+			__traits(getMember, ret, mem) = selectIfEmpty(
+				__traits(getMember, ret, mem),
+				__traits(getMember, conf, mem));
 		} else static if(canFind(
 			[ isMem!"dflags", isMem!"lflags", isMem!"versions"
 			, isMem!"importPaths", isMem!"sourcePaths", isMem!"sourceFiles"
@@ -64,6 +70,7 @@ void joinPackageDescription(ref PackageDescription ret,
 			, isMem!"debugVersionFilters", isMem!"debugVersions"
 			, isMem!"toolchainRequirements", isMem!"dependencies"
 			, isMem!"subConfigurations", isMem!"buildTypes"
+			, isMem!"targetType"
 			], mem))
 		{
 			__traits(getMember, ret, mem) =
@@ -82,6 +89,32 @@ void joinPackageDescription(ref PackageDescription ret,
 			pragma(msg, mem);
 		}
 	}
+}
+
+String selectIfEmpty(const(String) a, const(String) b) {
+	return b.platforms.empty
+		? a.ddup()
+		: b.ddup();
+}
+
+UnprocessedPath selectIfEmpty(const(UnprocessedPath) a,
+		const(UnprocessedPath) b)
+{
+	return b.path.empty
+		? a.ddup()
+		: b.ddup();
+}
+
+Path selectIfEmpty(const(Path) a, const(Path) b) {
+	return b.platforms.empty
+		? a.ddup()
+		: b.ddup();
+}
+
+string selectIfEmpty(const(string) a, const(string) b) {
+	return b.empty
+		? a.ddup()
+		: b.ddup();
 }
 
 SubConfigs join(ref const(SubConfigs) a, ref const(SubConfigs) b) {
@@ -139,6 +172,12 @@ Paths join(const(Paths) a, const(Paths) b) {
 				!canFind!((g, h) => areEqual(g, h))(a.platforms, it))
 		.each!(it => ret.platforms ~= dud.pkgdescription.duplicate.dup(it));
 	return ret;
+}
+
+TargetType join(const(TargetType) a, const(TargetType) b) {
+	return b != TargetType.autodetect
+		? b
+		: a;
 }
 
 Strings join(const(Strings) a, const(Strings) b) {

@@ -19,6 +19,7 @@ PackageDescription dup(const ref PackageDescription pkg) {
 		static if(is(MemType == string)
 				|| is(MemType == SemVer)
 				|| is(MemType == Path)
+				|| is(MemType == UnprocessedPath)
 				|| is(MemType == Paths)
 				|| is(MemType == BuildOptions)
 				|| is(MemType == Dependency[])
@@ -323,6 +324,10 @@ Path dup(ref const(Path) old) {
 	return ret;
 }
 
+//
+// string
+//
+
 string dup(const(string) old) {
 	return old;
 }
@@ -333,3 +338,8 @@ string[] dup(const(string[]) old) {
 	return ret;
 }
 
+string[string] dup(const(string[string]) old) {
+	string[string] ret;
+	old.byKeyValue.each!(kv => ret[kv.key.dup()] = kv.value.dup());
+	return ret;
+}
