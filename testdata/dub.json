@@ -1,4 +1,13 @@
 {
 	"name": "testdata",
-	"targetType": "library"
+	"targetType": "library",
+	"excludeSourceFiles" :
+		[ "source/dud/testdata/main.d"
+		],
+	"configurations": [
+		{ "name" : "app"
+		, "mainSourceFile" : "source/dud/testdata/main.d"
+		, "targetType" : "executable"
+		}
+	]
 }
