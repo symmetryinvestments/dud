@@ -81,7 +81,7 @@ unittest {
 		"Robert burner Schadek"
 	],
 	"copyright": "Copyright © 2019, Symmetry Investments",
-	"targetName": "dudposix",
+	"targetName": "dudposix"
 }`;
 
 	PackageDescription pkg = jsonToPackageDescription(toParse);
@@ -177,7 +177,7 @@ unittest {
 		"another" : "crazyConfig"
 	},
 
-	"workingDirectory" : "/root",
+	"workingDirectory" : "/root"
 
 }`;
 
