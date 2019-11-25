@@ -24,6 +24,10 @@ script:
   - cd resolve
   - dub test --compiler=${DC}
   - cd ..
+  - cd testdata
+  - dub test --compiler=${DC}
+  - dub build --config="app" --compiler=${DC}
+  - cd ..
   - cd descriptiongetter
   - dub test --compiler=${DC}
   - cd ..
