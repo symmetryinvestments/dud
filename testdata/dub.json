@@ -4,6 +4,13 @@
 	"excludeSourceFiles" :
 		[ "source/dud/testdata/main.d"
 		],
+
+	"dependencies": {
+		"descriptiongetter": {
+			"path": "../descriptiongetter",
+			"version": ">=0.0.0"
+		}
+	},
 	"configurations": [
 		{ "name" : "app"
 		, "mainSourceFile" : "source/dud/testdata/main.d"
