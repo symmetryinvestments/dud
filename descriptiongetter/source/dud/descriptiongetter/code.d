@@ -21,9 +21,9 @@ JSONValue getCodeDlangDump() @trusted {
 	return parseJSON(cast(const(char)[])un);
 }
 
-JSONValue trimCodeDlangDump(JSONValue old) {
+JSONValue trimCodeDlangDump(ref JSONValue old) @trusted {
 	if(old.type == JSONType.array) {
-		return trimArray(old.arrayNoRef());
+		return trimArray(old.array());
 	} else if(old.type == JSONType.object) {
 		return trimObject(old);
 	} else {
@@ -31,14 +31,16 @@ JSONValue trimCodeDlangDump(JSONValue old) {
 	}
 }
 
-JSONValue trimArray(JSONValue[] old) {
-	return JSONValue(old.map!(it => trimCodeDlangDump(it)).array);
+JSONValue trimArray(ref JSONValue[] old) {
+	return JSONValue(old
+			.map!((ref it) { return trimCodeDlangDump(it); })
+			.array);
 }
 
-JSONValue trimObject(JSONValue obj) {
+JSONValue trimObject(ref JSONValue obj) {
 	enforce(obj.type == JSONType.object);
 	JSONValue ret;
-	foreach(key, value; obj.objectNoRef()) {
+	foreach(key, ref value; obj.objectNoRef()) {
 		if(key == "info") {
 			ret["packageDescription"] = value;
 		} else if(!canFind(
