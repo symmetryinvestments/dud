@@ -24,6 +24,9 @@ script:
   - cd resolve
   - dub test --compiler=${DC}
   - cd ..
+  - cd descriptiongetter
+  - dub test --compiler=${DC}
+  - cd ..
   - dub test
   - dub build
 
