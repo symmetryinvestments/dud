@@ -1,10 +1,14 @@
 module dud.resolve.providier;
 
-import std.array : array : empty;
+import std.algorithm.iteration : map;
+import std.algorithm.searching : find;
+import std.array : array, empty, front;
 import std.exception : enforce;
 import std.json;
-import dud.pkgdescription : PackageDescription;
-import dud.pkgdescription.versionspecifier : VersionSpecifier;
+import std.format : format;
+import dud.pkgdescription : PackageDescription, jsonToPackageDescription;
+import dud.semver;
+import dud.pkgdescription.versionspecifier : parseVersionSpecifier, VersionSpecifier;
 
 @safe pure:
 
@@ -41,6 +45,7 @@ struct DumpFileprovidier {
 	const(PackageDescription)[] getPackage(string name,
 			const(VersionSpecifier) verRange)
 	{
+		assert(false);
 	}
 
 	const(PackageDescription) getPackage(string name, string ver) {
@@ -62,17 +67,18 @@ struct DumpFileprovidier {
 }
 
 private PackageDescription[] dumpJSONToPackage(JSONValue jv) {
-	enforce(jv.type == JSONValue.array);
-	return jv.arrayNoRef().map!((it) {
-		auto ptr = "packageDescription" in it;
-		enforce(ptr !is null && (*ptr).type == JSONType.object);
-		PackageDescription pkg = jsonToPackageDescription(*ptr);
-		enforce(pkg.version_.m_version.empty);
+	enforce(jv.type == JSONType.array);
+	return jv.arrayNoRef()
+		.map!((it) {
+			auto ptr = "packageDescription" in it;
+			enforce(ptr !is null && (*ptr).type == JSONType.object);
+			PackageDescription pkg = jsonToPackageDescription(*ptr);
+			enforce(pkg.version_.m_version.empty);
 
-		auto ver = "version" in it;
-		enforce(ver !is null, && (*ver).type == JSONType.string);
-		pkg.version_ = SemVer(*ver);
-		return pkg;
-	})
-	.array;
+			auto ver = "version" in it;
+			enforce(ver !is null && (*ver).type == JSONType.string);
+			pkg.version_ = SemVer((*ver).str());
+			return pkg;
+		})
+		.array;
 }
