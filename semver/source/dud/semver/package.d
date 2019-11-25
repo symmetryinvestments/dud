@@ -63,7 +63,7 @@ struct SemVer {
 
 		Note that branches are always considered pre-release versions.
 	*/
-	@property bool isPreRelease() const @nogc nothrow {
+	@property bool isPreRelease() const nothrow {
 		if (isBranch) return true;
 		return isPreReleaseVersion(m_version);
 	}
