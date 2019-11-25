@@ -49,13 +49,13 @@ struct SemVer {
 	}
 
 	/// Tests if this represents a branch instead of a version.
-	@property bool isBranch() const {
+	@property bool isBranch() const @nogc nothrow {
 		return m_version.length > 0
 			&& m_version[0] == BranchPrefix;
 	}
 
 	/// Tests if this represents the master branch "~master".
-	@property bool isMaster() const {
+	@property bool isMaster() const @nogc nothrow {
 		return m_version == MasterString;
 	}
 
@@ -63,13 +63,13 @@ struct SemVer {
 
 		Note that branches are always considered pre-release versions.
 	*/
-	@property bool isPreRelease() const {
+	@property bool isPreRelease() const @nogc nothrow {
 		if (isBranch) return true;
 		return isPreReleaseVersion(m_version);
 	}
 
 	/// Tests if this represents the special unknown version constant.
-	@property bool isUnknown() const {
+	@property bool isUnknown() const @nogc nothrow {
 		import std.array : empty;
 		return m_version.empty || m_version == UNKNOWN_VERS;
 	}
@@ -101,7 +101,7 @@ struct SemVer {
 	int opCmp(in SemVer other) const { return opCmp(other); }
 
 	/// Returns the string representation of the version/branch.
-	string toString() const { return m_version; }
+	string toString() const @nogc nothrow { return m_version; }
 }
 
 unittest {

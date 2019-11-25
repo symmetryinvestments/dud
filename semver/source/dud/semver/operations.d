@@ -103,7 +103,7 @@ bool isValidVersion(string ver) pure @nogc {
 /**
 	Determines if a given valid SemVer version has a pre-release suffix.
 */
-bool isPreReleaseVersion(string ver) pure @nogc
+bool isPreReleaseVersion(string ver) pure @nogc nothrow
 in { assert(isValidVersion(ver)); }
 body {
 	foreach (i; 0 .. 2) {
@@ -397,8 +397,7 @@ pure @nogc {
 	return true;
 }
 
-private bool isValidNumber(string str)
-pure @nogc {
+private bool isValidNumber(string str) pure @nogc nothrow {
 	if (str.length < 1) return false;
 	foreach (ch; str)
 		if (ch < '0' || ch > '9')

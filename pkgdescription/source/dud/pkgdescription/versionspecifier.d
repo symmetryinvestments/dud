@@ -10,6 +10,7 @@ import dud.semver.operations;
 @safe pure:
 
 struct VersionSpecifier {
+@safe pure:
 	string orig;
 	bool inclusiveA;
 	bool inclusiveB;
@@ -22,10 +23,51 @@ struct VersionSpecifier {
 		VersionSpecifier snn = s.get();
 		this = snn;
 	}
+
+
+	bool opEquals(const VersionSpecifier o) const pure @safe {
+		return o.inclusiveA == this.inclusiveA
+			&& o.inclusiveB == this.inclusiveB
+			&& o.versionA == this.versionA
+			&& o.versionB == this.versionB;
+	}
+
+	/// ditto
+	int opCmp(const VersionSpecifier o) const pure @safe {
+		if(this.inclusiveA != o.inclusiveA) {
+			return this.inclusiveA < o.inclusiveA ? -1 : 1;
+		}
+
+		if(this.inclusiveB != o.inclusiveB) {
+			return this.inclusiveB < o.inclusiveB ? -1 : 1;
+		}
+
+		if(this.versionA != o.versionA) {
+			return this.versionA < o.versionA ? -1 : 1;
+		}
+
+		if(this.versionB != o.versionB) {
+			return this.versionB < o.versionB ? -1 : 1;
+		}
+
+		return 0;
+	}
+
+	/// ditto
+	size_t toHash() const nothrow @trusted @nogc {
+		size_t hash = 0;
+		hash = this.inclusiveA.hashOf(hash);
+		hash = this.versionA.toString().hashOf(hash);
+		hash = this.inclusiveB.hashOf(hash);
+		hash = this.versionB.toString().hashOf(hash);
+		return hash;
+	}
 }
 
 unittest {
 	VersionSpecifier s = VersionSpecifier("1.0.0");
+	assert(s == s);
+	assert(s.toHash() != 0);
 }
 
 /** Sets/gets the matching version range as a specification string.
