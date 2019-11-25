@@ -46,6 +46,7 @@ JSONValue trimObject(JSONValue obj) {
 			, "packageDescriptionFile", "logo", "errors"
 			, "categories", "owner", "errors", "stats", "textScore"
 			, "updateCounter", "_id", "updatedAt", "commitID", "date"
+			, "documentationURL"
 			], key))
 		{
 			ret[key] = trimCodeDlangDump(value);

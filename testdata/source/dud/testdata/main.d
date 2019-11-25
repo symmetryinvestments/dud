@@ -31,8 +31,8 @@ void main(string[] args) {
 		return;
 	}
 
-	JSONValue all = !options.outFilename.empty
-		? parseJSON(readText(options.outFilename))
+	JSONValue all = !options.inFilename.empty
+		? parseJSON(readText(options.inFilename))
 		: options.getCodeDump
 			? getCodeDlangDump()
 			: JSONValue.init;
@@ -43,8 +43,8 @@ void main(string[] args) {
 
 	JSONValue shorter = trimCodeDlangDump(all);
 
-	if(!options.inFilename.empty) {
-		auto f = File(options.inFilename, "w");
+	if(!options.outFilename.empty) {
+		auto f = File(options.outFilename, "w");
 		f.writeln(shorter.toPrettyString());
 	} else {
 		writeln(shorter.toPrettyString());
