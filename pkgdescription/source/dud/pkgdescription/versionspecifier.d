@@ -2,6 +2,8 @@ module dud.pkgdescription.versionspecifier;
 
 import std.array : empty;
 import std.exception : enforce;
+import std.format : format;
+import std.stdio;
 import std.typecons : nullable, Nullable;
 
 import dud.semver;
@@ -197,4 +199,74 @@ private string skipComp(ref string c) {
 unittest {
 	string tt = ">=1.0.0";
 	auto v = parseVersionSpecifier(tt);
+}
+
+bool isInRange(const(VersionSpecifier) range, const(SemVer) v) {
+	enforce(!v.isBranch(), format("isInRange v must not be a branch '%s'",
+		v.toString()));
+
+	const int low = compareVersions(v.toString(), range.versionA.toString());
+	const int high = compareVersions(range.versionB.toString(), v.toString());
+	debug writefln("low %2s, high %2s, range %s", low, high, range);
+
+	if(low < 0 || (low == 0 && !range.inclusiveA)) {
+		return false;
+	}
+
+	if(high < 0 || (high == 0 && !range.inclusiveB)) {
+		return false;
+	}
+
+	return true;
+}
+
+unittest {
+	VersionSpecifier r1 = parseVersionSpecifier("^1.0.0");
+	SemVer v1 = SemVer("1.0.0");
+	SemVer v2 = SemVer("2.0.0");
+	SemVer v3 = SemVer("2.0.1");
+	SemVer v4 = SemVer("0.999.999");
+	SemVer v5 = SemVer("1.999.999");
+	SemVer v6 = SemVer("89.0.1");
+
+	assert( isInRange(r1, v1));
+	assert(!isInRange(r1, v2));
+	assert(!isInRange(r1, v3));
+	assert(!isInRange(r1, v4));
+	assert( isInRange(r1, v5));
+	assert(!isInRange(r1, v6));
+}
+
+unittest {
+	VersionSpecifier r1 = parseVersionSpecifier("*");
+	SemVer v1 = SemVer("1.0.0");
+	SemVer v2 = SemVer("2.0.0");
+	SemVer v3 = SemVer("2.0.1");
+	SemVer v4 = SemVer("0.999.999");
+	SemVer v5 = SemVer("1.999.999");
+	SemVer v6 = SemVer("89.0.1");
+
+	assert( isInRange(r1, v1));
+	assert( isInRange(r1, v2));
+	assert( isInRange(r1, v3));
+	assert( isInRange(r1, v4));
+	assert( isInRange(r1, v5));
+	assert( isInRange(r1, v6));
+}
+
+unittest {
+	VersionSpecifier r1 = parseVersionSpecifier("~master");
+	SemVer v1 = SemVer("1.0.0");
+	SemVer v2 = SemVer("2.0.0");
+	SemVer v3 = SemVer("2.0.1");
+	SemVer v4 = SemVer("0.999.999");
+	SemVer v5 = SemVer("1.999.999");
+	SemVer v6 = SemVer("89.0.1");
+
+	assert(!isInRange(r1, v1));
+	assert(!isInRange(r1, v2));
+	assert(!isInRange(r1, v3));
+	assert(!isInRange(r1, v4));
+	assert(!isInRange(r1, v5));
+	assert(!isInRange(r1, v6));
 }
