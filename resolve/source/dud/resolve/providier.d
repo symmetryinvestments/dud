@@ -45,10 +45,13 @@ struct DumpFileprovidier {
 	const(PackageDescription)[] getPackage(string name,
 			const(VersionSpecifier) verRange)
 	{
-		assert(false);
+		auto pkgs = this.ensurePackageIsInCache(name);
+		return (*pkgs)
+			.filter!(pkg => isInRange(verRange, pkg.version_))
+			.array;
 	}
 
-	const(PackageDescription) getPackage(string name, string ver) {
+	PackageDescription[]* ensurePackageIsInCache(string name) {
 		auto pkgs = name in this.cache;
 		if(pkgs is null) {
 			auto ptr = name in parsedPackages;
@@ -57,7 +60,11 @@ struct DumpFileprovidier {
 			this.cache[name] = dumpJSONToPackage(*ptr);
 			pkgs = name in this.cache;
 		}
+		return pkgs;
+	}
 
+	const(PackageDescription) getPackage(string name, string ver) {
+		auto pkgs = this.ensurePackageIsInCache(name);
 		auto f = (*pkgs).find!((it, s) => it.version_.m_version == s)(ver);
 		enforce(!f.empty, format("No version '%s' for package '%s' could"
 			~ " be found in versions [%s]", name, ver,

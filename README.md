@@ -14,7 +14,7 @@ Dud is to be written in a declarative and functional style.
 Testing is paramount.
 
 ## Features
-Most things do not work are are even implemented.
+Most things do not work and are not even implemented yet.
 Currently, the focus is on getting the data structures correct.
 
 Given the below displayed list of dub features, dud's current feature set is
