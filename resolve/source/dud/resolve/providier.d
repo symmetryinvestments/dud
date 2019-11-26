@@ -1,14 +1,16 @@
 module dud.resolve.providier;
 
-import std.algorithm.iteration : map;
+import std.algorithm.iteration : map, filter;
 import std.algorithm.searching : find;
+import std.algorithm.sorting : sort;
 import std.array : array, empty, front;
 import std.exception : enforce;
 import std.json;
 import std.format : format;
 import dud.pkgdescription : PackageDescription, jsonToPackageDescription;
 import dud.semver;
-import dud.pkgdescription.versionspecifier : parseVersionSpecifier, VersionSpecifier;
+import dud.pkgdescription.versionspecifier : parseVersionSpecifier,
+	   VersionSpecifier, isInRange;
 
 @safe pure:
 
@@ -19,7 +21,7 @@ interface PackageProvidier {
 	const(PackageDescription) getPackage(string name, string ver);
 }
 
-struct DumpFileprovidier {
+struct DumpFileProvidier {
 	// the cache either holds all or non
 	PackageDescription[][string] cache;
 	JSONValue[string] parsedPackages;
@@ -36,13 +38,13 @@ struct DumpFileprovidier {
 		}
 	}
 
-	const(PackageDescription)[] getPackage(string name,
+	const(PackageDescription)[] getPackages(string name,
 			string verRange)
 	{
-		return getPackage(name, parseVersionSpecifier(verRange));
+		return this.getPackages(name, parseVersionSpecifier(verRange));
 	}
 
-	const(PackageDescription)[] getPackage(string name,
+	const(PackageDescription)[] getPackages(string name,
 			const(VersionSpecifier) verRange)
 	{
 		auto pkgs = this.ensurePackageIsInCache(name);
@@ -74,8 +76,14 @@ struct DumpFileprovidier {
 }
 
 private PackageDescription[] dumpJSONToPackage(JSONValue jv) {
-	enforce(jv.type == JSONType.array);
-	return jv.arrayNoRef()
+	enforce(jv.type == JSONType.object, format("Expected object got '%s'",
+			jv.type));
+	auto vers = "versions" in jv;
+	enforce(vers !is null, "Couldn't find versions array");
+	enforce((*vers).type == JSONType.array, format("Expected array got '%s'",
+			(*vers).type));
+
+	return (*vers).arrayNoRef()
 		.map!((it) {
 			auto ptr = "packageDescription" in it;
 			enforce(ptr !is null && (*ptr).type == JSONType.object);
@@ -87,5 +95,7 @@ private PackageDescription[] dumpJSONToPackage(JSONValue jv) {
 			pkg.version_ = SemVer((*ver).str());
 			return pkg;
 		})
+		.array
+		.sort!((a, b) => a.version_ > b.version_)
 		.array;
 }
