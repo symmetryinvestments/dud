@@ -49,6 +49,7 @@ struct DumpFileProvidier {
 	{
 		auto pkgs = this.ensurePackageIsInCache(name);
 		return (*pkgs)
+			.filter!(pkg => !pkg.version_.isBranch())
 			.filter!(pkg => isInRange(verRange, pkg.version_))
 			.array;
 	}

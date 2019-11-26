@@ -207,7 +207,6 @@ bool isInRange(const(VersionSpecifier) range, const(SemVer) v) {
 
 	const int low = compareVersions(v.toString(), range.versionA.toString());
 	const int high = compareVersions(range.versionB.toString(), v.toString());
-	debug writefln("low %2s, high %2s, range %s", low, high, range);
 
 	if(low < 0 || (low == 0 && !range.inclusiveA)) {
 		return false;
