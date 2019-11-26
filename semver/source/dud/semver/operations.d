@@ -27,7 +27,7 @@ import std.conv;
 /**
 	Validates a version string according to the SemVer specification.
 */
-bool isValidVersion(string ver) pure @nogc {
+bool isValidVersion(string ver) pure {
 	// NOTE: this is not by spec, but to ensure sane input
 	if (ver.length > 256) return false;
 
@@ -103,7 +103,7 @@ bool isValidVersion(string ver) pure @nogc {
 /**
 	Determines if a given valid SemVer version has a pre-release suffix.
 */
-bool isPreReleaseVersion(string ver) pure @nogc
+bool isPreReleaseVersion(string ver) pure nothrow
 in { assert(isValidVersion(ver)); }
 body {
 	foreach (i; 0 .. 2) {
@@ -397,8 +397,7 @@ pure @nogc {
 	return true;
 }
 
-private bool isValidNumber(string str)
-pure @nogc {
+private bool isValidNumber(string str) pure @nogc nothrow {
 	if (str.length < 1) return false;
 	foreach (ch; str)
 		if (ch < '0' || ch > '9')
@@ -408,15 +407,4 @@ pure @nogc {
 	if (str[0] == '0' && str.length > 1) return false;
 
 	return true;
-}
-
-private ptrdiff_t indexOfAny(string str, in char[] chars)
-pure @nogc {
-	ptrdiff_t ret = -1;
-	foreach (ch; chars) {
-		auto idx = str.indexOf(ch);
-		if (idx >= 0 && (ret < 0 || idx < ret))
-			ret = idx;
-	}
-	return ret;
 }

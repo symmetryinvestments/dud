@@ -42,7 +42,7 @@ JSONValue trimObject(ref JSONValue obj) {
 	JSONValue ret;
 	foreach(key, ref value; obj.objectNoRef()) {
 		if(key == "info") {
-			ret["packageDescription"] = value;
+			ret["packageDescription"] = trimPackageDescription(value);
 		} else if(!canFind(
 			[ "readme", "readmeMarkdown", "docFolder"
 			, "packageDescriptionFile", "logo", "errors"
@@ -51,6 +51,17 @@ JSONValue trimObject(ref JSONValue obj) {
 			, "documentationURL"
 			], key))
 		{
+			ret[key] = trimCodeDlangDump(value);
+		}
+	}
+	return ret;
+}
+
+JSONValue trimPackageDescription(ref JSONValue pkg) {
+	enforce(pkg.type == JSONType.object);
+	JSONValue ret;
+	foreach(key, ref value; pkg.objectNoRef()) {
+		if(!canFind([ "packageDescriptionFile" ], key)) {
 			ret[key] = trimCodeDlangDump(value);
 		}
 	}
