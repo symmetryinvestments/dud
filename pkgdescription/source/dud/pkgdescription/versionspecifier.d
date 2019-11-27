@@ -269,3 +269,103 @@ unittest {
 	assert(!isInRange(r1, v5));
 	assert(!isInRange(r1, v6));
 }
+
+enum SetRelation {
+	/// The second set contains all elements of the first, as well as possibly
+	/// more.
+	subset,
+
+	/// Neither set contains any elements of the other.
+	disjoint,
+
+	/// The sets have elements in common, but the first is not a superset of the
+	/// second.
+	///
+	/// This is also used when the first set is a superset of the first, but in
+	/// practice we don't need to distinguish that from overlapping sets.
+	overlapping
+}
+
+SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b) {
+	const BoundRelation lowLow = relation(a.versionA, a.inclusiveA,
+			b.versionA, b.inclusiveA);
+	const BoundRelation lowHigh = relation(a.versionA, a.inclusiveA,
+			b.versionB, b.inclusiveB);
+	const BoundRelation highHigh = relation(a.versionB, a.inclusiveB,
+			b.versionB, b.inclusiveB);
+	const BoundRelation highLow = relation(a.versionB, a.inclusiveB,
+			b.versionA, b.inclusiveA);
+
+	// Disjoint
+
+	if(highLow == BoundRelation.less || lowHigh == BoundRelation.more) {
+		// a: | . | . . . .
+		// b: . . . . | . |
+
+		// a: . . . . | . |
+		// b: | . | . . . .
+		return SetRelation.disjoint;
+	}
+
+	if((lowLow == BoundRelation.equal && highHigh == BoundRelation.less)
+	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.less)
+	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.equal))
+	{
+		// a: | . . . | . .
+		// b: | . . . . | .
+
+		// a: . | . . | . .
+		// b: | . . . . | .
+
+		// a: . | . . | . .
+		// b: | . . . | . .
+		return SetRelation.subset;
+	}
+
+	if( (highHigh == BoundRelation.less &&
+			(highLow == BoundRelation.more || highLow == BoundRelation.equal))
+	||
+		((lowLow == BoundRelation.more || lowLow == BoundRelation.more) &&
+			highHigh == BoundRelation.more)
+	) {
+		// a: | . . . | . .
+		// b: . . | . . | .
+
+		// a: . . . | . . |
+		// b: . | . . . | .
+		return SetRelation.overlapping;
+	}
+
+	assert(false, format("\na:%s\nb:%s", a, b));
+}
+
+///
+enum BoundRelation {
+	less,
+	equal,
+	more
+}
+
+/** Return whether a is less than, equal, or greater than b
+*/
+BoundRelation relation(const(SemVer) a, const bool aInclusive,
+		const(SemVer) b, const bool bInclusive)
+{
+	import dud.semver.operations : compareVersions;
+	const int cmp = compareVersions(a, b);
+	if(cmp < 0) {
+		return BoundRelation.less;
+	} else if(cmp > 0) {
+		return BoundRelation.more;
+	} else if(cmp == 0 && aInclusive == bInclusive) {
+		return BoundRelation.equal;
+	} else if(cmp == 0 && !aInclusive == bInclusive) {
+		return BoundRelation.more;
+	} else if(cmp == 0 && aInclusive == !bInclusive) {
+		return BoundRelation.less;
+	} else {
+		assert(false, format(
+			"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
+			a, aInclusive, b, bInclusive));
+	}
+}

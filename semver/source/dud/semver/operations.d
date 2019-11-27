@@ -22,6 +22,8 @@ import std.string;
 import std.algorithm : max;
 import std.conv;
 
+import dud.semver : SemVer;
+
 @safe:
 
 /**
@@ -136,7 +138,7 @@ body {
 		Returns a negative number if `a` is a lower version than `b`, `0` if
 		they are equal, and a positive number otherwise.
 */
-int compareVersions(string a, string b) pure @safe {
+int compareVersions(string a, string b) pure {
 	// compare a.b.c numerically
 	if (auto ret = compareNumber(a, b)) return ret;
 	assert(a[0] == '.' && b[0] == '.');
@@ -166,6 +168,11 @@ int compareVersions(string a, string b) pure @safe {
 		return 0;
 	}
 	return bempty - aempty;
+}
+
+/// Ditto
+int compareVersions(const(SemVer) a, const(SemVer) b) pure {
+	return compareVersions(a.m_version, b.m_version);
 }
 
 ///
