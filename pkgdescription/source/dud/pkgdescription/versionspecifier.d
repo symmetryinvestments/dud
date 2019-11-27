@@ -359,13 +359,28 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 		return BoundRelation.more;
 	} else if(cmp == 0 && aInclusive == bInclusive) {
 		return BoundRelation.equal;
-	} else if(cmp == 0 && !aInclusive == bInclusive) {
+	} else if(cmp == 0 && aInclusive == false && bInclusive == true) {
 		return BoundRelation.more;
-	} else if(cmp == 0 && aInclusive == !bInclusive) {
+	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
 		return BoundRelation.less;
-	} else {
-		assert(false, format(
-			"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
-			a, aInclusive, b, bInclusive));
+	}
+	assert(false, format(
+		"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
+		a, aInclusive, b, bInclusive));
+}
+
+unittest {
+	SemVer[] sv = [SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")];
+	bool[] b = [true, false];
+
+	relation(sv[0], true, sv[0], false);
+	foreach(sa; sv) {
+		foreach(sb; sv) {
+			foreach(ba; b) {
+				foreach(bb; b) {
+					relation(sa, ba, sb, bb);
+				}
+			}
+		}
 	}
 }
