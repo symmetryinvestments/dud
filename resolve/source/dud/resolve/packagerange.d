@@ -1,7 +1,7 @@
 module dud.resolver.packagerange;
 
 import dud.pkgdescription;
-import dud.resolver.versionconfiguration;
+import dud.resolve.versionconfiguration;
 
 struct PackageRange {
 	const VersionConfiguration constraint;

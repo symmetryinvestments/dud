@@ -164,18 +164,24 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 				ret.inclusiveLow = ret.inclusiveHigh = true;
 			}
 		} else {
-			enforce(cmpa == ">" || cmpa == ">=", "First comparison operator expected to be either > or >=, not "~cmpa);
+			enforce(cmpa == ">" || cmpa == ">=",
+				"First comparison operator expected to be either > or >=, not "
+				~ cmpa);
 			assert(ves[idx2] == ' ');
 			ret.low = SemVer(ves[0..idx2]);
 			ret.inclusiveLow = cmpa == ">=";
 			string v2 = ves[idx2+1..$];
 			auto cmpb = skipComp(v2);
-			enforce(cmpb == "<" || cmpb == "<=", "Second comparison operator expected to be either < or <=, not "~cmpb);
+			enforce(cmpb == "<" || cmpb == "<=",
+				"Second comparison operator expected to be either < or <=, not "
+				~ cmpb);
 			ret.high = SemVer(v2);
 			ret.inclusiveHigh = cmpb == "<=";
 
-			enforce(!ret.low.isBranch && !ret.high.isBranch, format("Cannot compare branches: %s", ves));
-			enforce(ret.low <= ret.high, "First version must not be greater than the second one.");
+			enforce(!ret.low.isBranch && !ret.high.isBranch,
+				format("Cannot compare branches: %s", ves));
+			enforce(ret.low <= ret.high,
+				"First version must not be greater than the second one.");
 		}
 	}
 
@@ -185,7 +191,7 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 private string skipComp(ref string c) pure {
 	import std.ascii : isDigit;
 	size_t idx = 0;
-	while (idx < c.length && !isDigit(c[idx]) && c[idx] != SemVer.BranchPrefix) {
+	while(idx < c.length && !isDigit(c[idx]) && c[idx] != SemVer.BranchPrefix) {
 		idx++;
 	}
 	enforce(idx < c.length, "Expected version number in version spec: "~c);
@@ -276,6 +282,117 @@ pure unittest {
 	assert(!isInRange(r1, v6));
 }
 
+///
+enum BoundRelation {
+	less,
+	equal,
+	more
+}
+
+/** Return whether a is less than, equal, or greater than b
+*/
+BoundRelation relation(const(SemVer) a, const bool aInclusive,
+		const(SemVer) b, const bool bInclusive,
+		const BoundRelation onEqualFalseInclusive) pure
+{
+	import dud.semver.operations : compareVersions;
+	const int cmp = compareVersions(a, b);
+	if(cmp < 0) {
+		return BoundRelation.less;
+	} else if(cmp > 0) {
+		return BoundRelation.more;
+	} else if(cmp == 0 && aInclusive == true && aInclusive == bInclusive) {
+		return BoundRelation.equal;
+	} else if(cmp == 0 && aInclusive == false && aInclusive == bInclusive) {
+		return onEqualFalseInclusive;
+	} else if(cmp == 0 && aInclusive == false && bInclusive == true) {
+		return BoundRelation.less;
+	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
+		return BoundRelation.more;
+	}
+	assert(false, format(
+		"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
+		a, aInclusive, b, bInclusive));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+
+	BoundRelation aa = relation(a, true, a, true, BoundRelation.equal);
+	assert(aa == BoundRelation.equal, format("%s", aa));
+
+	aa = relation(a, true, a, false, BoundRelation.equal);
+	assert(aa == BoundRelation.more, format("%s", aa));
+
+	aa = relation(a, false, a, true, BoundRelation.equal);
+	assert(aa == BoundRelation.less, format("%s", aa));
+
+	aa = relation(a, true, a, true, BoundRelation.equal);
+	assert(aa == BoundRelation.equal, format("%s", aa));
+
+	aa = relation(a, false, a, false, BoundRelation.more);
+	assert(aa == BoundRelation.more, format("%s", aa));
+
+	aa = relation(a, false, a, false, BoundRelation.less);
+	assert(aa == BoundRelation.less, format("%s", aa));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+
+	BoundRelation ab = relation(a, true, b, true, BoundRelation.equal);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, true, BoundRelation.equal);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, true, b, false, BoundRelation.equal);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, false, BoundRelation.equal);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, false, BoundRelation.more);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, false, BoundRelation.less);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(b, true, a, true, BoundRelation.less);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, false, a, true, BoundRelation.less);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, false, a, false, BoundRelation.less);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, true, a, false, BoundRelation.less);
+	assert(ab == BoundRelation.more, format("%s", ab));
+}
+
+pure unittest {
+	SemVer[] sv = [SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")];
+	bool[] b = [true, false];
+
+	BoundRelation[] brs = [ BoundRelation.more, BoundRelation.less,
+		BoundRelation.equal];
+
+	relation(sv[0], true, sv[0], false, BoundRelation.less);
+	foreach(sa; sv) {
+		foreach(sb; sv) {
+			foreach(ba; b) {
+				foreach(bb; b) {
+					foreach(br; brs) {
+						relation(sa, ba, sb, bb, br);
+					}
+				}
+			}
+		}
+	}
+}
+
 enum SetRelation {
 	/// The second set contains all elements of the first, as well as possibly
 	/// more.
@@ -296,13 +413,13 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 		pure
 {
 	const BoundRelation lowLow = relation(a.low, a.inclusiveLow,
-			b.low, b.inclusiveLow);
+			b.low, b.inclusiveLow, BoundRelation.equal);
 	const BoundRelation lowHigh = relation(a.low, a.inclusiveLow,
-			b.high, b.inclusiveHigh);
+			b.high, b.inclusiveHigh, BoundRelation.more);
 	const BoundRelation highHigh = relation(a.high, a.inclusiveHigh,
-			b.high, b.inclusiveHigh);
+			b.high, b.inclusiveHigh, BoundRelation.equal);
 	const BoundRelation highLow = relation(a.high, a.inclusiveHigh,
-			b.low, b.inclusiveLow);
+			b.low, b.inclusiveLow, BoundRelation.less);
 
 	/*debug writefln("lowLow %s, lowHigh %s, highLow %s, highHigh %s",
 		lowLow, lowHigh, highLow, highHigh);
@@ -454,93 +571,23 @@ unittest {
 	assert(rel == SetRelation.overlapping, format("%s", rel));
 }
 
-///
-enum BoundRelation {
-	less,
-	equal,
-	more
-}
-
-/** Return whether a is less than, equal, or greater than b
-*/
-BoundRelation relation(const(SemVer) a, const bool aInclusive,
-		const(SemVer) b, const bool bInclusive) pure
-{
-	import dud.semver.operations : compareVersions;
-	const int cmp = compareVersions(a, b);
-	if(cmp < 0) {
-		return BoundRelation.less;
-	} else if(cmp > 0) {
-		return BoundRelation.more;
-	} else if(cmp == 0 && aInclusive == bInclusive) {
-		return BoundRelation.equal;
-	} else if(cmp == 0 && aInclusive == false && bInclusive == true) {
-		return BoundRelation.less;
-	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
-		return BoundRelation.more;
-	}
-	assert(false, format(
-		"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
-		a, aInclusive, b, bInclusive));
-}
-
-unittest {
-	SemVer a = SemVer("1.0.0");
-
-	BoundRelation aa = relation(a, true, a, true);
-	assert(aa == BoundRelation.equal, format("%s", aa));
-
-	aa = relation(a, true, a, false);
-	assert(aa == BoundRelation.more, format("%s", aa));
-
-	aa = relation(a, false, a, true);
-	assert(aa == BoundRelation.less, format("%s", aa));
-
-	aa = relation(a, true, a, true);
-	assert(aa == BoundRelation.equal, format("%s", aa));
-}
-
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
+	SemVer c = SemVer("3.0.0");
 
-	BoundRelation ab = relation(a, true, b, true);
-	assert(ab == BoundRelation.less, format("%s", ab));
+	auto v1 = VersionSpecifier(a, false, b, false);
+	auto v2 = VersionSpecifier(b, false, c, true);
+	auto v3 = VersionSpecifier(b, true, c, true);
+	auto v4 = VersionSpecifier(a, false, b, true);
 
-	ab = relation(a, false, b, true);
-	assert(ab == BoundRelation.less, format("%s", ab));
+	auto rel = relation(v1, v2);
+	assert(rel == SetRelation.disjoint, format("%s", rel));
 
-	ab = relation(a, true, b, false);
-	assert(ab == BoundRelation.less, format("%s", ab));
+	rel = relation(v1, v3);
+	assert(rel == SetRelation.disjoint, format("%s", rel));
 
-	ab = relation(a, false, b, false);
-	assert(ab == BoundRelation.less, format("%s", ab));
-
-	ab = relation(b, true, a, true);
-	assert(ab == BoundRelation.more, format("%s", ab));
-
-	ab = relation(b, false, a, true);
-	assert(ab == BoundRelation.more, format("%s", ab));
-
-	ab = relation(b, false, a, false);
-	assert(ab == BoundRelation.more, format("%s", ab));
-
-	ab = relation(b, true, a, false);
-	assert(ab == BoundRelation.more, format("%s", ab));
+	rel = relation(v3, v4);
+	assert(rel == SetRelation.overlapping, format("%s", rel));
 }
 
-pure unittest {
-	SemVer[] sv = [SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")];
-	bool[] b = [true, false];
-
-	relation(sv[0], true, sv[0], false);
-	foreach(sa; sv) {
-		foreach(sb; sv) {
-			foreach(ba; b) {
-				foreach(bb; b) {
-					relation(sa, ba, sb, bb);
-				}
-			}
-		}
-	}
-}
