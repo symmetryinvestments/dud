@@ -70,4 +70,10 @@ unittest {
 
 	r = relation(v2, v3);
 	assert(r == SetRelation.disjoint, format("%s", r));
+
+	r = relation(v2, v2);
+	assert(r == SetRelation.subset, format("%s", r));
+
+	r = relation(v3, v3);
+	assert(r == SetRelation.subset, format("%s", r));
 }
