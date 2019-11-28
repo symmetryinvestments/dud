@@ -304,51 +304,91 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 	const BoundRelation highLow = relation(a.high, a.inclusiveHigh,
 			b.low, b.inclusiveLow);
 
-	// Disjoint
+	/*debug writefln("lowLow %s, lowHigh %s, highLow %s, highHigh %s",
+		lowLow, lowHigh, highLow, highHigh);
+	*/
 
-	if(highLow == BoundRelation.less || lowHigh == BoundRelation.more) {
-		// a: | . | . . . .
-		// b: . . . . | . |
-
-		// a: . . . . | . |
-		// b: | . | . . . .
+	// a: | . | . . . . . . . .
+	// b: . . . | . . . | . . .
+	if(highLow == BoundRelation.less) {
 		return SetRelation.disjoint;
 	}
 
-	if((lowLow == BoundRelation.equal && highHigh == BoundRelation.less)
-	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.less)
-	|| (lowLow == BoundRelation.equal && highHigh == BoundRelation.equal)
-	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.equal))
-	{
-		// a: | . . . | . .
-		// b: | . . . . | .
+	// a: . . . . . . . . | . |
+	// b: . . . | . . . | . . .
+	if(lowHigh == BoundRelation.more) {
+		return SetRelation.disjoint;
+	}
 
-		// a: . | . . | . .
-		// b: | . . . . | .
-
-		// a: . | . . | . .
-		// b: | . . . | . .
-
-		// a: | . . . | . .
-		// b: | . . . | . .
+	// a: . . . | . . . | . . .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.equal) {
 		return SetRelation.subset;
 	}
 
-	if( (highHigh == BoundRelation.less &&
-			(highLow == BoundRelation.more || highLow == BoundRelation.equal))
-	||
-		((lowLow == BoundRelation.more || lowLow == BoundRelation.more) &&
-			highHigh == BoundRelation.more)
-	) {
-		// a: | . . . | . .
-		// b: . . | . . | .
+	// a: . . . . | . . | . . .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.more && highHigh == BoundRelation.equal) {
+		return SetRelation.subset;
+	}
 
-		// a: . . . | . . |
-		// b: . | . . . | .
+	// a: . . . | . . | . . . .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.less) {
+		return SetRelation.subset;
+	}
+
+	// a: . . . . | . | . . . .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.more && highHigh == BoundRelation.less) {
+		return SetRelation.subset;
+	}
+
+	// a: . | . | . . . . . . .
+	// b: . . . | . . . | . . .
+	if(highLow == BoundRelation.equal) {
 		return SetRelation.overlapping;
 	}
 
-	assert(false, format("\na:%s\nb:%s", a, b));
+	// a: . . . . . . . | . | .
+	// b: . . . | . . . | . . .
+	if(lowHigh == BoundRelation.equal) {
+		return SetRelation.overlapping;
+	}
+
+	// a: . . . . . | . . . | .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.more && lowHigh == BoundRelation.less) {
+		return SetRelation.overlapping;
+	}
+
+	// a: . | . . . | . . . . .
+	// b: . . . | . . . | . . .
+	if(highLow == BoundRelation.more && highHigh == BoundRelation.less) {
+		return SetRelation.overlapping;
+	}
+
+	// a: . | . . . . . | . . .
+	// b: . . . | . . . | . . .
+	if(lowLow == BoundRelation.less && highHigh == BoundRelation.equal) {
+		return SetRelation.overlapping;
+	}
+
+	// a: . . . | . . . | . . .
+	// b: . . . | . . | . . . .
+	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.more) {
+		return SetRelation.overlapping;
+	}
+
+	// a: . . | . . . . | . . .
+	// b: . . . | . . | . . . .
+	if(lowLow == BoundRelation.less && highHigh == BoundRelation.more) {
+		return SetRelation.overlapping;
+	}
+
+	assert(false, format(
+		"\na:%s\nb:%s\nlowLow:%s\nlowHigh:%s\nhighLow:%s\nhighHigh:%s", a, b,
+		lowLow, lowHigh, highLow, highHigh));
 }
 
 unittest {
@@ -375,22 +415,43 @@ unittest {
 		}
 	}
 
-	debug writefln("%(%s\n%)", vers);
+	//debug writefln("%(%s\n%)", vers);
 	foreach(adx, verA; vers) {
 		foreach(bdx, verB; vers) {
 			auto rel = relation(verA, verB);
+			//writefln("a: %s, b: %s, rel %s", verA, verB, rel);
+			auto reporter = () {
+				return format("\na: %s, b: %s, rel %s", verA, verB, rel);
+			};
 			if(adx == bdx) {
-				assert(rel == SetRelation.subset, format("%s %s %s", verA, verB,
-					rel));
+				assert(rel == SetRelation.subset, reporter());
 			} else if(verA.high < verB.low) {
-				assert(rel == SetRelation.disjoint, format("%s %s %s", verA, verB,
-					rel));
+				assert(rel == SetRelation.disjoint, reporter());
 			} else if(verA.low > verB.high) {
-				assert(rel == SetRelation.disjoint, format("%s %s %s", verA, verB,
-					rel));
+				assert(rel == SetRelation.disjoint, reporter());
+			} else if(verA.low < verB.low && verA.high > verB.high) {
+				assert(rel == SetRelation.overlapping, reporter());
+			} else if(verA.low > verB.low && verA.high < verB.high) {
+				assert(rel == SetRelation.subset, reporter());
+			} else {
+				assert((rel == SetRelation.overlapping)
+						|| (rel == SetRelation.subset)
+						|| (rel == SetRelation.disjoint), reporter());
 			}
 		}
 	}
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+	SemVer c = SemVer("3.0.0");
+
+	auto v1 = VersionSpecifier(a, false, b, true);
+	auto v2 = VersionSpecifier(b, true, c, true);
+
+	auto rel = relation(v1, v2);
+	assert(rel == SetRelation.overlapping, format("%s", rel));
 }
 
 ///
@@ -414,13 +475,58 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 	} else if(cmp == 0 && aInclusive == bInclusive) {
 		return BoundRelation.equal;
 	} else if(cmp == 0 && aInclusive == false && bInclusive == true) {
-		return BoundRelation.more;
-	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
 		return BoundRelation.less;
+	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
+		return BoundRelation.more;
 	}
 	assert(false, format(
 		"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
 		a, aInclusive, b, bInclusive));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+
+	BoundRelation aa = relation(a, true, a, true);
+	assert(aa == BoundRelation.equal, format("%s", aa));
+
+	aa = relation(a, true, a, false);
+	assert(aa == BoundRelation.more, format("%s", aa));
+
+	aa = relation(a, false, a, true);
+	assert(aa == BoundRelation.less, format("%s", aa));
+
+	aa = relation(a, true, a, true);
+	assert(aa == BoundRelation.equal, format("%s", aa));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+
+	BoundRelation ab = relation(a, true, b, true);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, true);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, true, b, false);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(a, false, b, false);
+	assert(ab == BoundRelation.less, format("%s", ab));
+
+	ab = relation(b, true, a, true);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, false, a, true);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, false, a, false);
+	assert(ab == BoundRelation.more, format("%s", ab));
+
+	ab = relation(b, true, a, false);
+	assert(ab == BoundRelation.more, format("%s", ab));
 }
 
 pure unittest {
