@@ -9,15 +9,15 @@ import std.typecons : nullable, Nullable;
 import dud.semver;
 import dud.semver.operations;
 
-@safe pure:
+@safe:
 
 struct VersionSpecifier {
 @safe pure:
 	string orig;
-	bool inclusiveA;
-	bool inclusiveB;
-	SemVer versionA;
-	SemVer versionB;
+	bool inclusiveLow;
+	bool inclusiveHigh;
+	SemVer low;
+	SemVer high;
 
 	this(string input) pure {
 		Nullable!VersionSpecifier s = parseVersionSpecifier(input);
@@ -26,30 +26,36 @@ struct VersionSpecifier {
 		this = snn;
 	}
 
+	this(SemVer verA, bool incA, SemVer verB, bool incB) {
+		this.low = verA;
+		this.inclusiveLow = incA;
+		this.high = verB;
+		this.inclusiveHigh = incB;
+	}
 
 	bool opEquals(const VersionSpecifier o) const pure @safe {
-		return o.inclusiveA == this.inclusiveA
-			&& o.inclusiveB == this.inclusiveB
-			&& o.versionA == this.versionA
-			&& o.versionB == this.versionB;
+		return o.inclusiveLow == this.inclusiveLow
+			&& o.inclusiveHigh == this.inclusiveHigh
+			&& o.low == this.low
+			&& o.high == this.high;
 	}
 
 	/// ditto
 	int opCmp(const VersionSpecifier o) const pure @safe {
-		if(this.inclusiveA != o.inclusiveA) {
-			return this.inclusiveA < o.inclusiveA ? -1 : 1;
+		if(this.inclusiveLow != o.inclusiveLow) {
+			return this.inclusiveLow < o.inclusiveLow ? -1 : 1;
 		}
 
-		if(this.inclusiveB != o.inclusiveB) {
-			return this.inclusiveB < o.inclusiveB ? -1 : 1;
+		if(this.inclusiveHigh != o.inclusiveHigh) {
+			return this.inclusiveHigh < o.inclusiveHigh ? -1 : 1;
 		}
 
-		if(this.versionA != o.versionA) {
-			return this.versionA < o.versionA ? -1 : 1;
+		if(this.low != o.low) {
+			return this.low < o.low ? -1 : 1;
 		}
 
-		if(this.versionB != o.versionB) {
-			return this.versionB < o.versionB ? -1 : 1;
+		if(this.high != o.high) {
+			return this.high < o.high ? -1 : 1;
 		}
 
 		return 0;
@@ -58,15 +64,15 @@ struct VersionSpecifier {
 	/// ditto
 	size_t toHash() const nothrow @trusted @nogc {
 		size_t hash = 0;
-		hash = this.inclusiveA.hashOf(hash);
-		hash = this.versionA.toString().hashOf(hash);
-		hash = this.inclusiveB.hashOf(hash);
-		hash = this.versionB.toString().hashOf(hash);
+		hash = this.inclusiveLow.hashOf(hash);
+		hash = this.low.toString().hashOf(hash);
+		hash = this.inclusiveHigh.hashOf(hash);
+		hash = this.high.toString().hashOf(hash);
 		return hash;
 	}
 }
 
-unittest {
+pure unittest {
 	VersionSpecifier s = VersionSpecifier("1.0.0");
 	assert(s == s);
 	assert(s.toHash() != 0);
@@ -92,7 +98,7 @@ unittest {
 	Apart from "$(LT)" and "$(GT)", "$(GT)=" and "$(LT)=" are also valid
 	comparators.
 */
-Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
+Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 	static import std.string;
 	import std.algorithm.searching : startsWith;
 	import std.format : format;
@@ -115,68 +121,68 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) {
 	if (ves.startsWith("~>")) {
 		// Shortcut: "~>x.y.z" variant. Last non-zero number will indicate
 		// the base for this so something like this: ">=x.y.z <x.(y+1).z"
-		ret.inclusiveA = true;
-		ret.inclusiveB = false;
+		ret.inclusiveLow = true;
+		ret.inclusiveHigh = false;
 		ves = ves[2..$];
-		ret.versionA = SemVer(expandVersion(ves));
-		ret.versionB = SemVer(bumpVersion(ves) ~ "-0");
+		ret.low = SemVer(expandVersion(ves));
+		ret.high = SemVer(bumpVersion(ves) ~ "-0");
 	} else if (ves.startsWith("^")) {
 		// Shortcut: "^x.y.z" variant. "Semver compatible" - no breaking changes.
 		// if 0.x.y, ==0.x.y
 		// if x.y.z, >=x.y.z <(x+1).0.0-0
 		// ^x.y is equivalent to ^x.y.0.
-		ret.inclusiveA = true;
-		ret.inclusiveB = false;
+		ret.inclusiveLow = true;
+		ret.inclusiveHigh = false;
 		ves = ves[1..$].expandVersion;
-		ret.versionA = SemVer(ves);
-		ret.versionB = SemVer(bumpIncompatibleVersion(ves) ~ "-0");
+		ret.low = SemVer(ves);
+		ret.high = SemVer(bumpIncompatibleVersion(ves) ~ "-0");
 	} else if (ves[0] == SemVer.BranchPrefix) {
-		ret.inclusiveA = true;
-		ret.inclusiveB = true;
-		ret.versionA = ret.versionB = SemVer(ves);
+		ret.inclusiveLow = true;
+		ret.inclusiveHigh = true;
+		ret.low = ret.high = SemVer(ves);
 	} else if (std.string.indexOf("><=", ves[0]) == -1) {
-		ret.inclusiveA = true;
-		ret.inclusiveB = true;
-		ret.versionA = ret.versionB = SemVer(ves);
+		ret.inclusiveLow = true;
+		ret.inclusiveHigh = true;
+		ret.low = ret.high = SemVer(ves);
 	} else {
 		auto cmpa = skipComp(ves);
 		size_t idx2 = std.string.indexOf(ves, " ");
 		if (idx2 == -1) {
 			if (cmpa == "<=" || cmpa == "<") {
-				ret.versionA = SemVer.MinRelease;
-				ret.inclusiveA = true;
-				ret.versionB = SemVer(ves);
-				ret.inclusiveB = cmpa == "<=";
+				ret.low = SemVer.MinRelease;
+				ret.inclusiveLow = true;
+				ret.high = SemVer(ves);
+				ret.inclusiveHigh = cmpa == "<=";
 			} else if (cmpa == ">=" || cmpa == ">") {
-				ret.versionA = SemVer(ves);
-				ret.inclusiveA = cmpa == ">=";
-				ret.versionB = SemVer.MaxRelease;
-				ret.inclusiveB = true;
+				ret.low = SemVer(ves);
+				ret.inclusiveLow = cmpa == ">=";
+				ret.high = SemVer.MaxRelease;
+				ret.inclusiveHigh = true;
 			} else {
 				// Converts "==" to ">=a&&<=a", which makes merging easier
-				ret.versionA = ret.versionB = SemVer(ves);
-				ret.inclusiveA = ret.inclusiveB = true;
+				ret.low = ret.high = SemVer(ves);
+				ret.inclusiveLow = ret.inclusiveHigh = true;
 			}
 		} else {
 			enforce(cmpa == ">" || cmpa == ">=", "First comparison operator expected to be either > or >=, not "~cmpa);
 			assert(ves[idx2] == ' ');
-			ret.versionA = SemVer(ves[0..idx2]);
-			ret.inclusiveA = cmpa == ">=";
+			ret.low = SemVer(ves[0..idx2]);
+			ret.inclusiveLow = cmpa == ">=";
 			string v2 = ves[idx2+1..$];
 			auto cmpb = skipComp(v2);
 			enforce(cmpb == "<" || cmpb == "<=", "Second comparison operator expected to be either < or <=, not "~cmpb);
-			ret.versionB = SemVer(v2);
-			ret.inclusiveB = cmpb == "<=";
+			ret.high = SemVer(v2);
+			ret.inclusiveHigh = cmpb == "<=";
 
-			enforce(!ret.versionA.isBranch && !ret.versionB.isBranch, format("Cannot compare branches: %s", ves));
-			enforce(ret.versionA <= ret.versionB, "First version must not be greater than the second one.");
+			enforce(!ret.low.isBranch && !ret.high.isBranch, format("Cannot compare branches: %s", ves));
+			enforce(ret.low <= ret.high, "First version must not be greater than the second one.");
 		}
 	}
 
 	return nullable(ret);
 }
 
-private string skipComp(ref string c) {
+private string skipComp(ref string c) pure {
 	import std.ascii : isDigit;
 	size_t idx = 0;
 	while (idx < c.length && !isDigit(c[idx]) && c[idx] != SemVer.BranchPrefix) {
@@ -196,30 +202,30 @@ private string skipComp(ref string c) {
 	}
 }
 
-unittest {
+pure unittest {
 	string tt = ">=1.0.0";
 	auto v = parseVersionSpecifier(tt);
 }
 
-bool isInRange(const(VersionSpecifier) range, const(SemVer) v) {
+bool isInRange(const(VersionSpecifier) range, const(SemVer) v) pure {
 	enforce(!v.isBranch(), format("isInRange v must not be a branch '%s'",
 		v.toString()));
 
-	const int low = compareVersions(v.toString(), range.versionA.toString());
-	const int high = compareVersions(range.versionB.toString(), v.toString());
+	const int low = compareVersions(v.toString(), range.low.toString());
+	const int high = compareVersions(range.high.toString(), v.toString());
 
-	if(low < 0 || (low == 0 && !range.inclusiveA)) {
+	if(low < 0 || (low == 0 && !range.inclusiveLow)) {
 		return false;
 	}
 
-	if(high < 0 || (high == 0 && !range.inclusiveB)) {
+	if(high < 0 || (high == 0 && !range.inclusiveHigh)) {
 		return false;
 	}
 
 	return true;
 }
 
-unittest {
+pure unittest {
 	VersionSpecifier r1 = parseVersionSpecifier("^1.0.0");
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
@@ -236,7 +242,7 @@ unittest {
 	assert(!isInRange(r1, v6));
 }
 
-unittest {
+pure unittest {
 	VersionSpecifier r1 = parseVersionSpecifier("*");
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
@@ -253,7 +259,7 @@ unittest {
 	assert( isInRange(r1, v6));
 }
 
-unittest {
+pure unittest {
 	VersionSpecifier r1 = parseVersionSpecifier("~master");
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
@@ -286,15 +292,17 @@ enum SetRelation {
 	overlapping
 }
 
-SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b) {
-	const BoundRelation lowLow = relation(a.versionA, a.inclusiveA,
-			b.versionA, b.inclusiveA);
-	const BoundRelation lowHigh = relation(a.versionA, a.inclusiveA,
-			b.versionB, b.inclusiveB);
-	const BoundRelation highHigh = relation(a.versionB, a.inclusiveB,
-			b.versionB, b.inclusiveB);
-	const BoundRelation highLow = relation(a.versionB, a.inclusiveB,
-			b.versionA, b.inclusiveA);
+SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
+		pure
+{
+	const BoundRelation lowLow = relation(a.low, a.inclusiveLow,
+			b.low, b.inclusiveLow);
+	const BoundRelation lowHigh = relation(a.low, a.inclusiveLow,
+			b.high, b.inclusiveHigh);
+	const BoundRelation highHigh = relation(a.high, a.inclusiveHigh,
+			b.high, b.inclusiveHigh);
+	const BoundRelation highLow = relation(a.high, a.inclusiveHigh,
+			b.low, b.inclusiveLow);
 
 	// Disjoint
 
@@ -309,6 +317,7 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b) {
 
 	if((lowLow == BoundRelation.equal && highHigh == BoundRelation.less)
 	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.less)
+	|| (lowLow == BoundRelation.equal && highHigh == BoundRelation.equal)
 	|| (lowLow == BoundRelation.more && highHigh == BoundRelation.equal))
 	{
 		// a: | . . . | . .
@@ -318,6 +327,9 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b) {
 		// b: | . . . . | .
 
 		// a: . | . . | . .
+		// b: | . . . | . .
+
+		// a: | . . . | . .
 		// b: | . . . | . .
 		return SetRelation.subset;
 	}
@@ -339,6 +351,48 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b) {
 	assert(false, format("\na:%s\nb:%s", a, b));
 }
 
+unittest {
+	SemVer[] sv =
+		[ SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")
+		, SemVer("4.0.0"), SemVer("5.0.0")
+		];
+
+	bool[] inclusive = [ true, false ];
+
+	VersionSpecifier[] vers;
+	foreach(idx, low; sv[0 .. $ - 1]) {
+		foreach(lowIn; inclusive) {
+			foreach(high; sv[idx + 1 .. $]) {
+				foreach(highIn; inclusive) {
+					VersionSpecifier tmp;
+					tmp.inclusiveLow = lowIn;
+					tmp.low = low;
+					tmp.inclusiveHigh = highIn;
+					tmp.high = high;
+					vers ~= tmp;
+				}
+			}
+		}
+	}
+
+	debug writefln("%(%s\n%)", vers);
+	foreach(adx, verA; vers) {
+		foreach(bdx, verB; vers) {
+			auto rel = relation(verA, verB);
+			if(adx == bdx) {
+				assert(rel == SetRelation.subset, format("%s %s %s", verA, verB,
+					rel));
+			} else if(verA.high < verB.low) {
+				assert(rel == SetRelation.disjoint, format("%s %s %s", verA, verB,
+					rel));
+			} else if(verA.low > verB.high) {
+				assert(rel == SetRelation.disjoint, format("%s %s %s", verA, verB,
+					rel));
+			}
+		}
+	}
+}
+
 ///
 enum BoundRelation {
 	less,
@@ -349,7 +403,7 @@ enum BoundRelation {
 /** Return whether a is less than, equal, or greater than b
 */
 BoundRelation relation(const(SemVer) a, const bool aInclusive,
-		const(SemVer) b, const bool bInclusive)
+		const(SemVer) b, const bool bInclusive) pure
 {
 	import dud.semver.operations : compareVersions;
 	const int cmp = compareVersions(a, b);
@@ -369,7 +423,7 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 		a, aInclusive, b, bInclusive));
 }
 
-unittest {
+pure unittest {
 	SemVer[] sv = [SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")];
 	bool[] b = [true, false];
 

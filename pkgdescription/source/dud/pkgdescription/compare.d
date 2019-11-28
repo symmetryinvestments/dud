@@ -257,7 +257,10 @@ unittest {
 //
 
 bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
-	return a.orig == b.orig;
+	return a.inclusiveLow == b.inclusiveLow
+		&& a.inclusiveHigh == b.inclusiveHigh
+		&& a.low == b.low
+		&& a.high == b.high;
 }
 
 //

@@ -55,8 +55,10 @@ PackageDescription dup(const ref PackageDescription pkg) {
 //
 
 VersionSpecifier dup(const ref VersionSpecifier old) {
-	VersionSpecifier ret = parseVersionSpecifier(old.orig);
-	return ret;
+	return old.orig.empty
+		? VersionSpecifier(old.low, old.inclusiveLow, old.high,
+				old.inclusiveHigh)
+		: parseVersionSpecifier(old.orig);
 }
 
 unittest {
