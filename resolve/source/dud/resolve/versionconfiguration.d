@@ -35,7 +35,7 @@ unittest {
 	auto v1 = VersionConfiguration(VersionSpecifier(a, true, b, true), "");
 	auto v2 = VersionConfiguration(VersionSpecifier(a, true, b, false), "");
 	auto v3 = VersionConfiguration(VersionSpecifier(a, true, c, false), "");
-	auto v4 = VersionConfiguration(VersionSpecifier(b, false, c, false), "");
+	auto v4 = VersionConfiguration(VersionSpecifier(b, true, c, false), "");
 
 	auto r = relation(v1, v2);
 	assert(r == SetRelation.overlapping, format("%s", r));
@@ -44,5 +44,30 @@ unittest {
 	assert(r == SetRelation.subset, format("%s", r));
 
 	r = relation(v2, v4);
+	assert(r == SetRelation.disjoint, format("%s", r));
+
+	r = relation(v1, v4);
+	assert(r == SetRelation.overlapping, format("%s", r));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+	SemVer c = SemVer("3.0.0");
+
+	auto v1 = VersionConfiguration(VersionSpecifier(a, true, b, true), "conf1");
+	auto v2 = VersionConfiguration(VersionSpecifier(a, true, b, false), "");
+	auto v3 = VersionConfiguration(VersionSpecifier(a, true, b, true), "conf2");
+
+	auto r = relation(v1, v2);
+	assert(r == SetRelation.overlapping, format("%s", r));
+
+	r = relation(v1, v1);
+	assert(r == SetRelation.subset, format("%s", r));
+
+	r = relation(v1, v3);
+	assert(r == SetRelation.disjoint, format("%s", r));
+
+	r = relation(v2, v3);
 	assert(r == SetRelation.disjoint, format("%s", r));
 }
