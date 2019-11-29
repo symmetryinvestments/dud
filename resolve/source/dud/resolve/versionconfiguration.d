@@ -1,5 +1,6 @@
 module dud.resolve.versionconfiguration;
 
+import std.stdio;
 import std.array : empty;
 import std.format : format;
 import dud.semver;
@@ -8,6 +9,7 @@ import dud.pkgdescription.versionspecifier;
 @safe:
 
 struct NotConf {
+@safe pure:
 	/// empty means wildcard
 	string conf;
 	/// true means the inverse of the `conf` inverse of `conf.empty`
@@ -301,6 +303,21 @@ unittest {
 	assert(sr == SetRelation.subset, format("%s", sr));
 }
 
+@safe pure unittest {
+	NotConf[] tt;
+	foreach(c1; ["", "conf", "conf2", "conf3"]) {
+		foreach(c2; ["", "!"]) {
+			tt ~= NotConf(c2 ~ c1);
+		}
+	}
+
+	foreach(it; tt) {
+		foreach(jt; tt) {
+			relation(it, jt);
+		}
+	}
+}
+
 struct VersionConfiguration {
 	const VersionSpecifier ver;
 	const NotConf conf;
@@ -312,15 +329,24 @@ if a and b overlap
 SetRelation relation(const(VersionConfiguration) a,
 		const(VersionConfiguration) b) pure
 {
-	/*const SetRelation rel = dud.pkgdescription.versionspecifier
+	const SetRelation ver = dud.pkgdescription.versionspecifier
 		.relation(a.ver, b.ver);
-	const bool conf = a.conf == b.conf || b.conf.empty;
+	const SetRelation conf = relation(a.conf, b.conf);
 
-	return conf
-		? rel
-		: SetRelation.disjoint;
-	*/
-	return SetRelation.disjoint;
+	debug writefln("ver %s, conf %s", ver, conf);
+	if(ver == SetRelation.disjoint || conf == SetRelation.disjoint) {
+		return SetRelation.disjoint;
+	}
+
+	if(ver == SetRelation.overlapping || conf == SetRelation.overlapping) {
+		return SetRelation.overlapping;
+	}
+
+	if(ver == SetRelation.subset && conf == SetRelation.subset) {
+		return SetRelation.subset;
+	}
+
+	assert(false, format("a: %s, b: %s", a, b));
 }
 
 unittest {
@@ -375,7 +401,7 @@ unittest {
 	assert(r == SetRelation.disjoint, format("%s", r));
 
 	r = relation(v2, v3);
-	assert(r == SetRelation.disjoint, format("%s", r));
+	assert(r == SetRelation.overlapping, format("%s", r));
 
 	r = relation(v2, v2);
 	assert(r == SetRelation.subset, format("%s", r));
