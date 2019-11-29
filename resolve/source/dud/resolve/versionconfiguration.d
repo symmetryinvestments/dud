@@ -7,9 +7,14 @@ import dud.pkgdescription.versionspecifier;
 
 @safe:
 
+struct NotConf {
+	string conf;
+	bool isNot;
+}
+
 struct VersionConfiguration {
 	const VersionSpecifier ver;
-	const string conf;
+	const NotConf conf;
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or

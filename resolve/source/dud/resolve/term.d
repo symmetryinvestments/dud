@@ -1,5 +1,7 @@
 module dud.resolve.term;
 
+import std.exception : enforce;
+
 import dud.resolve.versionconfiguration;
 import dud.pkgdescription;
 
@@ -13,13 +15,15 @@ struct Term {
 		if(this.pkg.name != other.pkg.name) {
 			return false;
 		}
+
+		return true;
 	}
 
 	SetRelation relation(ref const(Term) other) const {
 		enforce(this.pkg.name == other.pkg.name);
 
 		const SetRelation sr = dud.resolve.versionconfiguration
-				.relation(this.constraint, other.versionconfiguration);
+				.relation(this.constraint, other.constraint);
 		if(this.isPositive) {
 			if(other.isPositive) {
 				return sr;
@@ -30,6 +34,8 @@ struct Term {
 			} else {
 			}
 		}
+
+		assert(false);
 	}
 }
 

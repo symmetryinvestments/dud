@@ -11,11 +11,16 @@ import dud.semver.operations;
 
 @safe:
 
+enum Inclusive : bool {
+	no = false,
+	yes = true
+}
+
 struct VersionSpecifier {
 @safe pure:
 	string orig;
-	bool inclusiveLow;
-	bool inclusiveHigh;
+	Inclusive inclusiveLow;
+	Inclusive inclusiveHigh;
 	SemVer low;
 	SemVer high;
 
@@ -26,7 +31,7 @@ struct VersionSpecifier {
 		this = snn;
 	}
 
-	this(SemVer verA, bool incA, SemVer verB, bool incB) {
+	this(SemVer verA, Inclusive incA, SemVer verB, Inclusive incB) {
 		this.low = verA;
 		this.inclusiveLow = incA;
 		this.high = verB;
@@ -121,8 +126,8 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 	if (ves.startsWith("~>")) {
 		// Shortcut: "~>x.y.z" variant. Last non-zero number will indicate
 		// the base for this so something like this: ">=x.y.z <x.(y+1).z"
-		ret.inclusiveLow = true;
-		ret.inclusiveHigh = false;
+		ret.inclusiveLow = Inclusive.yes;
+		ret.inclusiveHigh = Inclusive.no;
 		ves = ves[2..$];
 		ret.low = SemVer(expandVersion(ves));
 		ret.high = SemVer(bumpVersion(ves) ~ "-0");
@@ -131,18 +136,18 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 		// if 0.x.y, ==0.x.y
 		// if x.y.z, >=x.y.z <(x+1).0.0-0
 		// ^x.y is equivalent to ^x.y.0.
-		ret.inclusiveLow = true;
-		ret.inclusiveHigh = false;
+		ret.inclusiveLow = Inclusive.yes;
+		ret.inclusiveHigh = Inclusive.no;
 		ves = ves[1..$].expandVersion;
 		ret.low = SemVer(ves);
 		ret.high = SemVer(bumpIncompatibleVersion(ves) ~ "-0");
 	} else if (ves[0] == SemVer.BranchPrefix) {
-		ret.inclusiveLow = true;
-		ret.inclusiveHigh = true;
+		ret.inclusiveLow = Inclusive.yes;
+		ret.inclusiveHigh = Inclusive.yes;
 		ret.low = ret.high = SemVer(ves);
 	} else if (std.string.indexOf("><=", ves[0]) == -1) {
-		ret.inclusiveLow = true;
-		ret.inclusiveHigh = true;
+		ret.inclusiveLow = Inclusive.yes;
+		ret.inclusiveHigh = Inclusive.yes;
 		ret.low = ret.high = SemVer(ves);
 	} else {
 		auto cmpa = skipComp(ves);
@@ -150,18 +155,18 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 		if (idx2 == -1) {
 			if (cmpa == "<=" || cmpa == "<") {
 				ret.low = SemVer.MinRelease;
-				ret.inclusiveLow = true;
+				ret.inclusiveLow = Inclusive.yes;
 				ret.high = SemVer(ves);
-				ret.inclusiveHigh = cmpa == "<=";
+				ret.inclusiveHigh = cast(Inclusive)(cmpa == "<=");
 			} else if (cmpa == ">=" || cmpa == ">") {
 				ret.low = SemVer(ves);
-				ret.inclusiveLow = cmpa == ">=";
+				ret.inclusiveLow = cast(Inclusive)(cmpa == ">=");
 				ret.high = SemVer.MaxRelease;
-				ret.inclusiveHigh = true;
+				ret.inclusiveHigh = Inclusive.yes;
 			} else {
 				// Converts "==" to ">=a&&<=a", which makes merging easier
 				ret.low = ret.high = SemVer(ves);
-				ret.inclusiveLow = ret.inclusiveHigh = true;
+				ret.inclusiveLow = ret.inclusiveHigh = Inclusive.yes;
 			}
 		} else {
 			enforce(cmpa == ">" || cmpa == ">=",
@@ -169,14 +174,14 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 				~ cmpa);
 			assert(ves[idx2] == ' ');
 			ret.low = SemVer(ves[0..idx2]);
-			ret.inclusiveLow = cmpa == ">=";
+			ret.inclusiveLow = cast(Inclusive)(cmpa == ">=");
 			string v2 = ves[idx2+1..$];
 			auto cmpb = skipComp(v2);
 			enforce(cmpb == "<" || cmpb == "<=",
 				"Second comparison operator expected to be either < or <=, not "
 				~ cmpb);
 			ret.high = SemVer(v2);
-			ret.inclusiveHigh = cmpb == "<=";
+			ret.inclusiveHigh = cast(Inclusive)(cmpb == "<=");
 
 			enforce(!ret.low.isBranch && !ret.high.isBranch,
 				format("Cannot compare branches: %s", ves));
@@ -301,13 +306,21 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 		return BoundRelation.less;
 	} else if(cmp > 0) {
 		return BoundRelation.more;
-	} else if(cmp == 0 && aInclusive == true && aInclusive == bInclusive) {
+	} else if(cmp == 0 && aInclusive == Inclusive.yes
+			&& aInclusive == bInclusive)
+	{
 		return BoundRelation.equal;
-	} else if(cmp == 0 && aInclusive == false && aInclusive == bInclusive) {
+	} else if(cmp == 0 && aInclusive == Inclusive.no
+			&& aInclusive == bInclusive)
+	{
 		return onEqualFalseInclusive;
-	} else if(cmp == 0 && aInclusive == false && bInclusive == true) {
+	} else if(cmp == 0 && aInclusive == Inclusive.no
+			&& bInclusive == Inclusive.yes)
+	{
 		return BoundRelation.less;
-	} else if(cmp == 0 && aInclusive == true && bInclusive == false) {
+	} else if(cmp == 0 && aInclusive == Inclusive.yes
+			&& bInclusive == Inclusive.no)
+	{
 		return BoundRelation.more;
 	}
 	assert(false, format(
@@ -318,22 +331,23 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 unittest {
 	SemVer a = SemVer("1.0.0");
 
-	BoundRelation aa = relation(a, true, a, true, BoundRelation.equal);
+	BoundRelation aa = relation(a, Inclusive.yes, a, Inclusive.yes,
+			BoundRelation.equal);
 	assert(aa == BoundRelation.equal, format("%s", aa));
 
-	aa = relation(a, true, a, false, BoundRelation.equal);
+	aa = relation(a, Inclusive.yes, a, Inclusive.no, BoundRelation.equal);
 	assert(aa == BoundRelation.more, format("%s", aa));
 
-	aa = relation(a, false, a, true, BoundRelation.equal);
+	aa = relation(a, Inclusive.no, a, Inclusive.yes, BoundRelation.equal);
 	assert(aa == BoundRelation.less, format("%s", aa));
 
-	aa = relation(a, true, a, true, BoundRelation.equal);
+	aa = relation(a, Inclusive.yes, a, Inclusive.yes, BoundRelation.equal);
 	assert(aa == BoundRelation.equal, format("%s", aa));
 
-	aa = relation(a, false, a, false, BoundRelation.more);
+	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.more);
 	assert(aa == BoundRelation.more, format("%s", aa));
 
-	aa = relation(a, false, a, false, BoundRelation.less);
+	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.less);
 	assert(aa == BoundRelation.less, format("%s", aa));
 }
 
@@ -341,45 +355,45 @@ unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
 
-	BoundRelation ab = relation(a, true, b, true, BoundRelation.equal);
+	BoundRelation ab = relation(a, Inclusive.yes, b, Inclusive.yes, BoundRelation.equal);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, false, b, true, BoundRelation.equal);
+	ab = relation(a, Inclusive.no, b, Inclusive.yes, BoundRelation.equal);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, true, b, false, BoundRelation.equal);
+	ab = relation(a, Inclusive.yes, b, Inclusive.no, BoundRelation.equal);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, false, b, false, BoundRelation.equal);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.equal);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, false, b, false, BoundRelation.more);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.more);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, false, b, false, BoundRelation.less);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(b, true, a, true, BoundRelation.less);
+	ab = relation(b, Inclusive.yes, a, Inclusive.yes, BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, false, a, true, BoundRelation.less);
+	ab = relation(b, Inclusive.no, a, Inclusive.yes, BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, false, a, false, BoundRelation.less);
+	ab = relation(b, Inclusive.no, a, Inclusive.no, BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, true, a, false, BoundRelation.less);
+	ab = relation(b, Inclusive.yes, a, Inclusive.no, BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 }
 
 pure unittest {
 	SemVer[] sv = [SemVer("1.0.0"), SemVer("2.0.0"), SemVer("3.0.0")];
-	bool[] b = [true, false];
+	Inclusive[] b = [Inclusive.yes, Inclusive.no];
 
 	BoundRelation[] brs = [ BoundRelation.more, BoundRelation.less,
 		BoundRelation.equal];
 
-	relation(sv[0], true, sv[0], false, BoundRelation.less);
+	relation(sv[0], Inclusive.yes, sv[0], Inclusive.no, BoundRelation.less);
 	foreach(sa; sv) {
 		foreach(sb; sv) {
 			foreach(ba; b) {
@@ -514,7 +528,7 @@ unittest {
 		, SemVer("4.0.0"), SemVer("5.0.0")
 		];
 
-	bool[] inclusive = [ true, false ];
+	Inclusive[] inclusive  = [Inclusive.yes, Inclusive.no];
 
 	VersionSpecifier[] vers;
 	foreach(idx, low; sv[0 .. $ - 1]) {
@@ -564,8 +578,8 @@ unittest {
 	SemVer b = SemVer("2.0.0");
 	SemVer c = SemVer("3.0.0");
 
-	auto v1 = VersionSpecifier(a, false, b, true);
-	auto v2 = VersionSpecifier(b, true, c, true);
+	auto v1 = VersionSpecifier(a, Inclusive.no, b, Inclusive.yes);
+	auto v2 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
 
 	auto rel = relation(v1, v2);
 	assert(rel == SetRelation.overlapping, format("%s", rel));
@@ -576,10 +590,10 @@ unittest {
 	SemVer b = SemVer("2.0.0");
 	SemVer c = SemVer("3.0.0");
 
-	auto v1 = VersionSpecifier(a, false, b, false);
-	auto v2 = VersionSpecifier(b, false, c, true);
-	auto v3 = VersionSpecifier(b, true, c, true);
-	auto v4 = VersionSpecifier(a, false, b, true);
+	auto v1 = VersionSpecifier(a, Inclusive.no, b, Inclusive.no);
+	auto v2 = VersionSpecifier(b, Inclusive.no, c, Inclusive.yes);
+	auto v3 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
+	auto v4 = VersionSpecifier(a, Inclusive.no, b, Inclusive.yes);
 
 	auto rel = relation(v1, v2);
 	assert(rel == SetRelation.disjoint, format("%s", rel));

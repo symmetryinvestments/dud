@@ -23,18 +23,27 @@ interface PackageProvidier {
 
 struct DumpFileProvidier {
 	// the cache either holds all or non
+	bool isLoaded;
+	const string dumpFileName;
 	PackageDescription[][string] cache;
 	JSONValue[string] parsedPackages;
 
 	this(string dumpFileName) {
+		this.dumpFileName = dumpFileName;
+	}
+
+	private void makeSureIsLoaded() {
 		import std.file : readText;
-		JSONValue dump = parseJSON(readText(dumpFileName));
-		enforce(dump.type == JSONType.array);
-		foreach(value; dump.arrayNoRef()) {
-			enforce(value.type == JSONType.object);
-			enforce("name" in value && value["name"].type == JSONType.string);
-			string name = value["name"].str();
-			this.parsedPackages[name] = value;
+		if(!this.isLoaded) {
+			JSONValue dump = parseJSON(readText(this.dumpFileName));
+			enforce(dump.type == JSONType.array);
+			foreach(value; dump.arrayNoRef()) {
+				enforce(value.type == JSONType.object);
+				enforce("name" in value && value["name"].type == JSONType.string);
+				string name = value["name"].str();
+				this.parsedPackages[name] = value;
+			}
+			this.isLoaded = true;
 		}
 	}
 
@@ -47,6 +56,7 @@ struct DumpFileProvidier {
 	const(PackageDescription)[] getPackages(string name,
 			const(VersionSpecifier) verRange)
 	{
+		this.makeSureIsLoaded();
 		auto pkgs = this.ensurePackageIsInCache(name);
 		return (*pkgs)
 			.filter!(pkg => !pkg.version_.isBranch())
@@ -67,6 +77,7 @@ struct DumpFileProvidier {
 	}
 
 	const(PackageDescription) getPackage(string name, string ver) {
+		this.makeSureIsLoaded();
 		auto pkgs = this.ensurePackageIsInCache(name);
 		auto f = (*pkgs).find!((it, s) => it.version_.m_version == s)(ver);
 		enforce(!f.empty, format("No version '%s' for package '%s' could"
