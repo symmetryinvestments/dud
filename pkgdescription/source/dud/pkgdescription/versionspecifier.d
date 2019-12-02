@@ -31,11 +31,13 @@ struct VersionSpecifier {
 		this = snn;
 	}
 
-	this(SemVer verA, Inclusive incA, SemVer verB, Inclusive incB) {
-		this.low = verA;
-		this.inclusiveLow = incA;
-		this.high = verB;
-		this.inclusiveHigh = incB;
+	this(SemVer low, Inclusive incLow, SemVer high, Inclusive incHigh) {
+		enforce(low <= high, format("low %s must be lower equal to high %s",
+			low, high));
+		this.low = low;
+		this.inclusiveLow = incLow;
+		this.high = high;
+		this.inclusiveHigh = incHigh;
 	}
 
 	bool opEquals(const VersionSpecifier o) const pure @safe {
@@ -435,9 +437,9 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 	const BoundRelation highLow = relation(a.high, a.inclusiveHigh,
 			b.low, b.inclusiveLow, BoundRelation.less);
 
-	/*debug writefln("lowLow %s, lowHigh %s, highLow %s, highHigh %s",
-		lowLow, lowHigh, highLow, highHigh);
-	*/
+	debug writefln("lowLow %s, lowHigh %s, highLow %s, highHigh %s",
+	  lowLow, lowHigh, highLow, highHigh);
+
 
 	// a: | . | . . . . . . . .
 	// b: . . . | . . . | . . .
@@ -589,11 +591,14 @@ unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
 	SemVer c = SemVer("3.0.0");
+	SemVer d = SemVer("99999.0.0");
 
 	auto v1 = VersionSpecifier(a, Inclusive.no, b, Inclusive.no);
 	auto v2 = VersionSpecifier(b, Inclusive.no, c, Inclusive.yes);
 	auto v3 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
 	auto v4 = VersionSpecifier(a, Inclusive.no, b, Inclusive.yes);
+	auto v5 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
+	auto v6 = VersionSpecifier(c, Inclusive.no, d, Inclusive.yes);
 
 	auto rel = relation(v1, v2);
 	assert(rel == SetRelation.disjoint, format("%s", rel));
@@ -603,5 +608,9 @@ unittest {
 
 	rel = relation(v3, v4);
 	assert(rel == SetRelation.overlapping, format("%s", rel));
+
+	writefln("v5: %s\nv6: %s", v5, v6);
+	rel = relation(v5, v6);
+	assert(rel == SetRelation.disjoint, format("%s", rel));
 }
 
