@@ -1,6 +1,7 @@
 module dud.resolve.versionconfiguration;
 
 import std.stdio;
+import std.exception : enforce;
 import std.array : empty;
 import std.format : format;
 import dud.semver;
@@ -318,9 +319,11 @@ unittest {
 	}
 }
 
+/** The algebraic datatype that stores a version range and a configuration
+*/
 struct VersionConfiguration {
-	const VersionSpecifier ver;
-	const NotConf conf;
+	VersionSpecifier ver;
+	NotConf conf;
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
@@ -349,6 +352,7 @@ SetRelation relation(const(VersionConfiguration) a,
 	assert(false, format("a: %s, b: %s", a, b));
 }
 
+/// Ditto
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
@@ -376,6 +380,7 @@ unittest {
 	assert(r == SetRelation.overlapping, format("%s", r));
 }
 
+/// Ditto
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
@@ -408,4 +413,82 @@ unittest {
 
 	r = relation(v3, v3);
 	assert(r == SetRelation.subset, format("%s", r));
+}
+
+/// Ditto
+SetRelation relation(const(VersionConfiguration) a,
+		const(VersionConfiguration)[2] other) pure
+{
+	return relation(a, other[0], other[1]);
+}
+
+/// Ditto
+SetRelation relation(const(VersionConfiguration) a,
+		const(VersionConfiguration) b, const(VersionConfiguration) c) pure
+{
+	const SetRelation ab = relation(a, b);
+	const SetRelation ac = relation(a, c);
+
+	debug {
+		const SetRelation bc = relation(b, c);
+		enforce(bc == SetRelation.disjoint, format(
+			"b %s and c %s must be disjoint", b, c));
+	}
+
+	if(ab == ac) {
+		return ab;
+	}
+
+	if(ab == SetRelation.subset || ac == SetRelation.subset) {
+		return SetRelation.subset;
+	}
+
+	if(ab == SetRelation.overlapping || ac == SetRelation.overlapping) {
+		return SetRelation.overlapping;
+	}
+
+	assert(false, format("\na: %s\nb: %s\nc: %s", a, b, c));
+}
+
+
+VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
+	VersionConfiguration[2] ret;
+	if(vs.ver.low > SemVer("0.0.0")) {
+		VersionConfiguration tmp = VersionConfiguration(
+			VersionSpecifier(SemVer("0.0.0"), Inclusive.yes,
+				vs.ver.low, vs.ver.inclusiveLow ? Inclusive.no : Inclusive.yes),
+			NotConf(vs.conf.conf, !vs.conf.isNot));
+
+		ret[0] = tmp;
+	}
+
+	VersionConfiguration tmp = VersionConfiguration(
+			VersionSpecifier(vs.ver.high,
+				vs.ver.inclusiveHigh ? Inclusive.no : Inclusive.yes,
+				SemVer.MaxRelease, Inclusive.yes),
+			NotConf(vs.conf.conf, !vs.conf.isNot));
+
+	ret[1] = tmp;
+	return ret;
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+	SemVer c = SemVer("3.0.0");
+
+	auto v1 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			NotConf("conf1"));
+	auto v2 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			NotConf(""));
+	auto v3 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			NotConf("conf2"));
+
+	auto notV1 = v1.invert();
+	SetRelation sr = relation(v1, notV1);
+	assert(sr == SetRelation.disjoint, format(
+		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v1, notV1[0], notV1[1]));
 }
