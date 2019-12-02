@@ -417,7 +417,7 @@ unittest {
 
 /// Ditto
 SetRelation relation(const(VersionConfiguration) a,
-		const(VersionConfiguration)[2] other) pure
+		const(VersionConfiguration[2]) other) pure
 {
 	return relation(a, other[0], other[1]);
 }
@@ -457,7 +457,8 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 	VersionConfiguration[2] ret;
 	ret[0] = vs.ver.low > SemVer("0.0.0")
 		? VersionConfiguration(
-			VersionSpecifier(SemVer("0.0.0"), Inclusive.yes,
+			VersionSpecifier(
+				SemVer("0.0.0"), Inclusive.yes,
 				vs.ver.low, vs.ver.inclusiveLow ? Inclusive.no : Inclusive.yes),
 			NotConf(vs.conf.conf, !vs.conf.isNot))
 		: VersionConfiguration(
@@ -466,8 +467,8 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 			NotConf(vs.conf.conf, !vs.conf.isNot));
 
 	VersionConfiguration tmp = VersionConfiguration(
-			VersionSpecifier(vs.ver.high,
-				vs.ver.inclusiveHigh ? Inclusive.no : Inclusive.yes,
+			VersionSpecifier(
+				vs.ver.high, vs.ver.inclusiveHigh ? Inclusive.no : Inclusive.yes,
 				SemVer.MaxRelease, Inclusive.yes),
 			NotConf(vs.conf.conf, !vs.conf.isNot));
 
@@ -476,6 +477,54 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 }
 
 unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+	auto v1 = VersionConfiguration(VersionSpecifier(a, Inclusive.yes, b,
+				Inclusive.yes), NotConf(""));
+
+	VersionConfiguration[2] v1Inv = v1.invert();
+	assert(v1Inv[0].ver.low == SemVer("0.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.high == SemVer("1.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
+	assert(v1Inv[0].conf.isNot == true, format("%s", v1Inv[0]));
+
+	assert(v1Inv[1].ver.low == SemVer("2.0.0"), format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.inclusiveLow == Inclusive.no, format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
+	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[1]));
+}
+
+unittest {
+	SemVer a = SemVer("1.0.0");
+	SemVer b = SemVer("2.0.0");
+	auto v1 = VersionConfiguration(VersionSpecifier(a, Inclusive.yes, b,
+				Inclusive.no), NotConf(""));
+
+	VersionConfiguration[2] v1Inv = v1.invert();
+	assert(v1Inv[0].ver.low == SemVer("0.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.high == SemVer("1.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
+	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[0]));
+
+	assert(v1Inv[1].ver.low == SemVer("2.0.0"), format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
+	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[1]));
+}
+
+unittest {
+	void test(const VersionConfiguration a, const(VersionConfiguration[2]) o,
+			const SetRelation exp)
+	{
+		SetRelation sr = relation(a, o);
+		assert(sr == exp, format(
+			"\nsr: %s\nex: %s\nb: %s\na: %s\nc: %s", sr, exp, o[0], a, o[1]));
+	}
+
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
 	SemVer c = SemVer("3.0.0");
@@ -501,36 +550,22 @@ unittest {
 			NotConf(""));
 
 	auto notV1 = v1.invert();
-	SetRelation sr = relation(v1, notV1);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v1, notV1[0], notV1[1]));
+	test(v1, notV1, SetRelation.disjoint);
 
 	auto notV4 = v4.invert();
-	sr = relation(v4, notV4);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v4, notV4[0], notV4[1]));
+	test(v4, notV4, SetRelation.disjoint);
 
 	auto notV2 = v2.invert();
-	sr = relation(v2, notV2);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v4, notV2[0], notV2[1]));
+	test(v2, notV2, SetRelation.disjoint);
 
 	auto notV3 = v3.invert();
-	sr = relation(v3, notV3);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v3, notV3[0], notV3[1]));
+	test(v3, notV3, SetRelation.disjoint);
 
 	auto notV5 = v5.invert();
-	sr = relation(v5, notV5);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v5, notV5[0], notV5[1]));
+	test(v5, notV5, SetRelation.disjoint);
 
 	auto notV6 = v6.invert();
-	sr = relation(v6, notV6);
-	assert(sr == SetRelation.disjoint, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v6, notV6[0], notV6[1]));
+	test(v6, notV6, SetRelation.disjoint);
 
-	sr = relation(v1, notV4);
-	assert(sr == SetRelation.overlapping, format(
-		"\nsr: %s\na: %s\nb: %s\nc: %s", sr, v1, notV4[0], notV4[1]));
+	test(v1, notV4, SetRelation.overlapping);
 }

@@ -300,7 +300,8 @@ enum BoundRelation {
 */
 BoundRelation relation(const(SemVer) a, const bool aInclusive,
 		const(SemVer) b, const bool bInclusive,
-		const BoundRelation onEqualFalseInclusive) pure
+		const BoundRelation onEqualFalseInclusive,
+		const BoundRelation onEqualTrueInclusive) pure
 {
 	import dud.semver.operations : compareVersions;
 	const int cmp = compareVersions(a, b);
@@ -323,7 +324,7 @@ BoundRelation relation(const(SemVer) a, const bool aInclusive,
 	} else if(cmp == 0 && aInclusive == Inclusive.yes
 			&& bInclusive == Inclusive.no)
 	{
-		return BoundRelation.more;
+		return onEqualTrueInclusive;
 	}
 	assert(false, format(
 		"invalid state a '%s', aInclusive '%s', b '%s', bInclusive '%s'",
@@ -334,22 +335,27 @@ unittest {
 	SemVer a = SemVer("1.0.0");
 
 	BoundRelation aa = relation(a, Inclusive.yes, a, Inclusive.yes,
-			BoundRelation.equal);
+			BoundRelation.equal, BoundRelation.less);
 	assert(aa == BoundRelation.equal, format("%s", aa));
 
-	aa = relation(a, Inclusive.yes, a, Inclusive.no, BoundRelation.equal);
-	assert(aa == BoundRelation.more, format("%s", aa));
-
-	aa = relation(a, Inclusive.no, a, Inclusive.yes, BoundRelation.equal);
+	aa = relation(a, Inclusive.yes, a, Inclusive.no, BoundRelation.equal,
+			BoundRelation.less);
 	assert(aa == BoundRelation.less, format("%s", aa));
 
-	aa = relation(a, Inclusive.yes, a, Inclusive.yes, BoundRelation.equal);
+	aa = relation(a, Inclusive.no, a, Inclusive.yes, BoundRelation.equal,
+			BoundRelation.less);
+	assert(aa == BoundRelation.less, format("%s", aa));
+
+	aa = relation(a, Inclusive.yes, a, Inclusive.yes, BoundRelation.equal,
+			BoundRelation.less);
 	assert(aa == BoundRelation.equal, format("%s", aa));
 
-	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.more);
+	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.more,
+			BoundRelation.less);
 	assert(aa == BoundRelation.more, format("%s", aa));
 
-	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.less);
+	aa = relation(a, Inclusive.no, a, Inclusive.no, BoundRelation.less,
+			BoundRelation.less);
 	assert(aa == BoundRelation.less, format("%s", aa));
 }
 
@@ -357,34 +363,44 @@ unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
 
-	BoundRelation ab = relation(a, Inclusive.yes, b, Inclusive.yes, BoundRelation.equal);
+	BoundRelation ab = relation(a, Inclusive.yes, b, Inclusive.yes,
+			BoundRelation.equal, BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, Inclusive.no, b, Inclusive.yes, BoundRelation.equal);
+	ab = relation(a, Inclusive.no, b, Inclusive.yes, BoundRelation.equal,
+			BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, Inclusive.yes, b, Inclusive.no, BoundRelation.equal);
+	ab = relation(a, Inclusive.yes, b, Inclusive.no, BoundRelation.equal,
+			BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.equal);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.equal,
+			BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.more);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.more,
+			BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.less);
+	ab = relation(a, Inclusive.no, b, Inclusive.no, BoundRelation.less,
+			BoundRelation.less);
 	assert(ab == BoundRelation.less, format("%s", ab));
 
-	ab = relation(b, Inclusive.yes, a, Inclusive.yes, BoundRelation.less);
+	ab = relation(b, Inclusive.yes, a, Inclusive.yes, BoundRelation.less,
+			BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, Inclusive.no, a, Inclusive.yes, BoundRelation.less);
+	ab = relation(b, Inclusive.no, a, Inclusive.yes, BoundRelation.less,
+			BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, Inclusive.no, a, Inclusive.no, BoundRelation.less);
+	ab = relation(b, Inclusive.no, a, Inclusive.no, BoundRelation.less,
+			BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 
-	ab = relation(b, Inclusive.yes, a, Inclusive.no, BoundRelation.less);
+	ab = relation(b, Inclusive.yes, a, Inclusive.no, BoundRelation.less,
+			BoundRelation.less);
 	assert(ab == BoundRelation.more, format("%s", ab));
 }
 
@@ -395,13 +411,16 @@ pure unittest {
 	BoundRelation[] brs = [ BoundRelation.more, BoundRelation.less,
 		BoundRelation.equal];
 
-	relation(sv[0], Inclusive.yes, sv[0], Inclusive.no, BoundRelation.less);
+	relation(sv[0], Inclusive.yes, sv[0], Inclusive.no, BoundRelation.less,
+			BoundRelation.equal);
 	foreach(sa; sv) {
 		foreach(sb; sv) {
 			foreach(ba; b) {
 				foreach(bb; b) {
 					foreach(br; brs) {
-						relation(sa, ba, sb, bb, br);
+						foreach(bl; brs) {
+							relation(sa, ba, sb, bb, br, bl);
+						}
 					}
 				}
 			}
@@ -428,17 +447,26 @@ enum SetRelation {
 SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 		pure
 {
-	const BoundRelation lowLow = relation(a.low, a.inclusiveLow,
-			b.low, b.inclusiveLow, BoundRelation.equal);
-	const BoundRelation lowHigh = relation(a.low, a.inclusiveLow,
-			b.high, b.inclusiveHigh, BoundRelation.more);
-	const BoundRelation highHigh = relation(a.high, a.inclusiveHigh,
-			b.high, b.inclusiveHigh, BoundRelation.equal);
-	const BoundRelation highLow = relation(a.high, a.inclusiveHigh,
-			b.low, b.inclusiveLow, BoundRelation.less);
+	const BoundRelation lowLow = relation(
+			a.low, a.inclusiveLow,
+			b.low, b.inclusiveLow,
+			BoundRelation.equal, BoundRelation.less);
+	const BoundRelation lowHigh = relation(
+			a.low, a.inclusiveLow,
+			b.high, b.inclusiveHigh,
+			BoundRelation.more, BoundRelation.less);
+	const BoundRelation highHigh = relation(
+			a.high, a.inclusiveHigh,
+			b.high, b.inclusiveHigh,
+			BoundRelation.equal, BoundRelation.more);
+	const BoundRelation highLow = relation(
+			a.high, a.inclusiveHigh,
+			b.low, b.inclusiveLow,
+			BoundRelation.less, BoundRelation.less);
 
-	debug writefln("lowLow %s, lowHigh %s, highLow %s, highHigh %s",
-	  lowLow, lowHigh, highLow, highHigh);
+	debug writefln(
+			"a: %s, b: %s, lowLow %s, lowHigh %s, highLow %s, highHigh %s",
+			a, b, lowLow, lowHigh, highLow, highHigh);
 
 
 	// a: | . | . . . . . . . .
