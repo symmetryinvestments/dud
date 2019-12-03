@@ -429,11 +429,11 @@ SetRelation relation(const(VersionConfiguration) a,
 	const SetRelation ab = relation(a, b);
 	const SetRelation ac = relation(a, c);
 
-	debug {
-		const SetRelation bc = relation(b, c);
-		enforce(bc == SetRelation.disjoint, format(
-			"\nb: %s\nc: %s must be disjoint", b, c));
-	}
+	//debug {
+	//	const SetRelation bc = relation(b, c);
+	//	enforce(bc == SetRelation.disjoint, format(
+	//		"\nb: %s\nc: %s must be disjoint", b, c));
+	//}
 
 	debug writefln("ab %s, ac %s", ab, ac);
 

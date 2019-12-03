@@ -446,6 +446,10 @@ enum SetRelation {
 
 SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 		pure
+out(sr) {
+	debug writeln("relation(VersionSpecifier) ", sr);
+}
+body
 {
 	const BoundRelation lowLow = relation(
 			a.low, a.inclusiveLow,
@@ -465,91 +469,116 @@ SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 			BoundRelation.less, BoundRelation.less);
 
 	debug writefln(
-			"a: %s, b: %s, lowLow %s, lowHigh %s, highLow %s, highHigh %s",
+			"a: %s, b: %s,\n\t lowLow %s, lowHigh %s, highLow %s, highHigh %s",
 			a, b, lowLow, lowHigh, highLow, highHigh);
 
 
 	// a: | . | . . . . . . . .
 	// b: . . . | . . . | . . .
 	if(highLow == BoundRelation.less) {
+		debug writeln(__LINE__);
 		return SetRelation.disjoint;
 	}
 
 	// a: . . . . . . . . | . |
 	// b: . . . | . . . | . . .
 	if(lowHigh == BoundRelation.more) {
+		debug writeln(__LINE__);
 		return SetRelation.disjoint;
 	}
 
 	// a: . . . | . . . | . . .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.equal) {
+		debug writeln(__LINE__);
 		return SetRelation.subset;
 	}
 
 	// a: . . . . | . . | . . .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.more && highHigh == BoundRelation.equal) {
+		debug writeln(__LINE__);
 		return SetRelation.subset;
 	}
 
 	// a: . . . | . . | . . . .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.less) {
+		debug writeln(__LINE__);
 		return SetRelation.subset;
 	}
 
 	// a: . . . . | . | . . . .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.more && highHigh == BoundRelation.less) {
+		debug writeln(__LINE__);
 		return SetRelation.subset;
 	}
 
 	// a: . | . | . . . . . . .
 	// b: . . . | . . . | . . .
 	if(highLow == BoundRelation.equal) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . . . . . . . | . | .
 	// b: . . . | . . . | . . .
 	if(lowHigh == BoundRelation.equal) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . . . . . | . . . | .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.more && lowHigh == BoundRelation.less) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . | . . . | . . . . .
 	// b: . . . | . . . | . . .
 	if(highLow == BoundRelation.more && highHigh == BoundRelation.less) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . | . . . . . | . . .
 	// b: . . . | . . . | . . .
 	if(lowLow == BoundRelation.less && highHigh == BoundRelation.equal) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . . . | . . . | . . .
 	// b: . . . | . . | . . . .
 	if(lowLow == BoundRelation.equal && highHigh == BoundRelation.more) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	// a: . . | . . . . | . . .
 	// b: . . . | . . | . . . .
 	if(lowLow == BoundRelation.less && highHigh == BoundRelation.more) {
+		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	assert(false, format(
 		"\na:%s\nb:%s\nlowLow:%s\nlowHigh:%s\nhighLow:%s\nhighHigh:%s", a, b,
 		lowLow, lowHigh, highLow, highHigh));
+}
+
+unittest {
+	auto a = SemVer("0.0.0");
+	auto b = SemVer("1.0.0");
+	auto c = SemVer("2.0.0");
+
+	auto v1 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.no);
+	auto v2 = VersionSpecifier(a, Inclusive.yes, b, Inclusive.no);
+
+	SetRelation sr = relation(v1, v2);
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 }
 
 unittest {
