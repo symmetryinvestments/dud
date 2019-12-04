@@ -336,7 +336,7 @@ SetRelation relation(const(VersionConfiguration) a,
 		.relation(a.ver, b.ver);
 	const SetRelation conf = relation(a.conf, b.conf);
 
-	debug writefln("ver %s, conf %s", ver, conf);
+	//debug writefln("ver %s, conf %s", ver, conf);
 	if(ver == SetRelation.disjoint || conf == SetRelation.disjoint) {
 		return SetRelation.disjoint;
 	}
@@ -435,7 +435,7 @@ SetRelation relation(const(VersionConfiguration) a,
 	//		"\nb: %s\nc: %s must be disjoint", b, c));
 	//}
 
-	debug writefln("ab %s, ac %s", ab, ac);
+	//debug writefln("ab %s, ac %s", ab, ac);
 
 	if(ab == ac) {
 		return ab;
@@ -594,6 +594,7 @@ unittest {
 	auto v3 = VersionConfiguration(
 			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
 			NotConf(""));
+	test(v3, notV1, SetRelation.overlapping);
 
 	auto v4 = VersionConfiguration(
 			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
@@ -618,4 +619,43 @@ unittest {
 			NotConf("!conf1"));
 
 	test(v7, notV1, SetRelation.disjoint);
+}
+
+unittest {
+	SemVer a = SemVer("0.0.0");
+	SemVer b = SemVer("1.0.0");
+	SemVer c = SemVer("2.0.0");
+	SemVer d = SemVer("3.0.0");
+	SemVer e = SemVer("4.0.0");
+
+	auto sms = [a, b, c, d, e];
+	auto confs = ["", "!", "conf1", "conf2", "!conf1", "!conf2"];
+	auto incs = [Inclusive.no, Inclusive.yes];
+
+	VersionConfiguration[] verConfs;
+	foreach(idx, sm0; sms[0 .. $ - 1]) {
+		foreach(sm1; sms[idx .. idx + 1]) {
+			foreach(conf; confs) {
+				foreach(inc0; incs) {
+					foreach(inc1; incs) {
+						verConfs ~= VersionConfiguration(
+								VersionSpecifier(sm0, inc0, sm1, inc1),
+								NotConf(conf)
+							);
+					}
+				}
+			}
+		}
+	}
+
+	foreach(ver0; verConfs) {
+		foreach(ver1; verConfs) {
+			relation(ver0, ver1);
+		}
+
+		auto notVer0 = ver0.invert();
+		foreach(ver1; verConfs) {
+			relation(ver1, notVer0);
+		}
+	}
 }
