@@ -476,6 +476,8 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 	return ret;
 }
 
+__EOF__
+
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
