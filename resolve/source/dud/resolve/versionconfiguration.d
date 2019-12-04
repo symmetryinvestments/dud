@@ -476,8 +476,6 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 	return ret;
 }
 
-__EOF__
-
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
@@ -569,5 +567,5 @@ unittest {
 	auto notV6 = v6.invert();
 	test(v6, notV6, SetRelation.disjoint);
 
-	test(v1, notV4, SetRelation.overlapping);
+	test(v1, notV4, SetRelation.disjoint);
 }
