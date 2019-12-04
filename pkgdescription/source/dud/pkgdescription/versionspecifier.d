@@ -422,10 +422,6 @@ enum SetRelation {
 
 SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
 		pure
-out(sr) {
-	debug writeln("relation(VersionSpecifier) ", sr);
-}
-body
 {
 	const BoundRelation lowLow = relation(
 			a.low, a.inclusiveLow,
@@ -440,9 +436,9 @@ body
 			a.high, a.inclusiveHigh,
 			b.low, b.inclusiveLow);
 
-	debug writefln(
-		"\na: %s\nb: %s\n\tlowLow %s\n\tlowHigh %s\n\thighLow %s\n\thighHigh %s",
-		a, b, lowLow, lowHigh, highLow, highHigh);
+	//debug writefln(
+	//	"\na: %s\nb: %s\n\tlowLow %s\n\tlowHigh %s\n\thighLow %s\n\thighHigh %s",
+	//	a, b, lowLow, lowHigh, highLow, highHigh);
 
 
 	// a: | . | . . . . . . . .
@@ -457,7 +453,6 @@ body
 			|| (highLow == BoundRelation.unequal
 				&& (!a.inclusiveHigh || !b.inclusiveLow)))
 	{
-		debug writeln(__LINE__);
 		return SetRelation.disjoint;
 	}
 
@@ -473,7 +468,6 @@ body
 			|| (lowHigh == BoundRelation.unequal
 				&& (!a.inclusiveLow || !b.inclusiveHigh)))
 	{
-		debug writeln(__LINE__);
 		return SetRelation.disjoint;
 	}
 
@@ -500,7 +494,6 @@ body
 		)
 	)
 	{
-		debug writeln(__LINE__);
 		return SetRelation.subset;
 	}
 
@@ -512,7 +505,6 @@ body
 	if(lowHigh == BoundRelation.equal
 			|| highLow == BoundRelation.equal)
 	{
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
@@ -530,7 +522,6 @@ body
 				)
 		)
 	{
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
@@ -551,17 +542,14 @@ body
 					&& !b.inclusiveLow))
 		)
 	{
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	if(lowLow == BoundRelation.less && highLow != BoundRelation.less) {
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
 	if(highHigh == BoundRelation.more && lowHigh != BoundRelation.more) {
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
@@ -574,7 +562,6 @@ body
 			)
 	)
 	{
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 
@@ -582,7 +569,6 @@ body
 			&& ((a.inclusiveLow && !b.inclusiveLow)
 				|| (a.inclusiveHigh && !b.inclusiveHigh)))
 	{
-		debug writeln(__LINE__);
 		return SetRelation.overlapping;
 	}
 

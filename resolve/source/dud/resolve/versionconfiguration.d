@@ -516,56 +516,106 @@ unittest {
 	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[1]));
 }
 
-unittest {
-	void test(const VersionConfiguration a, const(VersionConfiguration[2]) o,
-			const SetRelation exp)
-	{
-		SetRelation sr = relation(a, o);
-		assert(sr == exp, format(
-			"\nsr: %s\nex: %s\nb: %s\na: %s\nc: %s", sr, exp, o[0], a, o[1]));
-	}
+private void test(const VersionConfiguration a,
+		const(VersionConfiguration[2]) o, const SetRelation exp)
+{
+	SetRelation sr = relation(a, o);
+	assert(sr == exp, format(
+		"\ngot: %s\nexp: %s\na: %s\nb: %s\nc: %s", sr, exp, a, o[0], o[1]));
+}
 
-	SemVer a = SemVer("1.0.0");
-	SemVer b = SemVer("2.0.0");
-	SemVer c = SemVer("3.0.0");
-	SemVer d = SemVer("0.0.0");
+unittest {
+	SemVer a = SemVer("0.0.0");
+	SemVer b = SemVer("1.0.0");
+	SemVer c = SemVer("2.0.0");
+	SemVer d = SemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
-			NotConf("conf1"));
-	auto v2 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
-			NotConf(""));
-	auto v3 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
-			NotConf("conf2"));
-	auto v4 = VersionConfiguration(
-			VersionSpecifier(d, Inclusive.yes, a, Inclusive.yes),
-			NotConf("conf1"));
-	auto v5 = VersionConfiguration(
-			VersionSpecifier(d, Inclusive.yes, c, Inclusive.yes),
-			NotConf("conf1"));
-	auto v6 = VersionConfiguration(
-			VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes),
+			VersionSpecifier(b, Inclusive.yes, c, Inclusive.no),
 			NotConf(""));
 
 	auto notV1 = v1.invert();
 	test(v1, notV1, SetRelation.disjoint);
 
-	auto notV4 = v4.invert();
-	test(v4, notV4, SetRelation.disjoint);
+	auto v2 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			NotConf(""));
+	test(v2, notV1, SetRelation.overlapping);
 
-	auto notV2 = v2.invert();
-	test(v2, notV2, SetRelation.disjoint);
+	auto v3 = VersionConfiguration(
+			VersionSpecifier(c, Inclusive.yes, d, Inclusive.yes),
+			NotConf(""));
+	test(v3, notV1, SetRelation.subset);
+}
 
-	auto notV3 = v3.invert();
-	test(v3, notV3, SetRelation.disjoint);
+unittest {
+	SemVer a = SemVer("0.0.0");
+	SemVer b = SemVer("1.0.0");
+	SemVer c = SemVer("2.0.0");
+	SemVer d = SemVer("3.0.0");
+	SemVer e = SemVer("4.0.0");
 
-	auto notV5 = v5.invert();
-	test(v5, notV5, SetRelation.disjoint);
+	auto v1 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			NotConf("conf1"));
 
-	auto notV6 = v6.invert();
-	test(v6, notV6, SetRelation.disjoint);
+	auto notV1 = v1.invert();
+	test(v1, notV1, SetRelation.disjoint);
 
-	test(v1, notV4, SetRelation.disjoint);
+	foreach(end; [c, d, e]) {
+		auto v2 = VersionConfiguration(
+				VersionSpecifier(b, Inclusive.yes, end, Inclusive.yes),
+				NotConf(""));
+
+		test(v2, notV1, SetRelation.overlapping);
+	}
+}
+
+unittest {
+	SemVer a = SemVer("0.0.0");
+	SemVer b = SemVer("1.0.0");
+	SemVer c = SemVer("2.0.0");
+	SemVer d = SemVer("3.0.0");
+	SemVer e = SemVer("4.0.0");
+
+	auto v1 = VersionConfiguration(
+			VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes),
+			NotConf("conf1"));
+
+	auto notV1 = v1.invert();
+	test(v1, notV1, SetRelation.disjoint);
+
+	auto v2 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			NotConf(""));
+
+	test(v2, notV1, SetRelation.overlapping);
+
+	auto v3 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			NotConf(""));
+
+	auto v4 = VersionConfiguration(
+			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			NotConf("!conf1"));
+
+	test(v4, notV1, SetRelation.subset);
+
+	auto v5 = VersionConfiguration(
+			VersionSpecifier(d, Inclusive.no, e, Inclusive.no),
+			NotConf(""));
+
+	test(v5, notV1, SetRelation.overlapping);
+
+	auto v6 = VersionConfiguration(
+			VersionSpecifier(d, Inclusive.no, e, Inclusive.no),
+			NotConf("!conf1"));
+
+	test(v6, notV1, SetRelation.subset);
+
+	auto v7 = VersionConfiguration(
+			VersionSpecifier(b, Inclusive.no, c, Inclusive.no),
+			NotConf("!conf1"));
+
+	test(v7, notV1, SetRelation.disjoint);
 }
