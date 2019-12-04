@@ -1,5 +1,6 @@
 module dud.resolve.versionconfiguration;
 
+import std.array : empty;
 import std.stdio;
 import std.exception : enforce;
 import std.array : empty;
@@ -650,7 +651,12 @@ unittest {
 
 	foreach(ver0; verConfs) {
 		foreach(ver1; verConfs) {
-			relation(ver0, ver1);
+			auto sr = relation(ver0, ver1);
+			if(!ver1.conf.conf.empty && ver0.conf != ver1.conf) {
+				assert(sr == SetRelation.disjoint
+						|| sr == SetRelation.overlapping,
+					format("\ngot: %s\nver0: %s\nver1: %s", sr, ver0, ver1));
+			}
 		}
 
 		auto notVer0 = ver0.invert();
