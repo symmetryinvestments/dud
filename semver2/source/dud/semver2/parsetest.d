@@ -7,6 +7,7 @@ import std.format : format;
 
 import dud.semver2.parse;
 import dud.semver2.semver;
+import dud.semver2.exception;
 
 struct StrSV {
 	string str;
@@ -50,4 +51,10 @@ unittest {
 			format("An exception was thrown while parsing '%s'", test.str));
 		assert(sv == test.sv, format("\ngot: %s\nexp: %s", sv, test.sv));
 	}
+}
+
+unittest {
+	assertThrown!InvalidSeperator(parseSemVer("Hello World"));
+	assertThrown!OnlyDigitAllowed(parseSemVer("Hello World."));
+	assertThrown!NonAsciiChar(parseSemVer("1.2.3+ßßßßääü"));
 }
