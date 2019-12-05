@@ -1,7 +1,5 @@
 module dud.semver2.parse;
 
-import dud.semver2.semver;
-
 import std.array : array, back, empty, front, popFront;
 import std.algorithm.searching : all, countUntil;
 import std.algorithm.iteration : map, splitter;
@@ -11,7 +9,10 @@ import std.exception : enforce;
 import std.ascii : isDigit;
 import std.utf : byChar, byUTF;
 
-@safe:
+import dud.semver2.semver;
+import dud.semver2.exception;
+
+@safe pure:
 
 SemVer parseSemVer(string input) {
 	SemVer ret;
@@ -29,7 +30,7 @@ SemVer parseSemVer(string input) {
 			.array;
 	}
 	if(!inputRange.empty) {
-		enforce(inputRange[0] == '+',
+		enforce!InvalidSeperator(inputRange[0] == '+',
 			format("Expected a '+' got '%s'", inputRange[0]));
 		inputRange.popFront();
 		ret.buildIdentifier =
@@ -38,7 +39,7 @@ SemVer parseSemVer(string input) {
 			.map!(it => to!string(it))
 			.array;
 	}
-	enforce(inputRange.empty,
+	enforce!InputNotEmpty(inputRange.empty,
 		format("Surprisingly input '%s' left", inputRange));
 	return ret;
 }
@@ -46,7 +47,7 @@ SemVer parseSemVer(string input) {
 char[] checkASCII(char[] cs) {
 	import std.ascii : isAlpha;
 	foreach(it; cs.byUTF!char()) {
-		enforce(isDigit(it) || isAlpha(it) || it == '-', format(
+		enforce!NonAsciiChar(isDigit(it) || isAlpha(it) || it == '-', format(
 			"Non ASCII character '%s' surprisingly found input '%s'",
 			it, cs
 		));
@@ -55,7 +56,7 @@ char[] checkASCII(char[] cs) {
 }
 
 uint toNum(string numName, char[] input) {
-	enforce(all!isDigit(input),
+	enforce!OnlyDigitAllowed(all!isDigit(input),
 		format("%s range must solely consist of digits not '%s'",
 			numName, input));
 	return to!uint(input);
@@ -65,16 +66,18 @@ uint splitOutNumber(alias pred)(const string numName, const string dotName,
 		ref char[] input)
 {
 	const ptrdiff_t dot = input.byUTF!char().countUntil!pred();
-	enforce(dot != -1,
+	enforce!InvalidSeperator(dot != -1,
 		format("Couldn't find the %s dot in '%s'", dotName, input));
 	char[] num = input[0 .. dot];
 	const uint ret = toNum(numName, num);
-	enforce(input.length > dot + 1,
+	enforce!EmptyInput(input.length > dot + 1,
 		format("Input '%s' ended surprisingly after %s version",
 			input, numName));
 	input = input[dot + 1 .. $];
 	return ret;
 }
+
+@nogc nothrow:
 
 char[] dropUntilPredOrEmpty(alias pred)(ref char[] input) {
 	size_t pos;
