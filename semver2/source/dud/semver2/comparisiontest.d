@@ -88,3 +88,38 @@ unittest {
 	assert(compare(s1, s2) == 1);
 	assert(compare(s2, s1) == -1);
 }
+
+unittest {
+	auto s1 = SemVer(1,0,0,["rc", "1"], []);
+	auto s2 = SemVer(1,0,0,["rc", "2"], []);
+	auto s3 = SemVer(1,0,0,[], []);
+
+	assert(compare(s1, s1) == 0);
+	assert(compare(s2, s2) == 0);
+	assert(compare(s3, s3) == 0);
+
+	assert(compare(s1, s2) == -1);
+	assert(compare(s1, s3) == -1);
+	assert(compare(s2, s3) == -1);
+
+	assert(compare(s3, s1) == 1);
+	assert(compare(s3, s2) == 1);
+}
+
+unittest {
+	auto s1 = SemVer(1,0,0,["beta", "0"], []);
+	auto s2 = SemVer(1,0,0,["beta", "1"], []);
+	auto s3 = SemVer(1,0,0,["rc", "1"], []);
+	auto s4 = SemVer(1,0,0,["rc", "2"], []);
+	auto s5 = SemVer(1,0,0,[], []);
+
+	assert(compare(s1, s2) == -1);
+	assert(compare(s2, s3) == -1);
+	assert(compare(s3, s4) == -1);
+	assert(compare(s4, s5) == -1);
+
+	assert(compare(s1, s5) == -1);
+	assert(compare(s2, s5) == -1);
+	assert(compare(s3, s5) == -1);
+	assert(compare(s4, s5) == -1);
+}
