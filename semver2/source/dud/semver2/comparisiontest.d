@@ -78,3 +78,13 @@ unittest {
 	assert(compare(s1, s2) == 1);
 	assert(compare(s2, s1) == -1);
 }
+
+unittest {
+	auto s1 = SemVer(1,0,0,["foo", "baz"], []);
+	auto s2 = SemVer(1,0,0,["foo", "bar"], []);
+
+	assert(compare(s1, s1) == 0);
+	assert(compare(s2, s2) == 0);
+	assert(compare(s1, s2) == 1);
+	assert(compare(s2, s1) == -1);
+}
