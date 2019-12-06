@@ -150,10 +150,17 @@ unittest {
 		}
 	}
 
-	foreach(sv1; semvers) {
-		foreach(sv2; semvers) {
+	foreach(idx, sv1; semvers) {
+		foreach(jdx, sv2; semvers) {
 			int c = sv1 < sv2;
 			bool e = sv1 == sv2;
+			bool ne = sv1 != sv2;
+
+			if(idx == jdx) {
+				assert(c == 0);
+				assert(e);
+				assert(!ne);
+			}
 		}
 	}
 }
