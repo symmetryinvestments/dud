@@ -6,10 +6,10 @@ import std.algorithm.iteration : map, splitter;
 import std.conv : to;
 import std.format : format;
 import std.exception : enforce;
-import std.ascii : isDigit;
 import std.utf : byChar, byUTF;
 
 import dud.semver2.semver;
+import dud.semver2.helper : isDigit;
 import dud.semver2.exception;
 
 @safe pure:
@@ -25,6 +25,7 @@ SemVer parseSemVer(string input) {
 	if(!inputRange.empty && inputRange[0].isMinus()) {
 		inputRange.popFront();
 		ret.preRelease = splitter(dropUntilPredOrEmpty!isPlus(inputRange), '.')
+			.map!(it => checkNotEmpty(it))
 			.map!(it => checkASCII(it))
 			.map!(it => to!string(it))
 			.array;
@@ -35,6 +36,7 @@ SemVer parseSemVer(string input) {
 		inputRange.popFront();
 		ret.buildIdentifier =
 			splitter(dropUntilPredOrEmpty!isFalse(inputRange), '.')
+			.map!(it => checkNotEmpty(it))
 			.map!(it => checkASCII(it))
 			.map!(it => to!string(it))
 			.array;
@@ -42,6 +44,12 @@ SemVer parseSemVer(string input) {
 	enforce!InputNotEmpty(inputRange.empty,
 		format("Surprisingly input '%s' left", inputRange));
 	return ret;
+}
+
+char[] checkNotEmpty(char[] cs) {
+	enforce!EmptyIdentifier(!cs.empty,
+		"Build or prerelease identifier must not be empty");
+	return cs;
 }
 
 char[] checkASCII(char[] cs) {
@@ -56,7 +64,7 @@ char[] checkASCII(char[] cs) {
 }
 
 uint toNum(string numName, char[] input) {
-	enforce!OnlyDigitAllowed(all!isDigit(input),
+	enforce!OnlyDigitAllowed(all!(isDigit)(input.byUTF!char()),
 		format("%s range must solely consist of digits not '%s'",
 			numName, input));
 	return to!uint(input);

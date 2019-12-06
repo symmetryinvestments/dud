@@ -26,3 +26,7 @@ class InvalidSeperator : SemVerParseException {
 class InputNotEmpty : SemVerParseException {
 	mixin basicExceptionCtors;
 }
+
+class EmptyIdentifier : SemVerParseException {
+	mixin basicExceptionCtors;
+}

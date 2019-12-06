@@ -56,5 +56,10 @@ unittest {
 unittest {
 	assertThrown!InvalidSeperator(parseSemVer("Hello World"));
 	assertThrown!OnlyDigitAllowed(parseSemVer("Hello World."));
+	assertThrown!OnlyDigitAllowed(parseSemVer("1.2.332a"));
 	assertThrown!NonAsciiChar(parseSemVer("1.2.3+ßßßßääü"));
+	assertThrown!EmptyInput(parseSemVer("1.2."));
+	assertThrown!EmptyInput(parseSemVer("1."));
+	assertThrown!EmptyIdentifier(parseSemVer("2.0.1-alpha.1227.."));
+	assertThrown!EmptyIdentifier(parseSemVer("2.0.1+alpha.1227.."));
 }
