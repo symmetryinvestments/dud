@@ -1,13 +1,10 @@
 module dud.semver2.comparisontest;
 
 @safe pure private:
-import std.exception : assertThrown, assertNotThrown;
-import std.stdio;
 import std.format : format;
 
 import dud.semver2.parse;
 import dud.semver2.semver;
-import dud.semver2.exception;
 import  dud.semver2.comparision;
 
 unittest {
