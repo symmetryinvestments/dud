@@ -8,7 +8,7 @@ import dud.semver2.exception;
 
 @safe pure:
 
-int compare(const(SemVer) a, const(SemVer) b) {
+int compare(const(SemVer) a, const(SemVer) b) nothrow {
 	if(a.major != b.major) {
 		return a.major < b.major ? -1 : 1;
 	}
@@ -62,8 +62,6 @@ Nullable!uint isAllNum(string s) nothrow {
 	if(allNum) {
 		try {
 			return nullable(to!uint(s));
-		} catch(ConvException ce) {
-			return Nullable!(uint).init;
 		} catch(Exception e) {
 			assert(false, s);
 		}

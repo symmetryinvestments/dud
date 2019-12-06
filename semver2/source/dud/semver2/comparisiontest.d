@@ -47,6 +47,10 @@ unittest {
 	assert(compare(s2, s2) == 0);
 	assert(compare(s1, s2) == -1);
 	assert(compare(s2, s1) == 1);
+
+	assert(s1 == s1);
+	assert(s1 < s2);
+	assert(s2 > s1);
 }
 
 unittest {
@@ -122,4 +126,34 @@ unittest {
 	assert(compare(s2, s5) == -1);
 	assert(compare(s3, s5) == -1);
 	assert(compare(s4, s5) == -1);
+}
+
+unittest {
+	string[][] prs = [
+		[], ["foo"], ["1", "2"], ["1", "foo"], ["1", "baz"], ["1", "3"]
+	];
+
+	string[][] bs = [
+		[], ["somehash"], ["somehash", "morehash", "dmd"]
+	];
+
+	SemVer[] semvers;
+	foreach(mj; 0 .. 3) {
+		foreach(mi; 0 .. 3) {
+			foreach(p; 0 .. 3) {
+				foreach(pr; prs) {
+					foreach(b; bs) {
+						semvers ~= SemVer(mj, mi, p, pr, b);
+					}
+				}
+			}
+		}
+	}
+
+	foreach(sv1; semvers) {
+		foreach(sv2; semvers) {
+			int c = sv1 < sv2;
+			bool e = sv1 == sv2;
+		}
+	}
 }
