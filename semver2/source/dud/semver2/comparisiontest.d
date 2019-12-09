@@ -5,7 +5,7 @@ import std.format : format;
 
 import dud.semver2.parse;
 import dud.semver2.semver;
-import  dud.semver2.comparision;
+import dud.semver2.comparision;
 
 unittest {
 	auto s1 = SemVer(0,0,1);
