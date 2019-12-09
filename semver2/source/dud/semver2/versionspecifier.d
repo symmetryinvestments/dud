@@ -110,12 +110,12 @@ pure unittest {
 	comparators.
 */
 Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
-	static import std.string;
+	import std.string;
 	import std.algorithm.searching : startsWith;
 	import std.format : format;
 
 	enforce(ves.length > 0, "Can not process empty version specifier");
-	string orig = ves;
+	const string orig = ves;
 
 	VersionSpecifier ret;
 	ret.branch = orig;
@@ -151,13 +151,13 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 		ret.inclusiveLow = Inclusive.yes;
 		ret.inclusiveHigh = Inclusive.yes;
 		ret.branch = ves;
-	} else if (std.string.indexOf("><=", ves[0]) == -1) {
+	} else if (indexOf("><=", ves[0]) == -1) {
 		ret.inclusiveLow = Inclusive.yes;
 		ret.inclusiveHigh = Inclusive.yes;
 		ret.low = ret.high = parseSemVer(ves);
 	} else {
 		auto cmpa = skipComp(ves);
-		size_t idx2 = std.string.indexOf(ves, " ");
+		size_t idx2 = indexOf(ves, " ");
 		if (idx2 == -1) {
 			if (cmpa == "<=" || cmpa == "<") {
 				ret.low = SemVer.MinRelease.dup;
@@ -930,5 +930,3 @@ unittest {
 	rel = relation(v5, v6);
 	assert(rel == SetRelation.disjoint, format("%s", rel));
 }
-
-
