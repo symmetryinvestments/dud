@@ -20,7 +20,7 @@ enum Inclusive : bool {
 
 struct VersionSpecifier {
 @safe pure:
-	string orig;
+	string branch;
 	Inclusive inclusiveLow;
 	Inclusive inclusiveHigh;
 	SemVer low;
@@ -118,7 +118,7 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 	string orig = ves;
 
 	VersionSpecifier ret;
-	ret.orig = orig;
+	ret.branch = orig;
 
 	if(orig.empty) {
 		return Nullable!(VersionSpecifier).init;
@@ -150,7 +150,7 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 	} else if (ves[0] == '~') {
 		ret.inclusiveLow = Inclusive.yes;
 		ret.inclusiveHigh = Inclusive.yes;
-		ret.low = ret.high = parseSemVer(ves);
+		ret.branch = ves;
 	} else if (std.string.indexOf("><=", ves[0]) == -1) {
 		ret.inclusiveLow = Inclusive.yes;
 		ret.inclusiveHigh = Inclusive.yes;
