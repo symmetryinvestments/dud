@@ -1,4 +1,4 @@
-module dud.semver2.versionspecifier;
+module dud.semver2.versionrange;
 
 import std.array : empty, split, join;
 import std.conv : to;
@@ -18,7 +18,7 @@ enum Inclusive : bool {
 	yes = true
 }
 
-struct VersionSpecifier {
+struct VersionRange {
 @safe pure:
 	string branch;
 	Inclusive inclusiveLow;
@@ -27,9 +27,9 @@ struct VersionSpecifier {
 	SemVer high;
 
 	this(string input) pure {
-		Nullable!VersionSpecifier s = parseVersionSpecifier(input);
+		Nullable!VersionRange s = parseVersionRange(input);
 		enforce(!s.isNull());
-		VersionSpecifier snn = s.get();
+		VersionRange snn = s.get();
 		this = snn;
 	}
 
@@ -44,19 +44,19 @@ struct VersionSpecifier {
 		this.inclusiveHigh = incHigh;
 	}
 
-	bool opEquals(const VersionSpecifier o) const pure @safe {
+	bool isBranch() const pure @safe nothrow @nogc {
+		return !this.branch.empty;
+	}
+
+	bool opEquals(const VersionRange o) const pure @safe {
 		return o.inclusiveLow == this.inclusiveLow
 			&& o.inclusiveHigh == this.inclusiveHigh
 			&& o.low == this.low
 			&& o.high == this.high;
 	}
 
-	bool isBranch() const pure @safe nothrow @nogc {
-		return !this.branch.empty;
-	}
-
 	/// ditto
-	int opCmp(const VersionSpecifier o) const pure @safe {
+	int opCmp(const VersionRange o) const pure @safe {
 		if(this.inclusiveLow != o.inclusiveLow) {
 			return this.inclusiveLow < o.inclusiveLow ? -1 : 1;
 		}
@@ -88,7 +88,7 @@ struct VersionSpecifier {
 }
 
 pure unittest {
-	VersionSpecifier s = VersionSpecifier("1.0.0");
+	VersionRange s = VersionRange("1.0.0");
 	assert(s == s);
 	assert(s.toHash() != 0);
 }
@@ -113,7 +113,7 @@ pure unittest {
 	Apart from "$(LT)" and "$(GT)", "$(GT)=" and "$(LT)=" are also valid
 	comparators.
 */
-Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
+Nullable!VersionRange parseVersionRange(string ves) pure {
 	import std.string;
 	import std.algorithm.searching : startsWith;
 	import std.format : format;
@@ -121,11 +121,11 @@ Nullable!VersionSpecifier parseVersionSpecifier(string ves) pure {
 	enforce(ves.length > 0, "Can not process empty version specifier");
 	const string orig = ves;
 
-	VersionSpecifier ret;
+	VersionRange ret;
 	ret.branch = orig;
 
 	if(orig.empty) {
-		return Nullable!(VersionSpecifier).init;
+		return Nullable!(VersionRange).init;
 	}
 
 	ves = ves == "*"
@@ -324,10 +324,10 @@ private string skipComp(ref string c) pure {
 
 pure unittest {
 	string tt = ">=1.0.0";
-	auto v = parseVersionSpecifier(tt);
+	auto v = parseVersionRange(tt);
 }
 
-bool isInRange(const(VersionSpecifier) range, const(SemVer) v) pure {
+bool isInRange(const(VersionRange) range, const(SemVer) v) pure {
 	import dud.semver2.comparision : compare;
 
 	const int low = compare(v, range.low);
@@ -345,9 +345,9 @@ bool isInRange(const(VersionSpecifier) range, const(SemVer) v) pure {
 }
 
 pure unittest {
-	Nullable!VersionSpecifier r1N = parseVersionSpecifier("^1.0.0");
+	Nullable!VersionRange r1N = parseVersionRange("^1.0.0");
 	assert(!r1N.isNull());
-	VersionSpecifier r1 = r1N.get();
+	VersionRange r1 = r1N.get();
 	SemVer v1 = parseSemVer("1.0.0");
 	SemVer v2 = parseSemVer("2.0.0");
 	SemVer v3 = parseSemVer("2.0.1");
@@ -364,9 +364,9 @@ pure unittest {
 }
 
 pure unittest {
-	Nullable!VersionSpecifier r1N = parseVersionSpecifier("*");
+	Nullable!VersionRange r1N = parseVersionRange("*");
 	assert(!r1N.isNull());
-	VersionSpecifier r1 = r1N.get();
+	VersionRange r1 = r1N.get();
 	SemVer v1 = parseSemVer("1.0.0");
 	SemVer v2 = parseSemVer("2.0.0");
 	SemVer v3 = parseSemVer("2.0.1");
@@ -383,9 +383,9 @@ pure unittest {
 }
 
 pure unittest {
-	Nullable!VersionSpecifier r1N = parseVersionSpecifier("~master");
+	Nullable!VersionRange r1N = parseVersionRange("~master");
 	assert(!r1N.isNull());
-	VersionSpecifier r1 = r1N.get();
+	VersionRange r1 = r1N.get();
 	SemVer v1 = parseSemVer("1.0.0");
 	SemVer v2 = parseSemVer("2.0.0");
 	SemVer v3 = parseSemVer("2.0.1");
@@ -535,7 +535,7 @@ enum SetRelation {
 	overlapping
 }
 
-SetRelation relation(const(VersionSpecifier) a, const(VersionSpecifier) b)
+SetRelation relation(const(VersionRange) a, const(VersionRange) b)
 		pure
 {
 	const BoundRelation lowLow = relation(

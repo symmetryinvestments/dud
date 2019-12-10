@@ -1,10 +1,10 @@
-module dud.semver2.versionspecifiertest;
+module dud.semver2.versionrangetest;
 
 @safe pure private:
 import std.format : format;
 import dud.semver2.semver;
 import dud.semver2.parse;
-import dud.semver2.versionspecifier;
+import dud.semver2.versionrange;
 
 unittest {
 	void test(const SemVer lowA, const Inclusive lowAIn, const SemVer highA,
@@ -12,8 +12,8 @@ unittest {
 			const SemVer highB, const Inclusive highBIn,
 			const SetRelation br)
 	{
-		auto v1 = VersionSpecifier(lowA, lowAIn, highA, highAIn);
-		auto v2 = VersionSpecifier(lowB, lowBIn, highB, highBIn);
+		auto v1 = VersionRange(lowA, lowAIn, highA, highAIn);
+		auto v2 = VersionRange(lowB, lowBIn, highB, highBIn);
 
 		auto b = relation(v1, v2);
 		assert(b == br, format(
@@ -152,8 +152,8 @@ unittest {
 	auto b = parseSemVer("1.0.0");
 	auto c = parseSemVer("2.0.0");
 
-	auto v1 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.no);
-	auto v2 = VersionSpecifier(a, Inclusive.yes, b, Inclusive.no);
+	auto v1 = VersionRange(b, Inclusive.yes, c, Inclusive.no);
+	auto v2 = VersionRange(a, Inclusive.yes, b, Inclusive.no);
 
 	SetRelation sr = relation(v1, v2);
 	assert(sr == SetRelation.disjoint, format("%s", sr));
@@ -167,12 +167,12 @@ unittest {
 
 	Inclusive[] inclusive  = [Inclusive.yes, Inclusive.no];
 
-	VersionSpecifier[] vers;
+	VersionRange[] vers;
 	foreach(idx, low; sv[0 .. $ - 1]) {
 		foreach(lowIn; inclusive) {
 			foreach(high; sv[idx + 1 .. $]) {
 				foreach(highIn; inclusive) {
-					VersionSpecifier tmp;
+					VersionRange tmp;
 					tmp.inclusiveLow = lowIn;
 					tmp.low = low;
 					tmp.inclusiveHigh = highIn;
@@ -217,8 +217,8 @@ unittest {
 	SemVer b = parseSemVer("2.0.0");
 	SemVer c = parseSemVer("3.0.0");
 
-	auto v1 = VersionSpecifier(a, Inclusive.no, b, Inclusive.yes);
-	auto v2 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
+	auto v1 = VersionRange(a, Inclusive.no, b, Inclusive.yes);
+	auto v2 = VersionRange(b, Inclusive.yes, c, Inclusive.yes);
 	assert(!v1.isBranch());
 	assert(!v2.isBranch());
 
@@ -232,17 +232,17 @@ unittest {
 	SemVer c = parseSemVer("3.0.0");
 	SemVer d = parseSemVer("99999.0.0");
 
-	auto v1 = VersionSpecifier(a, Inclusive.no, b, Inclusive.no);
+	auto v1 = VersionRange(a, Inclusive.no, b, Inclusive.no);
 	assert(!v1.isBranch());
-	auto v2 = VersionSpecifier(b, Inclusive.no, c, Inclusive.yes);
+	auto v2 = VersionRange(b, Inclusive.no, c, Inclusive.yes);
 	assert(!v2.isBranch());
-	auto v3 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
+	auto v3 = VersionRange(b, Inclusive.yes, c, Inclusive.yes);
 	assert(!v3.isBranch());
-	auto v4 = VersionSpecifier(a, Inclusive.no, b, Inclusive.yes);
+	auto v4 = VersionRange(a, Inclusive.no, b, Inclusive.yes);
 	assert(!v4.isBranch());
-	auto v5 = VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes);
+	auto v5 = VersionRange(b, Inclusive.yes, c, Inclusive.yes);
 	assert(!v5.isBranch());
-	auto v6 = VersionSpecifier(c, Inclusive.no, d, Inclusive.yes);
+	auto v6 = VersionRange(c, Inclusive.no, d, Inclusive.yes);
 	assert(!v6.isBranch());
 
 	auto rel = relation(v1, v2);
