@@ -15,6 +15,9 @@ script:
   - cd semver
   - dub test --compiler=${DC}
   - cd ..
+  - cd semver2
+  - dub test --compiler=${DC}
+  - cd ..
   - cd sdlang
   - dub test --compiler=${DC}
   - cd ..
