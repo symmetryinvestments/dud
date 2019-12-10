@@ -1,5 +1,6 @@
 module dud.semver2.versionunion;
 
+import std.array : empty;
 import std.format : format;
 import dud.semver2.versionrange;
 import dud.semver2.semver;
@@ -10,9 +11,8 @@ struct VersionUnion {
 @safe pure:
 	VersionRange[] ranges;
 
-	/*void insert(VersionRange vr) {
-		const SetRelation sr = relation
-	}*/
+	void insert(const(VersionUnion) nvu) {
+	}
 }
 
 VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
@@ -26,4 +26,13 @@ VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
 		return VersionRange(a.low, a.inclusiveLow, b.high, b.inclusiveHigh);
 	}
 	return VersionRange(SemVer.init, Inclusive.no, SemVer.init, Inclusive.no);
+}
+
+VersionRange[] insert(VersionRange[] old, const(VersionRange) nvu) {
+	VersionRange[] ret;
+	if(old.empty) {
+		ret = [ nvu.dup() ];
+	}
+
+	return ret;
 }

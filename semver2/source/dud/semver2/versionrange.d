@@ -26,11 +26,8 @@ struct VersionRange {
 	SemVer low;
 	SemVer high;
 
-	this(string input) pure {
-		Nullable!VersionRange s = parseVersionRange(input);
-		enforce(!s.isNull());
-		VersionRange snn = s.get();
-		this = snn;
+	this(string branch) nothrow @nogc {
+		this.branch = branch;
 	}
 
 	this(const(SemVer) low, const(Inclusive) incLow, const(SemVer) high,
@@ -52,7 +49,8 @@ struct VersionRange {
 		return o.inclusiveLow == this.inclusiveLow
 			&& o.inclusiveHigh == this.inclusiveHigh
 			&& o.low == this.low
-			&& o.high == this.high;
+			&& o.high == this.high
+			&& o.branch == this.branch;
 	}
 
 	/// ditto
@@ -83,12 +81,28 @@ struct VersionRange {
 		hash = this.low.hashOf(hash);
 		hash = this.inclusiveHigh.hashOf(hash);
 		hash = this.high.hashOf(hash);
+		hash = this.branch.hashOf(hash);
 		return hash;
+	}
+
+	VersionRange dup() const {
+		return this.isBranch
+			? VersionRange(this.branch)
+			: VersionRange(this.low.dup(), this.inclusiveLow, this.high.dup(),
+				this.inclusiveHigh);
 	}
 }
 
-pure unittest {
-	VersionRange s = VersionRange("1.0.0");
+unittest {
+	Nullable!VersionRange snn = parseVersionRange("1.0.0");
+	assert(!snn.isNull);
+	VersionRange s = snn.get();
+	assert(s == s);
+	assert(s.toHash() != 0);
+
+	snn = parseVersionRange("~master");
+	assert(!snn.isNull);
+	s = snn.get();
 	assert(s == s);
 	assert(s.toHash() != 0);
 }
