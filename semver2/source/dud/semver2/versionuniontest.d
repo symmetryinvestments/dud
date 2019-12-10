@@ -40,4 +40,18 @@ unittest {
 
 	VersionRange m = merge(vr1, vr2);
 	assert(m == VersionRange.init, format("\n%s", m));
+
+	m = merge(vr2, vr1);
+	assert(m == VersionRange.init, format("\n%s", m));
+}
+
+unittest {
+	VersionRange vr1 = parseVersionRange(">=1.0.0 <=1.5.0").get();
+	VersionRange vr2 = parseVersionRange(">1.5.0 <=3.0.0").get();
+
+	VersionRange m = merge(vr1, vr2);
+	assert(m == VersionRange.init, format("\n%s", m));
+
+	m = merge(vr2, vr1);
+	assert(m == VersionRange.init, format("\n%s", m));
 }
