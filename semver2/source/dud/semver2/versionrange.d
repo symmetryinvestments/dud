@@ -10,6 +10,7 @@ import std.typecons : nullable, Nullable;
 
 import dud.semver2.semver;
 import dud.semver2.parse;
+import dud.semver2.comparision;
 
 @safe pure:
 
@@ -55,23 +56,25 @@ struct VersionRange {
 
 	/// ditto
 	int opCmp(const VersionRange o) const pure @safe {
-		if(this.inclusiveLow != o.inclusiveLow) {
-			return this.inclusiveLow < o.inclusiveLow ? -1 : 1;
+		import std.algorithm.comparison : cmp;
+		if(this.isBranch() && o.isBranch()) {
+			return cmp(this.branch, o.branch);
+		} else if(this.isBranch() && !o.isBranch()) {
+			return -1;
+		} else if(!this.isBranch() && o.isBranch()) {
+			return 1;
 		}
 
-		if(this.inclusiveHigh != o.inclusiveHigh) {
-			return this.inclusiveHigh < o.inclusiveHigh ? -1 : 1;
+		const int lowCmp = compare(this.low, o.low);
+		if(lowCmp == -1 || lowCmp == 1) {
+			return lowCmp;
+		} else {
+			return this.inclusiveLow && o.inclusiveLow
+				? 0
+				: this.inclusiveLow && !o.inclusiveLow
+					? 1
+					: -1;
 		}
-
-		if(this.low != o.low) {
-			return this.low < o.low ? -1 : 1;
-		}
-
-		if(this.high != o.high) {
-			return this.high < o.high ? -1 : 1;
-		}
-
-		return 0;
 	}
 
 	/// ditto
@@ -85,7 +88,7 @@ struct VersionRange {
 		return hash;
 	}
 
-	VersionRange dup() const {
+	@property VersionRange dup() const {
 		return this.isBranch
 			? VersionRange(this.branch)
 			: VersionRange(this.low.dup(), this.inclusiveLow, this.high.dup(),
@@ -136,7 +139,6 @@ Nullable!VersionRange parseVersionRange(string ves) pure {
 	const string orig = ves;
 
 	VersionRange ret;
-	ret.branch = orig;
 
 	if(orig.empty) {
 		return Nullable!(VersionRange).init;

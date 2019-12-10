@@ -1,6 +1,7 @@
 module dud.semver2.versionunion;
 
-import std.array : empty;
+import std.algorithm.sorting : sort;
+import std.array : empty, front, popFront;
 import std.format : format;
 import dud.semver2.versionrange;
 import dud.semver2.semver;
@@ -28,11 +29,30 @@ VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
 	return VersionRange(SemVer.init, Inclusive.no, SemVer.init, Inclusive.no);
 }
 
-VersionRange[] insert(VersionRange[] old, const(VersionRange) nvu) {
+package VersionRange[] merge(const(VersionRange)[] old,
+		const(VersionRange) nvu)
+{
 	VersionRange[] ret;
 	if(old.empty) {
-		ret = [ nvu.dup() ];
+		return [ nvu.dup() ];
 	}
+
+	ret ~= nvu.dup;
+
+	foreach(it; old) {
+		VersionRange top = ret.front();
+		ret.popFront();
+
+		VersionRange m = merge(top, it);
+		if(m == VersionRange.init) {
+			ret ~= top;
+			ret ~= it.dup();
+		} else {
+			ret ~= m;
+		}
+	}
+
+	ret.sort();
 
 	return ret;
 }
