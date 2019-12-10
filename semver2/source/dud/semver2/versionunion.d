@@ -13,6 +13,7 @@ struct VersionUnion {
 	VersionRange[] ranges;
 
 	void insert(const(VersionUnion) nvu) {
+		this.ranges = merge(this.ranges, nvu);
 	}
 }
 
