@@ -1,7 +1,7 @@
 module dud.semver2.checks;
 
 import dud.semver2.versionunion;
-import dud.semver2.range;
+import dud.semver2.versionrange;
 import dud.semver2.semver;
 
 /// Returns `true` if this constraint allows [version].
