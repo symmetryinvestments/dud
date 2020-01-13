@@ -62,7 +62,8 @@ unittest {
 unittest {
 	VersionRange[] arr =
 		[ parseVersionRange(">=1.0.0 <=1.5.0").get()
-		, parseVersionRange(">=2.0.0 <=3.5.0").get() ];
+		, parseVersionRange(">=2.0.0 <=3.5.0").get()
+		];
 
 	VersionRange vr = parseVersionRange(">=1.5.0 <=2.0.0").get();
 	VersionRange[] m = merge(arr, vr);
@@ -77,12 +78,19 @@ unittest {
 	const VersionRange vr2 = parseVersionRange(">=1.5.0 <=3.0.0").get();
 	const VersionRange vr3 = parseVersionRange(">=3.5.0 <=4.0.0").get();
 	const VersionRange vr4 = parseVersionRange(">=4.5.0 <=5.0.0").get();
+	const VersionRange vr5 = parseVersionRange(">=3.0.0 <=3.5.0").get();
+	const VersionRange vr6 = parseVersionRange(">=4.0.0 <=4.5.0").get();
 
-	const VersionRange[] arr = [ vr3, vr1, vr2 ];
-	VersionRange[] m = merge(arr, vr4);
-	assert(m.length == 4, format("\n%(%s\n%)", m));
-	assert(m[0] == vr1, format("\nexp: %s\ngot: %s", m[0], vr1));
-	assert(m[1] == vr2, format("\nexp: %s\ngot: %s", m[1], vr2));
-	assert(m[2] == vr3, format("\nexp: %s\ngot: %s", m[2], vr3));
-	assert(m[3] == vr4, format("\nexp: %s\ngot: %s", m[3], vr4));
+	VersionUnion vu;
+	vu.insert(vr1);
+	vu.insert(vr2);
+	assert(vu.ranges.length == 1);
+	vu.insert(vr3);
+	assert(vu.ranges.length == 2);
+	vu.insert(vr4);
+	assert(vu.ranges.length == 3);
+	vu.insert(vr5);
+	assert(vu.ranges.length == 2);
+	vu.insert(vr6);
+	assert(vu.ranges.length == 1);
 }

@@ -12,7 +12,7 @@ struct VersionUnion {
 @safe pure:
 	VersionRange[] ranges;
 
-	void insert(const(VersionUnion) nvu) {
+	void insert(const(VersionRange) nvu) {
 		this.ranges = merge(this.ranges, nvu);
 	}
 }
