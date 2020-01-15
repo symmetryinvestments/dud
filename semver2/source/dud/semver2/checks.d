@@ -25,7 +25,7 @@ bool allows(const(VersionRange) toCheckIn, const(VersionUnion) toCheck) {
 
 bool allows(const(VersionUnion) toCheckIn, const(SemVer) toCheck) {
 	return toCheckIn.ranges
-		.any!(vr => isInRange(vr, toCheck) != SetRelation.disjoint);
+		.any!(vr => isInRange(vr, toCheck));
 }
 
 bool allows(const(VersionUnion) toCheckIn, const(VersionRange) toCheck) {

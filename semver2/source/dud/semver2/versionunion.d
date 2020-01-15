@@ -2,7 +2,7 @@ module dud.semver2.versionunion;
 
 import std.algorithm.sorting : sort;
 import std.array : empty, front, popFront;
-import std.format : format;
+import std.format : format, formattedWrite;
 import dud.semver2.versionrange;
 import dud.semver2.semver;
 
@@ -11,6 +11,12 @@ import dud.semver2.semver;
 struct VersionUnion {
 @safe pure:
 	VersionRange[] ranges;
+
+	this(const(VersionRange)[] rng) {
+		foreach(it; rng) {
+			this.insert(it);
+		}
+	}
 
 	void insert(const(VersionRange) nvu) {
 		this.ranges = merge(this.ranges, nvu);
