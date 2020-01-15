@@ -551,6 +551,9 @@ enum SetRelation {
 	overlapping
 }
 
+/** Tests the relation between a and b.
+A and b can be overlapping or disjoint and a can be a subset of b.
+*/
 SetRelation relation(const(VersionRange) a, const(VersionRange) b)
 		pure
 {
