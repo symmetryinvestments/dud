@@ -8,7 +8,7 @@ import dud.semver2.semver;
 
 VersionUnion unionOf(const(SemVer) a, const(SemVer) b) {
 	VersionUnion ret = VersionUnion(
-			[ VersionRange(a, Inclusive.yes, b, Inclusive.yes)
+			[ VersionRange(a, Inclusive.yes, a, Inclusive.yes)
 			, VersionRange(b, Inclusive.yes, b, Inclusive.yes)
 			]);
 	return ret;

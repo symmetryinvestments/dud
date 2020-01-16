@@ -1,6 +1,6 @@
 module dud.semver2.testdata;
 
-@safe pure private:
+@safe pure:
 import dud.semver2.semver;
 import dud.semver2.versionrange;
 import dud.semver2.versionunion;
