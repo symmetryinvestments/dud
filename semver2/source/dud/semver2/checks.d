@@ -1,6 +1,6 @@
 module dud.semver2.checks;
 
-import std.algorithm.searching : any;
+import std.algorithm.searching : all, any;
 
 import dud.semver2.versionunion;
 import dud.semver2.versionrange;
@@ -56,12 +56,27 @@ bool allowsAll(const(VersionRange) toCheckIn, const(VersionRange) toCheck) {
 
 bool allowsAll(const(VersionRange) toCheckIn, const(VersionUnion) toCheck) {
 	return toCheck.ranges
-		.any!(vr => relation(vr, toCheckIn) == SetRelation.subset);
+		.all!(vr => relation(vr, toCheckIn) == SetRelation.subset);
 }
 
 bool allowsAll(const(VersionUnion) toCheckIn, const(SemVer) toCheck) {
 	return toCheckIn.ranges.any!(vr => isInRange(vr, toCheck));
 }
 
-bool allowsAll(const(VersionUnion) toCheckIn, const(VersionRange) toCheck);
-bool allowsAll(const(VersionUnion) toCheckIn, const(VersionUnion) toCheck);
+bool allowsAll(const(VersionUnion) toCheckIn, const(VersionRange) toCheck) {
+	return toCheckIn.ranges
+		.any!(vr => relation(toCheck, vr) == SetRelation.subset);
+}
+
+bool allowsAll(const(VersionUnion) toCheckIn, const(VersionUnion) toCheck) {
+	outer: foreach(it; toCheck.ranges) {
+		foreach(jt; toCheckIn.ranges) {
+			const SetRelation sr = relation(it, jt);
+			if(sr == SetRelation.subset) {
+				continue outer;
+			}
+		}
+		return false;
+	}
+	return true;
+}

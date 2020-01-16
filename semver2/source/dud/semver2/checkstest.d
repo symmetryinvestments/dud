@@ -29,7 +29,7 @@ immutable SemVer v2 = SemVer(1, 1, 0);
 immutable SemVer v3 = SemVer(2, 1, 0);
 immutable SemVer v4 = SemVer(2, 5, 0);
 
-unittest { // VersioUnion, VersionUnion
+unittest { // VersionUnion, VersionUnion
 	assert( allowsAny(vu1, vu1));
 	assert( allowsAny(vu1, vu2));
 	assert( allowsAny(vu1, vu3));
