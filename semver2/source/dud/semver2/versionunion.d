@@ -21,6 +21,14 @@ struct VersionUnion {
 	void insert(const(VersionRange) nvu) {
 		this.ranges = merge(this.ranges, nvu);
 	}
+
+	VersionUnion dup() const {
+		import std.array : array;
+		import std.algorithm.iteration : map;
+		VersionUnion ret;
+		ret.ranges = this.ranges.map!(it => it.dup).array;
+		return ret;
+	}
 }
 
 VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
