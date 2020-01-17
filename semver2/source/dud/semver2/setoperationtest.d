@@ -26,16 +26,18 @@ unittest { // SemVer, SemVer
 
 // VersionRange, SemVer
 unittest {
-	VersionUnion vu = unionOf(vr1, v1);
+	const VersionUnion vu = unionOf(vr1, v1);
 	assert(vu.ranges.length == 2);
 	assert(vu.ranges[1] == vr1);
 
 	assert( allowsAll(vu, v1));
 	assert( allowsAll(vu, vr1));
+
+	const VersionUnion vu2 = unionOf(v1, vr1);
 }
 
 unittest {
-	VersionUnion vu = unionOf(vr1, v2);
+	const VersionUnion vu = unionOf(vr1, v2);
 	assert(vu.ranges.length == 1);
 	assert( allowsAll(vu, v2));
 	assert( allowsAll(vu, vr1), format("\n%s\n%s", vu, vr1));
@@ -58,4 +60,36 @@ unittest {
 			assert(allowsAll(c, jt));
 		}
 	}
+}
+
+// VersionUnion, SemVer
+unittest {
+	const VersionUnion m = unionOf(vu2, v4);
+	assert(m.ranges.length == 2);
+	assert(allowsAll(m, vr1));
+	assert(allowsAll(m, vr2));
+	assert(allowsAll(m, v4));
+
+	const VersionUnion m2 = unionOf(v4, vu2);
+	assert(m == m2);
+}
+
+// VersionUnion, VersionRange
+unittest {
+	const VersionUnion m = unionOf(vu1, vr6);
+	assert(m.ranges.length == 1);
+	assert(allowsAll(m, vu1));
+	assert(allowsAll(m, vr3));
+
+	const VersionUnion m2 = unionOf(vr6, vu1);
+	assert(m == m2);
+}
+
+// VersionUnion, VersionUnion
+unittest {
+	const VersionUnion m = unionOf(vu1, vu2);
+	assert(m.ranges.length == 2);
+	assert(allowsAll(m, vr1));
+	assert(allowsAll(m, vr2));
+	assert(allowsAll(m, vr4));
 }
