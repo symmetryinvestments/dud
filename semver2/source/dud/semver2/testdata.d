@@ -10,6 +10,7 @@ immutable VersionRange vr2 = parseVersionRange(">=2.5.0 <=3.0.0").get();
 immutable VersionRange vr3 = parseVersionRange(">=1.5.0 <=3.0.0").get();
 immutable VersionRange vr4 = parseVersionRange(">=2.7.0 <=3.0.0").get();
 immutable VersionRange vr5 = parseVersionRange(">3.0.0 <=4.0.0").get();
+immutable VersionRange vr6 = parseVersionRange(">=2.0.0 <=4.0.0").get();
 
 immutable VersionUnion vu1 = VersionUnion([vr1, vr4]);
 immutable VersionUnion vu2 = VersionUnion([vr1, vr2]);

@@ -32,16 +32,23 @@ struct VersionUnion {
 }
 
 VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
-	if(a.high == b.low && a.inclusiveHigh && b.inclusiveLow) {
-		return VersionRange(a.low, a.inclusiveLow, b.high, b.inclusiveHigh);
-	} else if(a.low == b.high && a.inclusiveLow && b.inclusiveHigh) {
-		return VersionRange(b.low, b.inclusiveLow, a.high, a.inclusiveHigh);
-	} if(a.low < b.high && a.low > b.low) {
-		return VersionRange(b.low, b.inclusiveLow, a.high, a.inclusiveHigh);
-	} else if(b.low < a.high && b.low > a.low) {
-		return VersionRange(a.low, a.inclusiveLow, b.high, b.inclusiveHigh);
-	}
-	return VersionRange(SemVer.init, Inclusive.no, SemVer.init, Inclusive.no);
+	const SemVer low = a.low < b.low ? a.low : b.low;
+	const Inclusive lowInc = low == a.low ? a.inclusiveLow : b.inclusiveLow;
+
+	const SemVer high = a.high > b.high ? a.high : b.high;
+	const Inclusive highInc = high == a.high ? a.inclusiveHigh : b.inclusiveHigh;
+
+	const bool notIntersect =
+		(a.high == b.low
+			&& (a.inclusiveHigh == false || b.inclusiveLow == false))
+		|| (a.low == b.high
+			&& (a.inclusiveLow == false || b.inclusiveHigh == false))
+		|| (a.high < b.low)
+		|| (a.low > b.high);
+
+	return notIntersect
+		? VersionRange.init
+		: VersionRange(low, lowInc, high, highInc);
 }
 
 package VersionRange[] merge(const(VersionRange)[] old,
