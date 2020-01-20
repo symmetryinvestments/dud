@@ -24,12 +24,49 @@ immutable VersionRange vr3 = VersionRange(v3, Inclusive.yes, v4, Inclusive.yes);
 immutable VersionRange vr4 = VersionRange(v1, Inclusive.yes, v3, Inclusive.yes);
 immutable VersionRange vr5 = VersionRange(v2, Inclusive.yes, v5, Inclusive.yes);
 
+//
+// invert
+//
+
+// SemVer
+unittest {
+	const VersionUnion r = invert(v1);
+	assert(r.ranges.length == 2);
+
+	assert(r.ranges[0] ==
+			VersionRange(SemVer.min, Inclusive.yes, v1, Inclusive.no));
+
+	assert(r.ranges[1] ==
+			VersionRange(v1, Inclusive.no, SemVer.max, Inclusive.yes));
+}
+
+// VersionRange
+unittest {
+	const VersionUnion r = invert(vr1);
+	assert(r.ranges.length == 2);
+	assert(r.ranges[0] ==
+			VersionRange(SemVer.min(), Inclusive.yes, vr1.low.dup,
+				cast(Inclusive)!vr1.inclusiveLow));
+	assert(r.ranges[1] ==
+			VersionRange(vr1.high.dup, cast(Inclusive)!vr1.inclusiveHigh,
+				SemVer.max(), Inclusive.yes), format("%s", r.ranges[1]));
+}
+
+// VersionUnion
+unittest {
+	const VersionUnion vu = VersionUnion([vr1, vr3]);
+	const VersionUnion r = invert(vu);
+	debug writeln(r);
+}
+
+__EOF__
+
 // SemVer, SemVer
 unittest {
-	SemVer r = intersectionOf(v1, v1);
-	assert(r == v1);
+	SemVer r = differenceOf(v1, v1);
+	assert(r == v1, format("%s", r));
 
-	r = intersectionOf(v1, v2);
+	r = differenceOf(v1, v2);
 	assert(r == SemVer.init);
 }
 
