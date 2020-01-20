@@ -40,6 +40,8 @@ unittest {
 
 	r = intersectionOf(vr1, v3);
 	assert(r == SemVer.init);
+
+	assert(intersectionOf(v3, vr1) == r);
 }
 
 // VersionUnion, SemVer
@@ -47,9 +49,11 @@ unittest {
 	const vu = VersionUnion([vr1, vr2]);
 	SemVer r = intersectionOf(vu, v1);
 	assert(r == v1);
+	assert(r == intersectionOf(v1, vu));
 
 	r = intersectionOf(vu, v4);
 	assert(r == SemVer.init);
+
 }
 
 // VersionRange, VersionRange
@@ -104,6 +108,8 @@ unittest {
 	assert(r.ranges.length == 2, format("\n%s", r));
 	assert(r.ranges[0] == VersionRange(v6, Inclusive.yes, v3, Inclusive.yes));
 	assert(r.ranges[1] == VersionRange(v4, Inclusive.yes, v7, Inclusive.yes));
+
+	assert(r == intersectionOf(vr6, vu));
 }
 
 // VersionUnion, VersionUnion

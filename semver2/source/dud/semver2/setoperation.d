@@ -79,8 +79,16 @@ SemVer intersectionOf(const(VersionRange) a, const(SemVer) b) {
 	return allowsAny(a, b) ? b.dup : SemVer.init;
 }
 
+SemVer intersectionOf(const(SemVer) a, const(VersionRange) b) {
+	return intersectionOf(b, a);
+}
+
 SemVer intersectionOf(const(VersionUnion) a, const(SemVer) b) {
 	return allowsAny(a, b) ? b.dup : SemVer.init;
+}
+
+SemVer intersectionOf(const(SemVer) a, const(VersionUnion) b) {
+	return intersectionOf(b, a);
 }
 
 VersionRange intersectionOf(const(VersionRange) a, const(VersionRange) b) {
@@ -123,6 +131,10 @@ VersionUnion intersectionOf(const(VersionUnion) a, const(VersionRange) b) {
 		.filter!(it => it != VersionRange.init)
 		.array
 		.VersionUnion;
+}
+
+VersionUnion intersectionOf(const(VersionRange) a, const(VersionUnion) b) {
+	return intersectionOf(b, a);
 }
 
 VersionUnion intersectionOf(const(VersionUnion) a, const(VersionUnion) b) {
