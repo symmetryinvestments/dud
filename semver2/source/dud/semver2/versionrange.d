@@ -710,4 +710,3 @@ SetRelation relation(const(VersionRange) a, const(VersionRange) b)
 		"\na:%s\nb:%s\nlowLow:%s\nlowHigh:%s\nhighLow:%s\nhighHigh:%s", a, b,
 		lowLow, lowHigh, highLow, highHigh));
 }
-

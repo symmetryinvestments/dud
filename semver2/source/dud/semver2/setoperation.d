@@ -2,6 +2,7 @@ module dud.semver2.setoperation;
 
 import std.array : array;
 import std.algorithm.iteration : map, filter, joiner;
+import std.exception : enforce;
 
 import dud.semver2.versionunion;
 import dud.semver2.versionrange;
@@ -68,7 +69,7 @@ VersionUnion unionOf(const(VersionUnion) a, const(VersionUnion) b) {
 }
 
 //
-// unionOf
+// intersectionOf
 //
 
 SemVer intersectionOf(const(SemVer) a, const(SemVer) b) {
@@ -144,4 +145,37 @@ VersionUnion intersectionOf(const(VersionUnion) a, const(VersionUnion) b) {
 		.filter!(it => it != VersionRange.init)
 		.array
 		.VersionUnion;
+}
+
+//
+// invert
+//
+
+VersionUnion invert(const(SemVer) a) {
+	enforce(a != SemVer.init);
+	return VersionUnion(
+		[ VersionRange(SemVer.min, Inclusive.yes, a.dup, Inclusive.no)
+		, VersionRange(a.dup, Inclusive.no, SemVer.max, Inclusive.yes)
+		]);
+}
+
+VersionUnion invert(const(VersionRange) a) {
+	enforce(a.low != SemVer.init);
+	return VersionUnion(
+		[ VersionRange(SemVer.init, Inclusive.yes, a.low.dup, cast(Inclusive)!a.inclusiveLow)
+		, VersionRange(a.high.dup, cast(Inclusive)!a.inclusiveHigh, SemVer.max, Inclusive.yes)
+		]);
+}
+
+VersionUnion invert(const(VersionUnion) a) {
+	return a.ranges.map!(it => invert(it).ranges).joiner.array.VersionUnion;
+}
+
+//
+// difference
+//
+
+SemVer difference(const(SemVer) a, const(SemVer) b) {
+	const VersionUnion bInt = invert(b);
+	return intersectionOf(a, bInt);
 }
