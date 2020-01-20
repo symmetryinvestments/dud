@@ -1,5 +1,8 @@
 module dud.semver2.setoperation;
 
+import std.array : array;
+import std.algorithm.iteration : map, filter, joiner;
+
 import dud.semver2.versionunion;
 import dud.semver2.versionrange;
 import dud.semver2.semver;
@@ -112,4 +115,21 @@ VersionRange intersectionOf(const(VersionRange) a, const(VersionRange) b) {
 	return low <= high
 		? VersionRange(low, incLow, high, incHigh)
 		: VersionRange.init;
+}
+
+VersionUnion intersectionOf(const(VersionUnion) a, const(VersionRange) b) {
+	return a.ranges
+		.map!(it => intersectionOf(it, b))
+		.filter!(it => it != VersionRange.init)
+		.array
+		.VersionUnion;
+}
+
+VersionUnion intersectionOf(const(VersionUnion) a, const(VersionUnion) b) {
+	return a.ranges
+		.map!(it => b.ranges.map!(jt => intersectionOf(it, jt)))
+		.joiner
+		.filter!(it => it != VersionRange.init)
+		.array
+		.VersionUnion;
 }

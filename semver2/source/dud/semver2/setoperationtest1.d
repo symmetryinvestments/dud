@@ -89,3 +89,31 @@ unittest {
 	const VersionRange r = intersectionOf(vr1, vr3);
 	assert(r == VersionRange.init);
 }
+
+// VersionUnion, VersionRange
+unittest {
+	const v6 = SemVer(2,5,0);
+	const v7 = SemVer(4,5,0);
+
+	const vr6 = VersionRange(v6, Inclusive.yes, v7, Inclusive.yes);
+	const vr7 = VersionRange(v4, Inclusive.yes, v5, Inclusive.yes);
+
+	const vu = VersionUnion([vr1, vr2, vr7]);
+	const r = intersectionOf(vu, vr6);
+
+	assert(r.ranges.length == 2, format("\n%s", r));
+	assert(r.ranges[0] == VersionRange(v6, Inclusive.yes, v3, Inclusive.yes));
+	assert(r.ranges[1] == VersionRange(v4, Inclusive.yes, v7, Inclusive.yes));
+}
+
+// VersionUnion, VersionUnion
+unittest {
+	const vu1 = VersionUnion([vr1, vr3]);
+	assert(vu1.ranges.length == 2);
+	const vu2 = VersionUnion([vr2]);
+
+	const r = intersectionOf(vu1, vu2);
+	assert(r.ranges.length == 2);
+	assert(r.ranges[0] == VersionRange(v2, Inclusive.yes, v2, Inclusive.yes));
+	assert(r.ranges[1] == VersionRange(v3, Inclusive.yes, v3, Inclusive.yes));
+}
