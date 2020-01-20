@@ -4,7 +4,13 @@ import dud.semver2.versionunion;
 import dud.semver2.versionrange;
 import dud.semver2.semver;
 
+import dud.semver2.checks;
+
 @safe pure:
+
+//
+// unionOf
+//
 
 VersionUnion unionOf(const(SemVer) a, const(SemVer) b) {
 	VersionUnion ret = VersionUnion(
@@ -56,4 +62,54 @@ VersionUnion unionOf(const(VersionUnion) a, const(VersionUnion) b) {
 	VersionUnion ret = a.dup();
 	b.ranges.each!(it => ret.insert(it));
 	return ret;
+}
+
+//
+// unionOf
+//
+
+SemVer intersectionOf(const(SemVer) a, const(SemVer) b) {
+	return a == b ? a.dup : SemVer.init;
+}
+
+SemVer intersectionOf(const(VersionRange) a, const(SemVer) b) {
+	return allowsAny(a, b) ? b.dup : SemVer.init;
+}
+
+SemVer intersectionOf(const(VersionUnion) a, const(SemVer) b) {
+	return allowsAny(a, b) ? b.dup : SemVer.init;
+}
+
+VersionRange intersectionOf(const(VersionRange) a, const(VersionRange) b) {
+	// a: . . ( . . ] . .
+	// b: . [ . . ) . . .
+
+	// a: . [ . . ) . . .
+	// b: . . ( . . ] . .
+
+	// a: . [ . ] . . . .
+	// b: . . . . [ ] . .
+
+	// a: . . . . [ ] . .
+	// b: . [ . ] . . . .
+
+	// a: . . [ ] . . . .
+	// b: . [ . . ] . . .
+
+	const SemVer low = a.low < b.low ? b.low : a.low;
+	const SemVer high = a.high > b.high ? b.high : a.high;
+
+	const Inclusive incLow =
+		a.low == b.low && (!a.inclusiveLow || !b.inclusiveLow)
+			? Inclusive.no
+			: Inclusive.yes;
+
+	const Inclusive incHigh =
+		a.high == b.high && (!a.inclusiveHigh || !b.inclusiveHigh)
+			? Inclusive.no
+			: Inclusive.yes;
+
+	return low <= high
+		? VersionRange(low, incLow, high, incHigh)
+		: VersionRange.init;
 }
