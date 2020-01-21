@@ -68,14 +68,20 @@ unittest {
 			format("%s", r.ranges[2]));
 }
 
-__EOF__
+unittest {
+	const VersionUnion vu = VersionUnion([]);
+	const VersionUnion r = invert(vu);
+	assert(r.ranges.length == 1);
+	assert(r.ranges[0] == VersionRange(SemVer.min(), Inclusive.yes,
+				SemVer.max(), Inclusive.yes));
+}
 
 // SemVer, SemVer
 unittest {
 	SemVer r = differenceOf(v1, v1);
-	assert(r == v1, format("%s", r));
+	assert(r == SemVer.init);
 
 	r = differenceOf(v1, v2);
-	assert(r == SemVer.init);
+	assert(r == v1, format("%s", r));
 }
 
