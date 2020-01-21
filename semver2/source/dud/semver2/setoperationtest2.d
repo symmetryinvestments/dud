@@ -56,7 +56,16 @@ unittest {
 unittest {
 	const VersionUnion vu = VersionUnion([vr1, vr3]);
 	const VersionUnion r = invert(vu);
-	debug writeln(r);
+	assert(r.ranges.length == 3);
+	assert(r.ranges[0] ==
+			VersionRange(SemVer.min(), Inclusive.yes, v1, Inclusive.no),
+			format("%s", r.ranges[0]));
+	assert(r.ranges[1] ==
+			VersionRange(v2, Inclusive.no, v3, Inclusive.no),
+			format("%s", r.ranges[1]));
+	assert(r.ranges[2] ==
+			VersionRange(v4, Inclusive.no, SemVer.max(), Inclusive.yes),
+			format("%s", r.ranges[2]));
 }
 
 __EOF__

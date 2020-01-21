@@ -168,30 +168,22 @@ VersionUnion invert(const(VersionRange) a) {
 }
 
 VersionUnion invert(const(VersionUnion) a) {
-	//return a.ranges.map!(it => invert(it).ranges).joiner.array.VersionUnion;
-	VersionRange[] tmp;
-	foreach(idx; 0 .. a.ranges.length) {
-		const SemVer low = idx == 0
-			? SemVer.min
-			: a.ranges[idx].high;
-		const Inclusive lowInc = idx == 0
-			? Inclusive.yes
-			: cast(Inclusive)!a.ranges[idx].inclusiveHigh;
+	import std.range : chain, chunks, only, repeat, take;
 
-		const SemVer high = (idx + 1 == a.ranges.length)
-			? SemVer.max()
-			: a.ranges[idx + 1].low;
-		const Inclusive highInc = (idx + 1 == a.ranges.length)
-			? Inclusive.yes
-			: cast(Inclusive)!a.ranges[idx + 1].inclusiveLow;
+	auto zz = chain(
+			[ [ VersionRange(SemVer.min(), Inclusive.no, SemVer.min(), Inclusive.no) ]
+			, a.ranges.map!(r => r.dup.repeat.take(2)).joiner.array
+			, [ VersionRange(SemVer.max(), Inclusive.no, SemVer.max(), Inclusive.yes) ]
+			]
+		)
+		.joiner
+		.array
+		.chunks(2)
+		.map!(c => VersionRange(c[0].high, cast(Inclusive)!c[0].inclusiveHigh,
+					c[1].low, cast(Inclusive)!c[1].inclusiveLow))
+		.array;
 
-		auto t = VersionRange(low, lowInc, high, highInc);
-		import std.stdio;
-		debug writeln(t);
-		tmp ~= t;
-	}
-
-	return VersionUnion(tmp);
+	return VersionUnion(zz);
 }
 
 //
