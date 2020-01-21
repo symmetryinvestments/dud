@@ -24,6 +24,10 @@ immutable VersionRange vr3 = VersionRange(v3, Inclusive.yes, v4, Inclusive.yes);
 immutable VersionRange vr4 = VersionRange(v1, Inclusive.yes, v3, Inclusive.yes);
 immutable VersionRange vr5 = VersionRange(v2, Inclusive.yes, v5, Inclusive.yes);
 
+//
+// intersectionOf
+//
+
 // SemVer, SemVer
 unittest {
 	SemVer r = intersectionOf(v1, v1);
@@ -94,6 +98,14 @@ unittest {
 	assert(r == VersionRange.init);
 }
 
+unittest {
+	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0");
+	const VersionRange b = parseVersionRange(">=1.0.0 <=3.0.0");
+	const VersionRange c = intersectionOf(a, b);
+	const VersionRange r = parseVersionRange(">=1.0.0 <2.0.0");
+	assert(c == r, format("%s", c));
+}
+
 // VersionUnion, VersionRange
 unittest {
 	const v6 = SemVer(2,5,0);
@@ -110,6 +122,22 @@ unittest {
 	assert(r.ranges[1] == VersionRange(v4, Inclusive.yes, v7, Inclusive.yes));
 
 	assert(r == intersectionOf(vr6, vu));
+}
+
+unittest {
+	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0");
+	const VersionRange b = parseVersionRange(">2.0.0 <=3.0.0");
+
+	const VersionUnion ab = VersionUnion([a, b]);
+	assert(ab.ranges.length == 2);
+	assert(ab.ranges[0] == a);
+	assert(ab.ranges[1] == b);
+
+	const VersionRange c = parseVersionRange(">=1.0.0 <=3.0.0");
+	const VersionUnion abc = intersectionOf(ab, c);
+	assert(abc.ranges.length == 2, format("%s", abc.ranges.length));
+	assert(ab.ranges[0] == a);
+	assert(ab.ranges[1] == b);
 }
 
 // VersionUnion, VersionUnion

@@ -76,6 +76,10 @@ unittest {
 				SemVer.max(), Inclusive.yes));
 }
 
+//
+// differenceOf
+//
+
 // SemVer, SemVer
 unittest {
 	SemVer r = differenceOf(v1, v1);
@@ -85,3 +89,14 @@ unittest {
 	assert(r == v1, format("%s", r));
 }
 
+// VersionRange, Semver
+unittest {
+	const VersionUnion d1 = differenceOf(vr4, v2);
+	assert(d1.ranges.length == 2, format("%s", d1.ranges.length));
+}
+
+// VersionRange, VersionRange
+unittest {
+	const VersionUnion d1 = differenceOf(vr4, vr2);
+	assert(d1.ranges.length == 1, format("%s", d1));
+}

@@ -3,6 +3,7 @@ module dud.semver2.setoperation;
 import std.array : array;
 import std.algorithm.iteration : map, filter, joiner;
 import std.exception : enforce;
+import std.stdio;
 
 import dud.semver2.versionunion;
 import dud.semver2.versionrange;
@@ -108,18 +109,21 @@ VersionRange intersectionOf(const(VersionRange) a, const(VersionRange) b) {
 	// a: . . [ ] . . . .
 	// b: . [ . . ] . . .
 
+	// a: . . . . ( . ] .
+	// b: . [ . . ] . . .
+
 	const SemVer low = a.low < b.low ? b.low : a.low;
 	const SemVer high = a.high > b.high ? b.high : a.high;
 
 	const Inclusive incLow =
 		a.low == b.low && (!a.inclusiveLow || !b.inclusiveLow)
 			? Inclusive.no
-			: Inclusive.yes;
+			: a.low == low ? a.inclusiveLow : b.inclusiveLow;
 
 	const Inclusive incHigh =
 		a.high == b.high && (!a.inclusiveHigh || !b.inclusiveHigh)
 			? Inclusive.no
-			: Inclusive.yes;
+			: a.high == high ? a.inclusiveHigh : b.inclusiveHigh;
 
 	return low <= high
 		? VersionRange(low, incLow, high, incHigh)
@@ -193,4 +197,18 @@ VersionUnion invert(const(VersionUnion) a) {
 SemVer differenceOf(const(SemVer) a, const(SemVer) b) {
 	const VersionUnion bInt = invert(b);
 	return intersectionOf(a, bInt);
+}
+
+VersionUnion differenceOf(const(VersionRange) a, const(SemVer) b) {
+	const VersionUnion bInt = invert(b);
+	return intersectionOf(a, bInt);
+}
+
+VersionUnion differenceOf(const(VersionRange) a, const(VersionRange) b) {
+	const VersionUnion bInt = invert(b);
+	debug writefln("a:\n%s", a);
+	debug writefln("b:\n%(%s\n%)", bInt.ranges);
+	auto ret = intersectionOf(a, bInt);
+	debug writefln("r:\n%(%s\n%)", ret.ranges);
+	return ret;
 }

@@ -94,3 +94,13 @@ unittest {
 	vu.insert(vr6);
 	assert(vu.ranges.length == 1);
 }
+
+unittest {
+	const VersionRange vr1 = parseVersionRange(">=1.0.0 <2.0.0");
+	const VersionRange vr2 = parseVersionRange(">2.0.0 <=3.0.0");
+
+	const VersionUnion vu1 = VersionUnion([vr1, vr2]);
+	assert(vu1.ranges.length == 2);
+	assert(vu1.ranges[0] == vr1);
+	assert(vu1.ranges[1] == vr2);
+}

@@ -257,3 +257,27 @@ unittest {
 	rel = relation(v5, v6);
 	assert(rel == SetRelation.disjoint, format("%s", rel));
 }
+
+unittest {
+	const VersionRange vr1 = VersionRange("master");
+	const VersionRange vr2 = parseVersionRange(">=1.0.0");
+	assert(vr1 < vr2);
+	assert(vr2 > vr1);
+	assert(vr1 <= vr1);
+
+	const VersionRange vr3 = vr1.dup();
+	assert(vr3 == vr1);
+}
+
+unittest {
+	const SemVer sv1 = SemVer(1,0,0);
+	const SemVer sv2 = SemVer(2,0,0);
+	const VersionRange vr1 = VersionRange(sv1, Inclusive.yes, sv2,
+			Inclusive.no);
+	const VersionRange vr2 = VersionRange(sv1, Inclusive.no, sv2,
+			Inclusive.no);
+
+	assert(vr1 > vr2);
+	assert(vr2 < vr1);
+	assert(vr1 <= vr1);
+}
