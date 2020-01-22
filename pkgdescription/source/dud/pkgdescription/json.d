@@ -394,7 +394,7 @@ JSONValue dependencyToJ(const Dependency dep) {
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
 		}} else static if(is(MemType == Nullable!VersionRange)) {{
-			Nullable!VersionRange nvs = __traits(getMember, dep, mem);
+			Nullable!VersionRange nvs = __traits(getMember, dep, mem).dup;
 			if(!nvs.isNull()) {
 				ret[Mem] = nvs.get().toString();
 			}
@@ -745,9 +745,10 @@ ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
 void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
 		ref ToolchainRequirement[Toolchain] ret)
 {
+	import dud.pkgdescription.duplicate : dup;
 	enforce!ConflictingInput(tc !in ret, format(
 			"'%s' is already in '%s'", tc, ret));
-	ret[tc] = tcr;
+	ret[tc] = dup(tcr);
 }
 
 void jGetToolchainRequirement(ref JSONValue jv, string key,

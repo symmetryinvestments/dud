@@ -17,6 +17,8 @@ import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
 import dud.pkgdescription;
 import dud.semver.semver : SemVer;
+import dud.semver.parse : parseSemVer;
+import dud.semver.versionrange;
 
 import dud.sdlang;
 
@@ -306,7 +308,7 @@ void sGetSemVer(Tag t, string key, ref SemVer ret) {
 void sGetSemVer(ValueRange v, string key, ref SemVer ver) {
 	string s;
 	sGetString(v, "SemVer", s);
-	ver = nullable(SemVer(s));
+	ver = nullable(parseSemVer(s));
 }
 
 void semVerToS(Out)(auto ref Out o, const string key, const SemVer sv,
@@ -533,7 +535,7 @@ void toolchainRequirementToS(Out)(auto ref Out o, const string key,
 			"toolchainRequirements %-(%s %)\n",
 				tcrs.byKeyValue().map!(kv =>
 					format("%s=\"%s\"", kv.key,
-						kv.value.no ? "no" : kv.value.version_.orig))
+						kv.value.no ? "no" : kv.value.version_.toString()))
 		);
 	}
 }
@@ -542,8 +544,8 @@ ToolchainRequirement sGetToolchainRequirement(const ref Token f) {
 	typeCheck(f, [ ValueType.str ]);
 	const string s = f.value.get!string();
 	return s == "no"
-		? ToolchainRequirement(true, VersionSpecifier.init)
-		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
+		? ToolchainRequirement(true, VersionRange.init)
+		: ToolchainRequirement(false, parseVersionRange(s).get());
 }
 
 private immutable string[] tc = ["dmd", "ldc", "gdc", "frontend", "dub", "dud"];
@@ -648,7 +650,7 @@ void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 					.value
 					.value
 					.get!string()
-					.parseVersionSpecifier;
+					.parseVersionRange;
 				break;
 			case "path":
 				ret.path = UnprocessedPath(it.value.value.get!string());
@@ -685,7 +687,7 @@ void dependenciesToS(Out)(auto ref Out o, const string key,
 	foreach(value; deps) {
 		formatIndent(o, indent, "dependency \"%s\"", value.name);
 		if(!value.version_.isNull()) {
-			formattedWrite(o, " version=\"%s\"", value.version_.get().orig);
+			formattedWrite(o, " version=\"%s\"", value.version_.get());
 		}
 		if(!value.path.path.empty) {
 			formattedWrite(o, " path=\"%s\"", value.path.path);

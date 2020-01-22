@@ -51,10 +51,6 @@ PackageDescription dup(const ref PackageDescription pkg) {
 	return ret;
 }
 
-//
-// ToolchainRequirement
-//
-
 VersionRange dup(const ref VersionRange old) {
 	return old.dup();
 }
@@ -69,7 +65,11 @@ unittest {
 	assert(areEqual(old.get(), d));
 }
 
-ToolchainRequirement dup(const ref ToolchainRequirement old) {
+//
+// ToolchainRequirement
+//
+
+ToolchainRequirement dup(const ref ToolchainRequirement old) pure {
 	ToolchainRequirement ret;
 	ret.no = old.no;
 	ret.version_ = old.version_.dup();

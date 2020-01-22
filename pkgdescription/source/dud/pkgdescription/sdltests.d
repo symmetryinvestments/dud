@@ -15,6 +15,8 @@ import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 import dud.pkgdescription.exception;
 import dud.semver.semver : SemVer;
+import dud.semver.parse : parseSemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
@@ -45,7 +47,7 @@ configuration "test" {
 			, [ ]
 		)])
 	, to!string(pkg.importPaths));
-	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
+	assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.license == "LGPL3", pkg.license);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
 	auto e = UnprocessedPath("outDir");
@@ -61,7 +63,7 @@ configuration "test" {
 	dep[0].path = UnprocessedPath("../semver");
 	dep[3].path = UnprocessedPath("../path");
 	dep[1].path = UnprocessedPath("../sdlang");
-	dep[2].version_ = parseVersionSpecifier(">=1.0.0");
+	dep[2].version_ = parseVersionRange(">=1.0.0");
 	dep[2].default_ = nullable(true);
 	dep[2].optional = nullable(false);
 	pkg.dependencies.sort!((a,b) => a.name < b.name);
