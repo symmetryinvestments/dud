@@ -39,9 +39,9 @@ struct PackageDescription {
 	@SDL!(sGetString, stringToSName)("")
 	string name; /// Qualified name of the package
 
-	@JSON!(jGetSemVer, semVerToJ)("version")
-	@SDL!(sGetSemVer, semVerToS)("version")
-	SemVer version_; /// Version of the package
+	//@JSON!(jGetSemVer, semVerToJ)("version")
+	//@SDL!(sGetSemVer, semVerToS)("version")
+	//SemVer version_; /// Version of the package
 
 	@JSON!(jGetString, stringToJ)("")
 	@SDL!(sGetString, stringToS)("")

@@ -33,7 +33,6 @@ subConfiguration "semver" "subConf_posix" platform="posix"
 subConfiguration "semver" "subConf_windows" platform="windows"
 subConfiguration "graphql" "the_fast_version"
 license "LGPL3"
-version "1.0.0"
 configuration "test-win" {
 	platforms "windows"
 	libs "libc"
@@ -58,7 +57,6 @@ buildRequirements "allowWarnings"
 subConfiguration "semver" "subConf_posix"
 subConfiguration "graphql" "the_fast_version"
 license "LGPL3"
-version "1.0.0"
 libs "glibc"
 `;
 

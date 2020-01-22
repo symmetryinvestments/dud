@@ -26,7 +26,6 @@ unittest {
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"description": "A dub replacement",
 	"license": "LGPL3",
-	"version": "1.0.0",
 	"targetType": "library",
 	"name": "dud",
 	"dependencies" : {
@@ -46,7 +45,7 @@ unittest {
 	PackageDescription pkg = jsonToPackageDescription(toParse);
 	assert(pkg.description == "A dub replacement", pkg.description);
 	assert(pkg.license == "LGPL3", pkg.license);
-	assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
+	//assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.targetPath.path == "/bin/dud",
 		format("%s", pkg.targetPath));
 	assert(pkg.configurations.length == 1);
@@ -436,8 +435,7 @@ unittest {
             ]
         }
     ],
-    "targetType": "none",
-    "version": "2.0.65"
+    "targetType": "none"
 }
 `;
 

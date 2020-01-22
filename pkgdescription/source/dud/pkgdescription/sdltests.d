@@ -30,7 +30,6 @@ targetType "library"
 targetPath "outDir"
 importPaths "source" "source1" "source2"
 license "LGPL3"
-version "1.0.0"
 configuration "test" {
 	platforms "windows"
 	libs "libc"
@@ -47,7 +46,7 @@ configuration "test" {
 			, [ ]
 		)])
 	, to!string(pkg.importPaths));
-	assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
+	//assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.license == "LGPL3", pkg.license);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
 	auto e = UnprocessedPath("outDir");
@@ -169,7 +168,6 @@ unittest {
 unittest {
 	string toParse = `
 name "describe-dependency-1"
-version "~master"
 description "A test describe project"
 homepage "fake.com"
 authors "nobody"
@@ -357,7 +355,6 @@ configuration "unittest" {
 unittest {
 	string toParse = `
 name "animated"
-version "~develop"
 description "An animation library, written in D, based loosely upon the animation framework used in Android."
 homepage "https://github.com/luke5542/AnimateD"
 authors "luke5542"

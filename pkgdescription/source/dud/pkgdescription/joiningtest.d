@@ -19,7 +19,6 @@ unittest {
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"description": "A dub replacement",
 	"license": "LGPL3",
-	"version": "1.0.0",
 	"targetType": "library",
 	"name": "dud",
 	"dependencies" : {

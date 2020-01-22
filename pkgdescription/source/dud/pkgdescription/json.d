@@ -125,7 +125,7 @@ JSONValue platformsToJ(const Platform[][] plts) {
 //
 
 JSONValue semVerToJ(const SemVer v) {
-	return v.toString().empty
+	return v == SemVer.init
 		? JSONValue.init
 		: JSONValue(v.toString());
 }
@@ -394,17 +394,17 @@ JSONValue dependencyToJ(const Dependency dep) {
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
 		}} else static if(is(MemType == Nullable!VersionRange)) {{
-			Nullable!VersionRange nvs = __traits(getMember, dep, mem).dup;
+			const Nullable!VersionRange nvs = __traits(getMember, dep, mem);
 			if(!nvs.isNull()) {
 				ret[Mem] = nvs.get().toString();
 			}
 		}} else static if(is(MemType == UnprocessedPath)) {{
-			UnprocessedPath p = __traits(getMember, dep, mem);
+			const UnprocessedPath p = __traits(getMember, dep, mem);
 			if(!p.path.empty) {
 				ret[Mem] = p.path;
 			}
 		}} else static if(is(MemType == Nullable!bool)) {{
-			Nullable!bool b = __traits(getMember, dep, mem);
+			const Nullable!bool b = __traits(getMember, dep, mem);
 			if(!b.isNull()) {
 				ret[Mem] = b;
 			}
