@@ -103,3 +103,14 @@ unittest {
 	assert(d1.ranges.length == 1, format("%s", d1));
 	assert(d1.ranges[0] == VersionRange(v1, Inclusive.yes, v2, Inclusive.no));
 }
+
+unittest {
+	const VersionUnion d1 = differenceOf(vr1, vr3);
+	assert(d1.ranges.length == 1, format("%s", d1));
+	assert(d1.ranges[0] == vr1);
+}
+
+unittest {
+	const VersionUnion d1 = differenceOf(vr1, vr1);
+	assert(d1.ranges.length == 0, format("%s", d1));
+}
