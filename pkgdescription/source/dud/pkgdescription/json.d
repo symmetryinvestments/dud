@@ -17,7 +17,6 @@ import std.traits : FieldNameTuple;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
-import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription;
 import dud.semver.semver : SemVer;
 import dud.semver.versionrange;

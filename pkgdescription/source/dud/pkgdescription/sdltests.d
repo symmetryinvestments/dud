@@ -10,7 +10,6 @@ import std.stdio;
 import std.json;
 
 import dud.pkgdescription;
-import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 import dud.pkgdescription.exception;

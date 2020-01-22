@@ -633,7 +633,6 @@ void sGetDependencies(Tag t, string key, ref Dependency[] ret) {
 void sGetDependencies(ValueRange v, AttributeAccessor ars, string key,
 		ref Dependency[] deps)
 {
-	import dud.pkgdescription.versionspecifier;
 	enforce!EmptyInput(!v.empty,
 		format("Can not get Dependencies of an empty range", key));
 	string name;

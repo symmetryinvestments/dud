@@ -3,7 +3,6 @@ module dud.pkgdescription;
 import std.typecons : Nullable;
 
 public import dud.pkgdescription.path;
-public import dud.pkgdescription.versionspecifier;
 public import dud.pkgdescription.udas;
 public import dud.pkgdescription.json;
 public import dud.pkgdescription.sdl;
