@@ -107,8 +107,9 @@ struct PackageDescriptionNoPlatform {
 
 	string[string] subConfigurations;
 
-	bool opEquals(const(typeof(this)) other) const {
-		return true;
+	bool opEquals(const(PackageDescriptionNoPlatform) other) const {
+		import dud.pkgdescription.compare : areEqual;
+		return areEqual(this, other);
 	}
 }
 
