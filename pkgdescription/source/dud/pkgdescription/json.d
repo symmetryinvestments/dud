@@ -19,7 +19,8 @@ import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
 import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.versionrange;
 
 @safe pure:
 
@@ -130,8 +131,9 @@ JSONValue semVerToJ(const SemVer v) {
 }
 
 SemVer jGetSemVer(ref JSONValue jv) {
+	import dud.semver.parse : parseSemVer;
 	string s = jGetString(jv);
-	return SemVer(s);
+	return parseSemVer(s);
 }
 
 //
@@ -305,17 +307,17 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	}
 
 	Dependency extractDependencyStr(ref JSONValue jv) pure {
-		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
+		import dud.semver.versionrange;
 
 		typeCheck(jv, [JSONType.string]);
 
 		Dependency ret;
-		ret.version_ = parseVersionSpecifier(jv.str());
+		ret.version_ = parseVersionRange(jv.str());
 		return ret;
 	}
 
 	Dependency extractDependencyObj(ref JSONValue jv) pure {
-		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
+		import dud.semver.versionrange;
 
 		typeCheck(jv, [JSONType.object]);
 
@@ -323,7 +325,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 		foreach(keyF, value; jv.objectNoRef()) {
 			switch(keyF) {
 				case "version":
-					ret.version_ = parseVersionSpecifier(jGetString(value));
+					ret.version_ = parseVersionRange(jGetString(value));
 					break;
 				case "path":
 					ret.path.path = jGetString(value);
@@ -382,7 +384,7 @@ JSONValue dependencyToJ(const Dependency dep) {
 
 	JSONValue ret;
 	if(isShortFrom(dep)) {
-		return JSONValue(dep.version_.get().orig);
+		return JSONValue(dep.version_.get().toString());
 	}
 	static foreach(mem; FieldNameTuple!Dependency) {{
 		alias MemType = typeof(__traits(getMember, Dependency, mem));
@@ -391,10 +393,10 @@ JSONValue dependencyToJ(const Dependency dep) {
 
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
-		}} else static if(is(MemType == Nullable!VersionSpecifier)) {{
-			Nullable!VersionSpecifier nvs = __traits(getMember, dep, mem);
+		}} else static if(is(MemType == Nullable!VersionRange)) {{
+			Nullable!VersionRange nvs = __traits(getMember, dep, mem);
 			if(!nvs.isNull()) {
-				ret[Mem] = nvs.get().orig;
+				ret[Mem] = nvs.get().toString();
 			}
 		}} else static if(is(MemType == UnprocessedPath)) {{
 			UnprocessedPath p = __traits(getMember, dep, mem);
@@ -736,8 +738,8 @@ ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
 	typeCheck(jv, [JSONType.string]);
 	const string s = jv.str;
 	return s == "no"
-		? ToolchainRequirement(true, VersionSpecifier.init)
-		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
+		? ToolchainRequirement(true, VersionRange.init)
+		: ToolchainRequirement(false, parseVersionRange(s).get());
 }
 
 void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
@@ -760,7 +762,7 @@ void jGetToolchainRequirement(ref JSONValue jv, string key,
 }
 
 string toolchainToString(const ToolchainRequirement tcr) {
-	return tcr.no ? "no" : tcr.version_.orig;
+	return tcr.no ? "no" : tcr.version_.toString();
 }
 
 void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,

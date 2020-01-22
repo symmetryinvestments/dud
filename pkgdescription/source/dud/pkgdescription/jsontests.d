@@ -10,7 +10,9 @@ import std.format : format;
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
 import dud.pkgdescription.helper;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.parse : parseSemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription;
 import dud.pkgdescription.validation;
 import dud.pkgdescription.duplicate : ddup = dup;
@@ -44,7 +46,7 @@ unittest {
 	PackageDescription pkg = jsonToPackageDescription(toParse);
 	assert(pkg.description == "A dub replacement", pkg.description);
 	assert(pkg.license == "LGPL3", pkg.license);
-	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
+	assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.targetPath.path == "/bin/dud",
 		format("%s", pkg.targetPath));
 	assert(pkg.configurations.length == 1);
@@ -73,7 +75,6 @@ unittest {
 }
 
 unittest {
-	import dud.semver : SemVer;
 	string toParse = `
 {
 	"name" : "Foo",

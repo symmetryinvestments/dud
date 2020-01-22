@@ -9,7 +9,8 @@ public import dud.pkgdescription.json;
 public import dud.pkgdescription.sdl;
 public import dud.pkgdescription.platform;
 
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 @safe pure:
 
@@ -317,7 +318,7 @@ struct Dependency {
 @safe pure:
 	import std.typecons : Nullable;
 	string name;
-	Nullable!VersionSpecifier version_;
+	Nullable!VersionRange version_;
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
@@ -358,5 +359,5 @@ enum Toolchain {
 
 struct ToolchainRequirement {
 	bool no;
-	VersionSpecifier version_;
+	VersionRange version_;
 }

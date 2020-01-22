@@ -1,4 +1,10 @@
 {
 	"name": "semver",
-	"targetType": "library"
+	"targetType": "library",
+	"dependencies": {
+		"exception": {
+			"path": "../exception",
+			"version": ">=0.0.0"
+		}
+	}
 }

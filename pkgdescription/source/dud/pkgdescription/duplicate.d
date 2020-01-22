@@ -6,7 +6,8 @@ import std.traits : FieldNameTuple;
 import std.typecons : nullable;
 import std.format : format;
 
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 import dud.pkgdescription;
 
 @safe:
@@ -54,19 +55,17 @@ PackageDescription dup(const ref PackageDescription pkg) {
 // ToolchainRequirement
 //
 
-VersionSpecifier dup(const ref VersionSpecifier old) {
-	return old.orig.empty
-		? VersionSpecifier(old.low, old.inclusiveLow, old.high,
-				old.inclusiveHigh)
-		: parseVersionSpecifier(old.orig).get();
+VersionRange dup(const ref VersionRange old) {
+	return old.dup();
 }
 
 unittest {
 	import dud.pkgdescription.compare;
-	auto old = parseVersionSpecifier(">=1.15.0");
+	import dud.semver.versionrange;
+	auto old = parseVersionRange(">=1.15.0");
 	assert(!old.isNull());
 
-	VersionSpecifier d = dup(old.get());
+	VersionRange d = dup(old.get());
 	assert(areEqual(old.get(), d));
 }
 
@@ -99,9 +98,7 @@ TargetType dup(const(TargetType) old) {
 //
 
 SemVer dup(ref const(SemVer) old) {
-	return old.m_version.empty
-		? SemVer.init
-		: SemVer(old.m_version.dup);
+	return old.dup();
 }
 
 SemVer[] dup(const(SemVer[]) old) {
@@ -233,7 +230,7 @@ Dependency dup(ref const(Dependency) old) {
 	}
 
 	if(!old.version_.isNull()) {
-		const VersionSpecifier o = old.version_.get();
+		VersionRange o = old.version_.get().dup;
 		ret.version_ = o;
 	}
 	return ret;

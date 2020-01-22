@@ -14,7 +14,7 @@ import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 import dud.pkgdescription.exception;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
 import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {

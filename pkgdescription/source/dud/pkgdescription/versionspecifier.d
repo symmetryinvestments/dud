@@ -1,5 +1,7 @@
 module dud.pkgdescription.versionspecifier;
 
+__EOF__
+
 import std.array : empty;
 import std.exception : enforce;
 import std.format : format;
@@ -25,7 +27,7 @@ struct VersionSpecifier {
 	SemVer high;
 
 	this(string input) pure {
-		Nullable!VersionSpecifier s = parseVersionSpecifier(input);
+		Nullable!VersionSpecifier s = parseVersionRange(input);
 		enforce(!s.isNull());
 		VersionSpecifier snn = s.get();
 		this = snn;

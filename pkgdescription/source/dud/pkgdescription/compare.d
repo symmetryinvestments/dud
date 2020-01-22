@@ -6,7 +6,8 @@ import std.algorithm.searching : all, any, canFind, find;
 import std.traits : Unqual, FieldNameTuple;
 import std.typecons : nullable;
 
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription;
 import dud.pkgdescription.platformselection;
 
@@ -27,9 +28,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 		} else static if(is(aMemType == const(SemVer))) {
 			auto aSem = __traits(getMember, a, mem);
 			auto bSem = __traits(getMember, b, mem);
-			if(aSem.isUnknown() || bSem.isUnknown()) {
-				return aSem.isUnknown() == bSem.isUnknown();
-			} else if(aSem != bSem) {
+			if(aSem != bSem) {
 				return false;
 			}
 		} else static if(is(aMemType == const(Dependency[]))
@@ -83,9 +82,7 @@ bool areEqual(const PackageDescriptionNoPlatform a,
 		} else static if(is(aMemType == const(SemVer))) {
 			auto aSem = __traits(getMember, a, mem);
 			auto bSem = __traits(getMember, b, mem);
-			if(aSem.isUnknown() || bSem.isUnknown()) {
-				return aSem.isUnknown() == bSem.isUnknown();
-			} else if(aSem != bSem) {
+			if(aSem != bSem) {
 				return false;
 			}
 		} else static if(is(aMemType == const(DependencyNoPlatform[string]))
@@ -351,14 +348,11 @@ unittest {
 }
 
 //
-// VersionSpecifier
+// VersionRange
 //
 
-bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
-	return a.inclusiveLow == b.inclusiveLow
-		&& a.inclusiveHigh == b.inclusiveHigh
-		&& a.low == b.low
-		&& a.high == b.high;
+bool areEqual(const VersionRange a, const VersionRange b) {
+	return a == b;
 }
 
 //

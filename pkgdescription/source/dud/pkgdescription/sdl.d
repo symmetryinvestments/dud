@@ -16,7 +16,7 @@ import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
 import dud.pkgdescription;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
 
 import dud.sdlang;
 

@@ -15,7 +15,8 @@ import dud.pkgdescription.duplicate : ddup = dup;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.path;
 import dud.pkgdescription;
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 PackageDescriptionNoPlatform select(const(PackageDescription) pkg,
 		const(Platform[]) platform)
@@ -121,7 +122,7 @@ struct SubPackageNoPlatform {
 struct DependencyNoPlatform {
 @safe pure:
 	string name;
-	Nullable!VersionSpecifier version_;
+	Nullable!VersionRange version_;
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
