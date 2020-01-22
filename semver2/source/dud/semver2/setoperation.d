@@ -125,9 +125,13 @@ VersionRange intersectionOf(const(VersionRange) a, const(VersionRange) b) {
 			? Inclusive.no
 			: a.high == high ? a.inclusiveHigh : b.inclusiveHigh;
 
-	return low <= high
+	return low < high
 		? VersionRange(low, incLow, high, incHigh)
-		: VersionRange.init;
+		: a.high == b.low && a.inclusiveHigh && b.inclusiveLow
+			? VersionRange(a.high, Inclusive.yes, a.high, Inclusive.yes)
+			: b.high == a.low && b.inclusiveHigh && a.inclusiveLow
+				? VersionRange(b.high, Inclusive.yes, b.high, Inclusive.yes)
+				: VersionRange.init;
 }
 
 VersionUnion intersectionOf(const(VersionUnion) a, const(VersionRange) b) {
