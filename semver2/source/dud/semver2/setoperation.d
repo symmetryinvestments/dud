@@ -210,9 +210,6 @@ VersionUnion differenceOf(const(VersionRange) a, const(SemVer) b) {
 
 VersionUnion differenceOf(const(VersionRange) a, const(VersionRange) b) {
 	const VersionUnion bInt = invert(b);
-	debug writefln("a:\n%s", a);
-	debug writefln("b:\n%(%s\n%)", bInt.ranges);
 	auto ret = intersectionOf(a, bInt);
-	debug writefln("r:\n%(%s\n%)", ret.ranges);
 	return ret;
 }
