@@ -106,6 +106,10 @@ struct PackageDescriptionNoPlatform {
 	PackageDescriptionNoPlatform[] configurations;
 
 	string[string] subConfigurations;
+
+	bool opEquals(const(typeof(this)) other) const {
+		return true;
+	}
 }
 
 struct SubPackageNoPlatform {

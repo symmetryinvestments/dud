@@ -14,6 +14,7 @@ private struct Options {
 	string inFilename;
 }
 
+version(App):
 void main(string[] args) {
 	Options options;
 	auto helpWanted = getopt(args,

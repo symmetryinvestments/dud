@@ -22,7 +22,7 @@ import dud.pkgdescription.helper;
 
 @safe:
 
-unittest {
+void fun1() {
 	string input = q{
 configuration "windows-release" {
   preBuildCommands "cd $PACKAGE_DIR\\cpp && cmake . -G \"Visual Studio 14 2015 Win64\" && cmake --build . --config Release" platform="windows-x86_64"
@@ -48,7 +48,7 @@ configuration "windows-release" {
 
 version(ExcessivConvTests):
 
-unittest {
+void fun2() {
 	auto all = chain(
 		() @trusted { return allDubJSONFiles(); }(),
 		() @trusted { return allDubSDLFiles(); }())
@@ -115,4 +115,9 @@ unittest {
 		++idx;
 	}
 	writefln("fails %s, %d worked", failCnt, worked);
+}
+
+void main() {
+	fun1();
+	fun2();
 }
