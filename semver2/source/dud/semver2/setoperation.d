@@ -55,6 +55,7 @@ VersionUnion unionOf(const(VersionRange) a, const(VersionRange) b) {
 VersionUnion unionOf(const(VersionRange) a, const(VersionUnion) b) {
 	return unionOf(b, a);
 }
+
 VersionUnion unionOf(const(VersionUnion) a, const(VersionRange) b) {
 	VersionUnion ret = a.dup();
 	ret.insert(b);
