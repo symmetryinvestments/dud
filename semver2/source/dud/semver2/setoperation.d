@@ -208,7 +208,30 @@ VersionUnion differenceOf(const(VersionRange) a, const(SemVer) b) {
 	return intersectionOf(a, bInt);
 }
 
+SemVer differenceOf(const(SemVer) a, const(VersionRange) b) {
+	const VersionUnion bInt = invert(b);
+	return intersectionOf(a, bInt);
+}
+
 VersionUnion differenceOf(const(VersionRange) a, const(VersionRange) b) {
+	const VersionUnion bInt = invert(b);
+	auto ret = intersectionOf(a, bInt);
+	return ret;
+}
+
+VersionUnion differenceOf(const(VersionUnion) a, const(VersionRange) b) {
+	const VersionUnion bInt = invert(b);
+	auto ret = intersectionOf(a, bInt);
+	return ret;
+}
+
+VersionUnion differenceOf(const(VersionRange) a, const(VersionUnion) b) {
+	const VersionUnion bInt = invert(b);
+	auto ret = intersectionOf(a, bInt);
+	return ret;
+}
+
+VersionUnion differenceOf(const(VersionUnion) a, const(VersionUnion) b) {
 	const VersionUnion bInt = invert(b);
 	auto ret = intersectionOf(a, bInt);
 	return ret;
