@@ -58,7 +58,7 @@ VersionSpecifier dup(const ref VersionSpecifier old) {
 	return old.orig.empty
 		? VersionSpecifier(old.low, old.inclusiveLow, old.high,
 				old.inclusiveHigh)
-		: parseVersionSpecifier(old.orig);
+		: parseVersionSpecifier(old.orig).get();
 }
 
 unittest {
@@ -223,15 +223,18 @@ Dependency dup(ref const(Dependency) old) {
 	ret.platforms = old.platforms.dup();
 	ret.path = old.path.dup();
 	if(!old.default_.isNull()) {
-		ret.default_ = nullable(old.default_.get());
+		const bool o = old.default_.get();
+		ret.default_ = o;
 	}
 
 	if(!old.optional.isNull()) {
-		ret.optional = nullable(old.optional.get());
+		const bool o = old.optional.get();
+		ret.optional = o;
 	}
 
 	if(!old.version_.isNull()) {
-		ret.version_ = nullable(old.version_.get());
+		const VersionSpecifier o = old.version_.get();
+		ret.version_ = o;
 	}
 	return ret;
 }

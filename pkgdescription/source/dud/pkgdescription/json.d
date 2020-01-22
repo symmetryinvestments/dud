@@ -320,8 +320,8 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 		typeCheck(jv, [JSONType.object]);
 
 		Dependency ret;
-		foreach(key, value; jv.objectNoRef()) {
-			switch(key) {
+		foreach(keyF, value; jv.objectNoRef()) {
+			switch(keyF) {
 				case "version":
 					ret.version_ = parseVersionSpecifier(jGetString(value));
 					break;
@@ -337,7 +337,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 				default:
 					throw new Exception(format(
 							"Key '%s' is not part of a Dependency declaration",
-							key));
+							keyF));
 			}
 		}
 
@@ -365,8 +365,8 @@ void dependenciesToJ(const Dependency[] deps, string key, ref JSONValue jv) {
 	JSONValue[string][string] tmp;
 	deps.each!(dep => tmp[platformKeyToS(key, dep.platforms)][dep.name] =
 		dependencyToJ(dep));
-	foreach(key, value; tmp) {
-		jv[key] = JSONValue(value);
+	foreach(keyF, value; tmp) {
+		jv[keyF] = JSONValue(value);
 	}
 }
 
@@ -386,7 +386,9 @@ JSONValue dependencyToJ(const Dependency dep) {
 	}
 	static foreach(mem; FieldNameTuple!Dependency) {{
 		alias MemType = typeof(__traits(getMember, Dependency, mem));
+
 		enum Mem = PreprocessKey!(mem);
+
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
 		}} else static if(is(MemType == Nullable!VersionSpecifier)) {{
@@ -473,10 +475,10 @@ void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 
 void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[string] bts) {
 	typeCheck(jv, [JSONType.object]);
-	foreach(key, value; jv.objectNoRef()) {
+	foreach(keyF, value; jv.objectNoRef()) {
 		BuildType tmp;
-		jGetBuildType(value, key, tmp);
-		bts[key] = tmp;
+		jGetBuildType(value, keyF, tmp);
+		bts[keyF] = tmp;
 	}
 }
 
@@ -489,9 +491,9 @@ void buildTypesToJ(const BuildType[string] bts, const string key,
 	}
 
 	JSONValue[string] map;
-	foreach(key, value; bts) {
+	foreach(keyF, value; bts) {
 		JSONValue tmp = packageDescriptionToJ(value.pkg);
-		map[key] = tmp;
+		map[keyF] = tmp;
 	}
 	ret["buildTypes"] = map;
 }
@@ -735,7 +737,7 @@ ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
 	const string s = jv.str;
 	return s == "no"
 		? ToolchainRequirement(true, VersionSpecifier.init)
-		: ToolchainRequirement(false, parseVersionSpecifier(s));
+		: ToolchainRequirement(false, parseVersionSpecifier(s).get());
 }
 
 void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
@@ -770,8 +772,8 @@ void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
 	typeCheck(ret, [JSONType.object, JSONType.null_]);
 
 	JSONValue[string] map;
-	foreach(key, value; tcrs) {
-		map[to!string(key)] = toolchainToString(value);
+	foreach(keyF, value; tcrs) {
+		map[to!string(keyF)] = toolchainToString(value);
 	}
 	ret["toolchainRequirements"] = map;
 }

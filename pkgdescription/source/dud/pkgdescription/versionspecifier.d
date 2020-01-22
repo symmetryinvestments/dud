@@ -239,7 +239,7 @@ bool isInRange(const(VersionSpecifier) range, const(SemVer) v) pure {
 }
 
 pure unittest {
-	VersionSpecifier r1 = parseVersionSpecifier("^1.0.0");
+	VersionSpecifier r1 = parseVersionSpecifier("^1.0.0").get();
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
 	SemVer v3 = SemVer("2.0.1");
@@ -256,7 +256,7 @@ pure unittest {
 }
 
 pure unittest {
-	VersionSpecifier r1 = parseVersionSpecifier("*");
+	VersionSpecifier r1 = parseVersionSpecifier("*").get();
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
 	SemVer v3 = SemVer("2.0.1");
@@ -273,7 +273,7 @@ pure unittest {
 }
 
 pure unittest {
-	VersionSpecifier r1 = parseVersionSpecifier("~master");
+	VersionSpecifier r1 = parseVersionSpecifier("~master").get();
 	SemVer v1 = SemVer("1.0.0");
 	SemVer v2 = SemVer("2.0.0");
 	SemVer v3 = SemVer("2.0.1");
