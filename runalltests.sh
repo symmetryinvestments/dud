@@ -41,12 +41,13 @@ for dc in $1
 do
 	test utils ${dc}
 	test exception ${dc}
-	test sdlang ${dc} "ExcessiveTests"
+	#test sdlang ${dc} "ExcessiveTests"
+	test testdata ${dc} "app"
+	test sdlang ${dc}
 	test semver ${dc}
 	#test pkgdescription ${dc} "ExcessiveSDLTests" "ExcessiveJSONTests" "ExcessiveConvTests"
 	test pkgdescription ${dc}
 	test resolve ${dc}
-	test testdata ${dc} "app"
 	test descriptiongetter ${dc}
 done
 exit 0
