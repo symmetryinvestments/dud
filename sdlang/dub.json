@@ -11,12 +11,9 @@
 	},
 	"configurations" : [
 		{ "name" : "ExcessiveTests"
-		, "versions" : ["ExcessivTests"]
+		, "mainSourceFile" : "source/dud/sdlang/parsertest2.d"
+		, "versions" : ["ExcessiveTestsSDLang"]
 		, "targetType" : "executable"
-		, "dflags" : ["-unittest", "-main"]
-		}
-		, { "name" : "unittest"
-		, "dflags" : ["-unittest"]
 		}
 	]
 }

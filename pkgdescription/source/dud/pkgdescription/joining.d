@@ -78,7 +78,7 @@ void joinPackageDescription(ref PackageDescription ret,
 						__traits(getMember, conf, mem));
 		} else static if(canFind(
 			[ isMem!"name", isMem!"description", isMem!"homepage"
-			, isMem!"license", isMem!"authors", isMem!"version_"
+			, isMem!"license", isMem!"authors"//, isMem!"version_"
 			, isMem!"copyright", isMem!"subPackages"
 			, isMem!"ddoxFilterArgs", isMem!"configurations"
 			, isMem!"buildRequirements"

@@ -6,12 +6,14 @@ import std.algorithm.searching : all, any, canFind, find;
 import std.traits : Unqual, FieldNameTuple;
 import std.typecons : nullable;
 
+import dud.semver.semver : SemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription;
+import dud.pkgdescription.platformselection;
 
 @safe pure:
 
 bool areEqual(const PackageDescription a, const PackageDescription b) {
-	import dud.semver : SemVer;
 	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		alias aMemType = typeof(__traits(getMember, a, mem));
 
@@ -26,9 +28,7 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 		} else static if(is(aMemType == const(SemVer))) {
 			auto aSem = __traits(getMember, a, mem);
 			auto bSem = __traits(getMember, b, mem);
-			if(aSem.isUnknown() || bSem.isUnknown()) {
-				return aSem.isUnknown() == bSem.isUnknown();
-			} else if(aSem != bSem) {
+			if(aSem != bSem) {
 				return false;
 			}
 		} else static if(is(aMemType == const(Dependency[]))
@@ -62,6 +62,96 @@ bool areEqual(const PackageDescription a, const PackageDescription b) {
 }
 
 //
+// PackageDescriptionNoPlatform
+//
+
+bool areEqual(const PackageDescriptionNoPlatform a,
+		const PackageDescriptionNoPlatform b)
+{
+	static foreach(mem; FieldNameTuple!PackageDescriptionNoPlatform) {{
+		alias aMemType = typeof(__traits(getMember, a, mem));
+
+		static if(is(aMemType == const(string))
+				|| is(aMemType == const(TargetType))
+				|| is(aMemType == const(string[]))
+			)
+		{
+			if(__traits(getMember, a, mem) != __traits(getMember, b, mem)) {
+				return false;
+			}
+		} else static if(is(aMemType == const(SemVer))) {
+			auto aSem = __traits(getMember, a, mem);
+			auto bSem = __traits(getMember, b, mem);
+			if(aSem != bSem) {
+				return false;
+			}
+		} else static if(is(aMemType == const(DependencyNoPlatform[string]))
+				|| is(aMemType == const(UnprocessedPath))
+				|| is(aMemType == const(UnprocessedPath[]))
+				|| is(aMemType == const(PackageDescriptionNoPlatform[]))
+				|| is(aMemType == const(SubPackageNoPlatform[]))
+				|| is(aMemType == const(BuildRequirement[]))
+				|| is(aMemType == const(BuildOption[]))
+				|| is(aMemType == const(ToolchainRequirement[Toolchain]))
+				|| is(aMemType == const(string[string]))
+		) {
+			if(!areEqual(__traits(getMember, a, mem),
+					__traits(getMember, b, mem)))
+			{
+				return false;
+			}
+		} else {
+			static assert(false, aMemType.stringof ~ " not handled");
+		}
+	}}
+	return true;
+}
+
+bool areEqual(const(PackageDescriptionNoPlatform[]) as,
+		const(PackageDescriptionNoPlatform[]) bs)
+{
+	return as.all!(it => canFind!((a,b) => areEqual(a, b))(bs, it))
+		&& bs.all!(it => canFind!((a,b) => areEqual(a, b))(as, it));
+}
+
+//
+// BuildRequirement
+//
+
+bool areEqual(const(BuildRequirement[]) as, const(BuildRequirement[]) bs) {
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	return as.all!(it => canFind(bs, it))
+		&& bs.all!(it => canFind(as, it));
+
+}
+
+//
+// SubPackageNoPlatform
+//
+
+bool areEqual(const(SubPackageNoPlatform[]) as,
+		const(SubPackageNoPlatform[]) bs)
+{
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	return as.all!(it => canFind!((a,b) => areEqual(a, b))(bs, it))
+		&& bs.all!(it => canFind!((a,b) => areEqual(a, b))(as, it));
+}
+
+bool areEqual(const SubPackageNoPlatform a, const SubPackageNoPlatform b) {
+	return areEqual(a.path, b.path)
+		&& a.inlinePkg.isNull() == b.inlinePkg.isNull()
+		&& !a.inlinePkg.isNull()
+			? areEqual(a.inlinePkg.get(), b.inlinePkg.get())
+			: true;
+}
+
+//
 // ToolchainRequirement
 //
 
@@ -88,7 +178,12 @@ bool areEqual(const BuildOption[] as, const BuildOption[] bs) {
 		return false;
 	}
 
-	return as.all!(a => canFind(bs, a)) && bs.all!(b => canFind(as, b));
+	bool c(const(BuildOption) a, const(BuildOption) b) {
+		return a == b;
+	}
+
+	return as.all!(it => canFind!c(bs, it))
+		&& bs.all!(it => canFind!c(as, it));
 }
 
 //
@@ -253,16 +348,29 @@ unittest {
 }
 
 //
-// VersionSpecifier
+// VersionRange
 //
 
-bool areEqual(const VersionSpecifier a, const VersionSpecifier b) {
-	return a.orig == b.orig;
+bool areEqual(const VersionRange a, const VersionRange b) {
+	return a == b;
 }
 
 //
 // Path
 //
+
+bool areEqual(const(UnprocessedPath[]) as, const(UnprocessedPath[]) bs) {
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	bool cmp(const(UnprocessedPath) a, const(UnprocessedPath) b) {
+		return areEqual(a, b);
+	}
+
+	return as.all!(it => canFind!cmp(bs, it))
+		&& bs.all!(it => canFind!cmp(as, it));
+}
 
 bool areEqual(const UnprocessedPath a, const UnprocessedPath b) {
 	return a.path == b.path;
@@ -391,6 +499,37 @@ unittest {
 }
 
 //
+// DependencyNoPlatform
+//
+
+bool areEqual(const(DependencyNoPlatform[string]) as,
+		const(DependencyNoPlatform[string]) bs)
+{
+	if(as.length != bs.length) {
+		return false;
+	}
+
+	return as.byKeyValue
+			.all!(it => it.key in bs && areEqual(bs[it.key], it.value));
+}
+
+bool areEqual(const(DependencyNoPlatform) a, const(DependencyNoPlatform) b) {
+	return a.name == b.name
+		&& a.version_.isNull() == b.version_.isNull()
+		&& a.version_.isNull()
+			? true
+			: areEqual(a.version_.get(), b.version_.get())
+		&& a.optional.isNull() == b.optional.isNull()
+		&& a.optional.isNull()
+			? true
+			: a.optional.get() == b.optional.get()
+		&& a.default_.isNull() == b.default_.isNull()
+		&& a.default_.isNull()
+			? true
+			: a.default_.get() == b.default_.get();
+}
+
+//
 // Dependency
 //
 
@@ -486,6 +625,13 @@ unittest {
 	Platform[] a = [Platform.gnu, Platform.bsd];
 	Platform[] b = [Platform.bsd, Platform.gnu];
 	assert(areEqual(a, b));
+}
+
+//
+// string[string]
+//
+bool areEqual(const(string[string]) as, const(string[string]) bs) {
+	return as == bs;
 }
 
 //

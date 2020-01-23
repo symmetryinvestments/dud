@@ -5,6 +5,7 @@ import std.stdio;
 import std.format : format;
 import std.typecons : nullable, Nullable;
 
+import dud.semver.versionrange;
 import dud.pkgdescription;
 import dud.pkgdescription.compare;
 import dud.pkgdescription.joining;
@@ -18,7 +19,6 @@ unittest {
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"description": "A dub replacement",
 	"license": "LGPL3",
-	"version": "1.0.0",
 	"targetType": "library",
 	"name": "dud",
 	"dependencies" : {
@@ -65,12 +65,12 @@ unittest {
 	auto deps = [
 		depBuild("semver", ">=0.0.3", "../semver", nullable(true)),
 		depBuild("path", "../path", Nullable!(bool).init, nullable(false)),
-		depBuild("dmd", parseVersionSpecifier(">=2.80.0")),
+		depBuild("dmd", parseVersionRange(">=2.80.0")),
 		depBuild("pkgdescription", "../../pkgdescription"),
-		depBuild("pkgdescription", parseVersionSpecifier(">=1.0.0"),
+		depBuild("pkgdescription", parseVersionRange(">=1.0.0"),
 				"../../pkgdescription", Nullable!(bool).init,
 				Nullable!(bool).init, [Platform.posix]),
-		depBuild("dmd", parseVersionSpecifier(">=2.81.0"),
+		depBuild("dmd", parseVersionRange(">=2.81.0"),
 				"", Nullable!(bool).init,
 				Nullable!(bool).init, [Platform.posix])
 	];
@@ -106,7 +106,7 @@ Dependency depBuild(string n, string pa,
 		Nullable!bool default_ = Nullable!(bool).init,
 		Platform[] p = null)
 {
-	return depBuild(n, Nullable!(VersionSpecifier).init, pa, optional,
+	return depBuild(n, Nullable!(VersionRange).init, pa, optional,
 		default_, p);
 }
 
@@ -115,10 +115,10 @@ Dependency depBuild(string n, string v, string pa,
 		Nullable!bool default_ = Nullable!(bool).init,
 		Platform[] p = null)
 {
-	return depBuild(n, parseVersionSpecifier(v), pa, optional, default_, p);
+	return depBuild(n, parseVersionRange(v), pa, optional, default_, p);
 }
 
-Dependency depBuild(string n, Nullable!VersionSpecifier v, string pa = "",
+Dependency depBuild(string n, Nullable!VersionRange v, string pa = "",
 		Nullable!bool optional = Nullable!(bool).init,
 		Nullable!bool default_ = Nullable!(bool).init,
 		Platform[] p = null)

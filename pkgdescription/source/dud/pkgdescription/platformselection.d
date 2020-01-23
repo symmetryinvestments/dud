@@ -15,7 +15,8 @@ import dud.pkgdescription.duplicate : ddup = dup;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.path;
 import dud.pkgdescription;
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 PackageDescriptionNoPlatform select(const(PackageDescription) pkg,
 		const(Platform[]) platform)
@@ -106,6 +107,11 @@ struct PackageDescriptionNoPlatform {
 	PackageDescriptionNoPlatform[] configurations;
 
 	string[string] subConfigurations;
+
+	bool opEquals(const(PackageDescriptionNoPlatform) other) const {
+		import dud.pkgdescription.compare : areEqual;
+		return areEqual(this, other);
+	}
 }
 
 struct SubPackageNoPlatform {
@@ -116,7 +122,7 @@ struct SubPackageNoPlatform {
 struct DependencyNoPlatform {
 @safe pure:
 	string name;
-	Nullable!VersionSpecifier version_;
+	Nullable!VersionRange version_;
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
@@ -131,7 +137,7 @@ PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
 	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
 		static if(canFind(
-			[ isMem!"name", isMem!"version_", isMem!"description"
+			[ isMem!"name", /*isMem!"version_",*/ isMem!"description"
 			, isMem!"homepage", isMem!"authors", isMem!"copyright"
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"

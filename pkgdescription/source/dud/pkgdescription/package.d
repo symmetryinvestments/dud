@@ -3,13 +3,13 @@ module dud.pkgdescription;
 import std.typecons : Nullable;
 
 public import dud.pkgdescription.path;
-public import dud.pkgdescription.versionspecifier;
 public import dud.pkgdescription.udas;
 public import dud.pkgdescription.json;
 public import dud.pkgdescription.sdl;
 public import dud.pkgdescription.platform;
 
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 @safe pure:
 
@@ -38,9 +38,9 @@ struct PackageDescription {
 	@SDL!(sGetString, stringToSName)("")
 	string name; /// Qualified name of the package
 
-	@JSON!(jGetSemVer, semVerToJ)("version")
-	@SDL!(sGetSemVer, semVerToS)("version")
-	SemVer version_; /// Version of the package
+	//@JSON!(jGetSemVer, semVerToJ)("version")
+	//@SDL!(sGetSemVer, semVerToS)("version")
+	//SemVer version_; /// Version of the package
 
 	@JSON!(jGetString, stringToJ)("")
 	@SDL!(sGetString, stringToS)("")
@@ -317,7 +317,7 @@ struct Dependency {
 @safe pure:
 	import std.typecons : Nullable;
 	string name;
-	Nullable!VersionSpecifier version_;
+	Nullable!VersionRange version_;
 	UnprocessedPath path;
 	Nullable!bool optional;
 	Nullable!bool default_;
@@ -358,5 +358,5 @@ enum Toolchain {
 
 struct ToolchainRequirement {
 	bool no;
-	VersionSpecifier version_;
+	VersionRange version_;
 }

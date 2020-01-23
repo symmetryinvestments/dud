@@ -10,7 +10,9 @@ import std.format : format;
 import dud.pkgdescription.json;
 import dud.pkgdescription.output;
 import dud.pkgdescription.helper;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.parse : parseSemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription;
 import dud.pkgdescription.validation;
 import dud.pkgdescription.duplicate : ddup = dup;
@@ -24,7 +26,6 @@ unittest {
 	"copyright": "Copyright © 2019, Symmetry Investments",
 	"description": "A dub replacement",
 	"license": "LGPL3",
-	"version": "1.0.0",
 	"targetType": "library",
 	"name": "dud",
 	"dependencies" : {
@@ -44,7 +45,7 @@ unittest {
 	PackageDescription pkg = jsonToPackageDescription(toParse);
 	assert(pkg.description == "A dub replacement", pkg.description);
 	assert(pkg.license == "LGPL3", pkg.license);
-	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
+	//assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.targetPath.path == "/bin/dud",
 		format("%s", pkg.targetPath));
 	assert(pkg.configurations.length == 1);
@@ -73,7 +74,6 @@ unittest {
 }
 
 unittest {
-	import dud.semver : SemVer;
 	string toParse = `
 {
 	"name" : "Foo",
@@ -311,7 +311,7 @@ unittest {
     "subPackages": [
         {
             "dependencies": {
-                "gfm:core": "~>6.0"
+                "gfm:core": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "core"
@@ -323,8 +323,8 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:core": "*",
-                "gfm:math": "~>6.0"
+                "dplug:core": ">=0.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "dsp"
@@ -336,7 +336,7 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:core": "*"
+                "dplug:core": ">=0.0.0"
             },
             "importPaths": [
                 "client"
@@ -348,9 +348,9 @@ unittest {
         },
         {
             "dependencies": {
-                "derelict-util": "~>2.0",
-                "dplug:core": "*",
-                "dplug:vst": "*"
+                "derelict-util": ">=2.0.0 <3.0.0",
+                "dplug:core": ">=0.0.0",
+                "dplug:vst": ">=0.0.0"
             },
             "importPaths": [
                 "host"
@@ -362,7 +362,7 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:client": "*"
+                "dplug:client": ">=0.0.0"
             },
             "importPaths": [
                 "vst"
@@ -374,11 +374,11 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:client": "*"
+                "dplug:client": ">=0.0.0"
             },
             "dependencies-osx": {
-                "derelict-carbon": "~>0.0",
-                "derelict-cocoa": "~>0.0"
+                "derelict-carbon": ">=0.0.0 <1.0.0",
+                "derelict-cocoa": ">=0.0.0 <1.0.0"
             },
             "importPaths": [
                 "au"
@@ -390,14 +390,14 @@ unittest {
         },
         {
             "dependencies": {
-                "ae-graphics": "~>0.0",
-                "dplug:core": "*",
-                "gfm:core": "~>6.0",
-                "gfm:math": "~>6.0"
+                "ae-graphics": ">=0.0.0 <1.0.0",
+                "dplug:core": ">=0.0.0",
+                "gfm:core": ">=6.0.0 <7.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0"
             },
             "dependencies-osx": {
-                "derelict-carbon": "~>0.0",
-                "derelict-cocoa": "~>0.0"
+                "derelict-carbon": ">=0.0.0 <1.0.0",
+                "derelict-cocoa": ">=0.0.0 <1.0.0"
             },
             "importPaths": [
                 "window"
@@ -419,12 +419,12 @@ unittest {
         },
         {
             "dependencies": {
-                "ae-graphics": "~>0.0",
-                "dplug:client": "*",
-                "dplug:core": "*",
-                "dplug:window": "*",
-                "gfm:math": "~>6.0",
-                "imageformats": "~>6.0"
+                "ae-graphics": ">=0.0.0 <1.0.0",
+                "dplug:client": ">=0.0.0",
+                "dplug:core": ">=0.0.0",
+                "dplug:window": ">=0.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0",
+                "imageformats": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "gui"
@@ -435,8 +435,7 @@ unittest {
             ]
         }
     ],
-    "targetType": "none",
-    "version": "2.0.65"
+    "targetType": "none"
 }
 `;
 
@@ -579,8 +578,7 @@ unittest {
 	"name" : "Foo",
     "toolchainRequirements": {
         "ldc": ">=1.15.0"
-    },
-    "version": "~master"
+    }
 }
 
 `;

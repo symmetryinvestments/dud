@@ -17,9 +17,9 @@ import std.traits : FieldNameTuple;
 import dud.pkgdescription.exception;
 import dud.pkgdescription.outpututils;
 import dud.pkgdescription.udas;
-import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.versionrange;
 
 @safe pure:
 
@@ -124,14 +124,15 @@ JSONValue platformsToJ(const Platform[][] plts) {
 //
 
 JSONValue semVerToJ(const SemVer v) {
-	return v.toString().empty
+	return v == SemVer.init
 		? JSONValue.init
 		: JSONValue(v.toString());
 }
 
 SemVer jGetSemVer(ref JSONValue jv) {
+	import dud.semver.parse : parseSemVer;
 	string s = jGetString(jv);
-	return SemVer(s);
+	return parseSemVer(s);
 }
 
 //
@@ -305,25 +306,25 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 	}
 
 	Dependency extractDependencyStr(ref JSONValue jv) pure {
-		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
+		import dud.semver.versionrange;
 
 		typeCheck(jv, [JSONType.string]);
 
 		Dependency ret;
-		ret.version_ = parseVersionSpecifier(jv.str());
+		ret.version_ = parseVersionRange(jv.str());
 		return ret;
 	}
 
 	Dependency extractDependencyObj(ref JSONValue jv) pure {
-		import dud.pkgdescription.versionspecifier : parseVersionSpecifier;
+		import dud.semver.versionrange;
 
 		typeCheck(jv, [JSONType.object]);
 
 		Dependency ret;
-		foreach(key, value; jv.objectNoRef()) {
-			switch(key) {
+		foreach(keyF, value; jv.objectNoRef()) {
+			switch(keyF) {
 				case "version":
-					ret.version_ = parseVersionSpecifier(jGetString(value));
+					ret.version_ = parseVersionRange(jGetString(value));
 					break;
 				case "path":
 					ret.path.path = jGetString(value);
@@ -337,7 +338,7 @@ void jGetDependencies(ref JSONValue jv, string key, ref Dependency[] deps) {
 				default:
 					throw new Exception(format(
 							"Key '%s' is not part of a Dependency declaration",
-							key));
+							keyF));
 			}
 		}
 
@@ -365,8 +366,8 @@ void dependenciesToJ(const Dependency[] deps, string key, ref JSONValue jv) {
 	JSONValue[string][string] tmp;
 	deps.each!(dep => tmp[platformKeyToS(key, dep.platforms)][dep.name] =
 		dependencyToJ(dep));
-	foreach(key, value; tmp) {
-		jv[key] = JSONValue(value);
+	foreach(keyF, value; tmp) {
+		jv[keyF] = JSONValue(value);
 	}
 }
 
@@ -382,25 +383,27 @@ JSONValue dependencyToJ(const Dependency dep) {
 
 	JSONValue ret;
 	if(isShortFrom(dep)) {
-		return JSONValue(dep.version_.get().orig);
+		return JSONValue(dep.version_.get().toString());
 	}
 	static foreach(mem; FieldNameTuple!Dependency) {{
 		alias MemType = typeof(__traits(getMember, Dependency, mem));
+
 		enum Mem = PreprocessKey!(mem);
+
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
-		}} else static if(is(MemType == Nullable!VersionSpecifier)) {{
-			Nullable!VersionSpecifier nvs = __traits(getMember, dep, mem);
+		}} else static if(is(MemType == Nullable!VersionRange)) {{
+			const Nullable!VersionRange nvs = __traits(getMember, dep, mem);
 			if(!nvs.isNull()) {
-				ret[Mem] = nvs.get().orig;
+				ret[Mem] = nvs.get().toString();
 			}
 		}} else static if(is(MemType == UnprocessedPath)) {{
-			UnprocessedPath p = __traits(getMember, dep, mem);
+			const UnprocessedPath p = __traits(getMember, dep, mem);
 			if(!p.path.empty) {
 				ret[Mem] = p.path;
 			}
 		}} else static if(is(MemType == Nullable!bool)) {{
-			Nullable!bool b = __traits(getMember, dep, mem);
+			const Nullable!bool b = __traits(getMember, dep, mem);
 			if(!b.isNull()) {
 				ret[Mem] = b;
 			}
@@ -473,10 +476,10 @@ void jGetBuildType(ref JSONValue jv, string key, ref BuildType bt) {
 
 void jGetBuildTypes(ref JSONValue jv, string key, ref BuildType[string] bts) {
 	typeCheck(jv, [JSONType.object]);
-	foreach(key, value; jv.objectNoRef()) {
+	foreach(keyF, value; jv.objectNoRef()) {
 		BuildType tmp;
-		jGetBuildType(value, key, tmp);
-		bts[key] = tmp;
+		jGetBuildType(value, keyF, tmp);
+		bts[keyF] = tmp;
 	}
 }
 
@@ -489,9 +492,9 @@ void buildTypesToJ(const BuildType[string] bts, const string key,
 	}
 
 	JSONValue[string] map;
-	foreach(key, value; bts) {
+	foreach(keyF, value; bts) {
 		JSONValue tmp = packageDescriptionToJ(value.pkg);
-		map[key] = tmp;
+		map[keyF] = tmp;
 	}
 	ret["buildTypes"] = map;
 }
@@ -734,16 +737,17 @@ ToolchainRequirement jGetToolchainRequirement(ref JSONValue jv) {
 	typeCheck(jv, [JSONType.string]);
 	const string s = jv.str;
 	return s == "no"
-		? ToolchainRequirement(true, VersionSpecifier.init)
-		: ToolchainRequirement(false, parseVersionSpecifier(s));
+		? ToolchainRequirement(true, VersionRange.init)
+		: ToolchainRequirement(false, parseVersionRange(s).get());
 }
 
 void insertInto(const Toolchain tc, const ToolchainRequirement tcr,
 		ref ToolchainRequirement[Toolchain] ret)
 {
+	import dud.pkgdescription.duplicate : dup;
 	enforce!ConflictingInput(tc !in ret, format(
 			"'%s' is already in '%s'", tc, ret));
-	ret[tc] = tcr;
+	ret[tc] = dup(tcr);
 }
 
 void jGetToolchainRequirement(ref JSONValue jv, string key,
@@ -758,7 +762,7 @@ void jGetToolchainRequirement(ref JSONValue jv, string key,
 }
 
 string toolchainToString(const ToolchainRequirement tcr) {
-	return tcr.no ? "no" : tcr.version_.orig;
+	return tcr.no ? "no" : tcr.version_.toString();
 }
 
 void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
@@ -770,8 +774,8 @@ void toolchainRequirementToJ(const ToolchainRequirement[Toolchain] tcrs,
 	typeCheck(ret, [JSONType.object, JSONType.null_]);
 
 	JSONValue[string] map;
-	foreach(key, value; tcrs) {
-		map[to!string(key)] = toolchainToString(value);
+	foreach(keyF, value; tcrs) {
+		map[to!string(keyF)] = toolchainToString(value);
 	}
 	ret["toolchainRequirements"] = map;
 }

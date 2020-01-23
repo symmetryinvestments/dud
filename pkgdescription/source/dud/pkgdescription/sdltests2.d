@@ -16,7 +16,7 @@ import dud.pkgdescription.exception;
 import dud.pkgdescription;
 import dud.testdata;
 
-unittest {
+void main() {
 	string[] dubs = () @trusted { return allDubSDLFiles(); }();
 	size_t[TestFailKind] failCnt;
 	foreach(idx, f; dubs) {

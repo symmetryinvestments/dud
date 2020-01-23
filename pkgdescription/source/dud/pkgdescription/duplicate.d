@@ -6,7 +6,8 @@ import std.traits : FieldNameTuple;
 import std.typecons : nullable;
 import std.format : format;
 
-import dud.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 import dud.pkgdescription;
 
 @safe:
@@ -50,25 +51,25 @@ PackageDescription dup(const ref PackageDescription pkg) {
 	return ret;
 }
 
-//
-// ToolchainRequirement
-//
-
-VersionSpecifier dup(const ref VersionSpecifier old) {
-	VersionSpecifier ret = parseVersionSpecifier(old.orig);
-	return ret;
+VersionRange dup(const ref VersionRange old) {
+	return old.dup();
 }
 
 unittest {
 	import dud.pkgdescription.compare;
-	auto old = parseVersionSpecifier(">=1.15.0");
+	import dud.semver.versionrange;
+	auto old = parseVersionRange(">=1.15.0");
 	assert(!old.isNull());
 
-	VersionSpecifier d = dup(old.get());
+	VersionRange d = dup(old.get());
 	assert(areEqual(old.get(), d));
 }
 
-ToolchainRequirement dup(const ref ToolchainRequirement old) {
+//
+// ToolchainRequirement
+//
+
+ToolchainRequirement dup(const ref ToolchainRequirement old) pure {
 	ToolchainRequirement ret;
 	ret.no = old.no;
 	ret.version_ = old.version_.dup();
@@ -97,9 +98,7 @@ TargetType dup(const(TargetType) old) {
 //
 
 SemVer dup(ref const(SemVer) old) {
-	return old.m_version.empty
-		? SemVer.init
-		: SemVer(old.m_version.dup);
+	return old.dup();
 }
 
 SemVer[] dup(const(SemVer[]) old) {
@@ -221,15 +220,18 @@ Dependency dup(ref const(Dependency) old) {
 	ret.platforms = old.platforms.dup();
 	ret.path = old.path.dup();
 	if(!old.default_.isNull()) {
-		ret.default_ = nullable(old.default_.get());
+		const bool o = old.default_.get();
+		ret.default_ = o;
 	}
 
 	if(!old.optional.isNull()) {
-		ret.optional = nullable(old.optional.get());
+		const bool o = old.optional.get();
+		ret.optional = o;
 	}
 
 	if(!old.version_.isNull()) {
-		ret.version_ = nullable(old.version_.get());
+		VersionRange o = old.version_.get().dup;
+		ret.version_ = o;
 	}
 	return ret;
 }

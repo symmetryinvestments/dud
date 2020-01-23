@@ -10,11 +10,12 @@ import std.stdio;
 import std.json;
 
 import dud.pkgdescription;
-import dud.pkgdescription.versionspecifier;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.output;
 import dud.pkgdescription.exception;
-import dud.semver : SemVer;
+import dud.semver.semver : SemVer;
+import dud.semver.parse : parseSemVer;
+import dud.semver.versionrange;
 import dud.pkgdescription.duplicate : ddup = dup;
 
 unittest {
@@ -28,7 +29,6 @@ targetType "library"
 targetPath "outDir"
 importPaths "source" "source1" "source2"
 license "LGPL3"
-version "1.0.0"
 configuration "test" {
 	platforms "windows"
 	libs "libc"
@@ -45,7 +45,7 @@ configuration "test" {
 			, [ ]
 		)])
 	, to!string(pkg.importPaths));
-	assert(pkg.version_ == SemVer("1.0.0"), pkg.version_.toString);
+	//assert(pkg.version_ == parseSemVer("1.0.0"), pkg.version_.toString);
 	assert(pkg.license == "LGPL3", pkg.license);
 	assert(pkg.dependencies.length == 4, to!string(pkg.dependencies.length));
 	auto e = UnprocessedPath("outDir");
@@ -61,7 +61,7 @@ configuration "test" {
 	dep[0].path = UnprocessedPath("../semver");
 	dep[3].path = UnprocessedPath("../path");
 	dep[1].path = UnprocessedPath("../sdlang");
-	dep[2].version_ = parseVersionSpecifier(">=1.0.0");
+	dep[2].version_ = parseVersionRange(">=1.0.0");
 	dep[2].default_ = nullable(true);
 	dep[2].optional = nullable(false);
 	pkg.dependencies.sort!((a,b) => a.name < b.name);
@@ -167,7 +167,6 @@ unittest {
 unittest {
 	string toParse = `
 name "describe-dependency-1"
-version "~master"
 description "A test describe project"
 homepage "fake.com"
 authors "nobody"
@@ -355,7 +354,6 @@ configuration "unittest" {
 unittest {
 	string toParse = `
 name "animated"
-version "~develop"
 description "An animation library, written in D, based loosely upon the animation framework used in Android."
 homepage "https://github.com/luke5542/AnimateD"
 authors "luke5542"
@@ -456,8 +454,7 @@ unittest {
     "name": "intel-intrinsics",
     "sourcePaths": [
         "source"
-    ],
-    "version": "1.0.30"
+    ]
 }
 `;
 
