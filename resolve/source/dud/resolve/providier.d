@@ -8,24 +8,28 @@ import std.exception : enforce;
 import std.json;
 import std.format : format;
 import dud.pkgdescription : PackageDescription, jsonToPackageDescription;
-import dud.semver;
-import dud.pkgdescription.versionspecifier : parseVersionSpecifier,
-	   VersionSpecifier, isInRange;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 @safe pure:
 
 interface PackageProvidier {
 	const(PackageDescription)[] getPackage(string name,
-			const(VersionSpecifier) verRange);
+			const(VersionRange) verRange);
 
 	const(PackageDescription) getPackage(string name, string ver);
+}
+
+struct PackageDescriptionVersion {
+	PackageDescription pkg;
+	VersionRange ver;
 }
 
 struct DumpFileProvidier {
 	// the cache either holds all or non
 	bool isLoaded;
 	const string dumpFileName;
-	PackageDescription[][string] cache;
+	PackageDescriptionVersion[][string] cache;
 	JSONValue[string] parsedPackages;
 
 	this(string dumpFileName) {
@@ -47,24 +51,25 @@ struct DumpFileProvidier {
 		}
 	}
 
-	const(PackageDescription)[] getPackages(string name,
+	const(PackageDescriptionVersion)[] getPackages(string name,
 			string verRange)
 	{
-		return this.getPackages(name, parseVersionSpecifier(verRange));
+		return this.getPackages(name, parseVersionRange(verRange));
 	}
 
-	const(PackageDescription)[] getPackages(string name,
-			const(VersionSpecifier) verRange)
+	const(PackageDescriptionVersion)[] getPackages(string name,
+			const(VersionRange) verRange)
 	{
+		import dud.semver.checks : allowsAny;
 		this.makeSureIsLoaded();
 		auto pkgs = this.ensurePackageIsInCache(name);
 		return (*pkgs)
-			.filter!(pkg => !pkg.version_.isBranch())
-			.filter!(pkg => isInRange(verRange, pkg.version_))
+			.filter!(pkg => !pkg.ver.isBranch())
+			.filter!(pkg => allowsAny(verRange, pkg.ver))
 			.array;
 	}
 
-	PackageDescription[]* ensurePackageIsInCache(string name) {
+	PackageDescriptionVersion[]* ensurePackageIsInCache(string name) {
 		auto pkgs = name in this.cache;
 		if(pkgs is null) {
 			auto ptr = name in parsedPackages;
@@ -79,15 +84,16 @@ struct DumpFileProvidier {
 	const(PackageDescription) getPackage(string name, string ver) {
 		this.makeSureIsLoaded();
 		auto pkgs = this.ensurePackageIsInCache(name);
-		auto f = (*pkgs).find!((it, s) => it.version_.m_version == s)(ver);
+		const VersionRange vr = parseVersionRange(ver);
+		auto f = (*pkgs).find!((it, s) => it.ver == vr)(vr);
 		enforce(!f.empty, format("No version '%s' for package '%s' could"
 			~ " be found in versions [%s]", name, ver,
-			(*pkgs).map!(it => it.version_.m_version)));
-		return f.front;
+			(*pkgs).map!(it => it.ver)));
+		return f.front.pkg;
 	}
 }
 
-private PackageDescription[] dumpJSONToPackage(JSONValue jv) {
+private PackageDescriptionVersion[] dumpJSONToPackage(JSONValue jv) {
 	enforce(jv.type == JSONType.object, format("Expected object got '%s'",
 			jv.type));
 	auto vers = "versions" in jv;
@@ -100,14 +106,13 @@ private PackageDescription[] dumpJSONToPackage(JSONValue jv) {
 			auto ptr = "packageDescription" in it;
 			enforce(ptr !is null && (*ptr).type == JSONType.object);
 			PackageDescription pkg = jsonToPackageDescription(*ptr);
-			enforce(pkg.version_.m_version.empty);
 
 			auto ver = "version" in it;
 			enforce(ver !is null && (*ver).type == JSONType.string);
-			pkg.version_ = SemVer((*ver).str());
-			return pkg;
+			VersionRange vr = parseVersionRange((*ver).str());
+			return PackageDescriptionVersion(pkg, vr);
 		})
 		.array
-		.sort!((a, b) => a.version_ > b.version_)
+		.sort!((a, b) => a.ver > b.ver)
 		.array;
 }

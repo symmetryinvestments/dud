@@ -2,8 +2,9 @@ module dud.resolve.term;
 
 import std.exception : enforce;
 
-import dud.resolve.versionconfiguration;
+import dud.semver.versionrange;
 import dud.pkgdescription;
+import dud.resolve.versionconfiguration;
 
 @safe:
 struct Term {

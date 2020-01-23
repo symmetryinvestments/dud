@@ -6,6 +6,7 @@ import std.exception : enforce;
 import std.array : empty;
 import std.format : format;
 import dud.semver.semver;
+import dud.semver.parse;
 import dud.semver.versionrange;
 
 @safe:
@@ -333,8 +334,8 @@ if a and b overlap
 SetRelation relation(const(VersionConfiguration) a,
 		const(VersionConfiguration) b) pure
 {
-	const SetRelation ver = dud.pkgdescription.versionspecifier
-		.relation(a.ver, b.ver);
+	static import dud.semver.versionrange;
+	const SetRelation ver = dud.semver.versionrange.relation(a.ver, b.ver);
 	const SetRelation conf = relation(a.conf, b.conf);
 
 	//debug writefln("ver %s, conf %s", ver, conf);
@@ -355,9 +356,9 @@ SetRelation relation(const(VersionConfiguration) a,
 
 /// Ditto
 unittest {
-	SemVer a = SemVer("1.0.0");
-	SemVer b = SemVer("2.0.0");
-	SemVer c = SemVer("3.0.0");
+	SemVer a = parseSemVer("1.0.0");
+	SemVer b = parseSemVer("2.0.0");
+	SemVer c = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
 			VersionRange(a, Inclusive.yes, b, Inclusive.yes), NotConf(""));
@@ -383,9 +384,9 @@ unittest {
 
 /// Ditto
 unittest {
-	SemVer a = SemVer("1.0.0");
-	SemVer b = SemVer("2.0.0");
-	SemVer c = SemVer("3.0.0");
+	SemVer a = parseSemVer("1.0.0");
+	SemVer b = parseSemVer("2.0.0");
+	SemVer c = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
 			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
@@ -456,15 +457,15 @@ SetRelation relation(const(VersionConfiguration) a,
 
 VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 	VersionConfiguration[2] ret;
-	ret[0] = vs.ver.low > SemVer("0.0.0")
+	ret[0] = vs.ver.low > parseSemVer("0.0.0")
 		? VersionConfiguration(
 			VersionRange(
-				SemVer("0.0.0"), Inclusive.yes,
+				parseSemVer("0.0.0"), Inclusive.yes,
 				vs.ver.low, vs.ver.inclusiveLow ? Inclusive.no : Inclusive.yes),
 			NotConf(vs.conf.conf, !vs.conf.isNot))
 		: VersionConfiguration(
-			VersionRange(SemVer("0.0.0"), Inclusive.no,
-				SemVer("0.0.0"), Inclusive.no),
+			VersionRange(parseSemVer("0.0.0"), Inclusive.no,
+				parseSemVer("0.0.0"), Inclusive.no),
 			NotConf(vs.conf.conf, !vs.conf.isNot));
 
 	VersionConfiguration tmp = VersionConfiguration(
@@ -478,19 +479,19 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 }
 
 unittest {
-	SemVer a = SemVer("1.0.0");
-	SemVer b = SemVer("2.0.0");
+	SemVer a = parseSemVer("1.0.0");
+	SemVer b = parseSemVer("2.0.0");
 	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
 				Inclusive.yes), NotConf(""));
 
 	VersionConfiguration[2] v1Inv = v1.invert();
-	assert(v1Inv[0].ver.low == SemVer("0.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.low == parseSemVer("0.0.0"), format("%s", v1Inv[0]));
 	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.high == SemVer("1.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.high == parseSemVer("1.0.0"), format("%s", v1Inv[0]));
 	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
 	assert(v1Inv[0].conf.isNot == true, format("%s", v1Inv[0]));
 
-	assert(v1Inv[1].ver.low == SemVer("2.0.0"), format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.low == parseSemVer("2.0.0"), format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.inclusiveLow == Inclusive.no, format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
@@ -498,19 +499,19 @@ unittest {
 }
 
 unittest {
-	SemVer a = SemVer("1.0.0");
-	SemVer b = SemVer("2.0.0");
+	SemVer a = parseSemVer("1.0.0");
+	SemVer b = parseSemVer("2.0.0");
 	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
 				Inclusive.no), NotConf(""));
 
 	VersionConfiguration[2] v1Inv = v1.invert();
-	assert(v1Inv[0].ver.low == SemVer("0.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.low == parseSemVer("0.0.0"), format("%s", v1Inv[0]));
 	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.high == SemVer("1.0.0"), format("%s", v1Inv[0]));
+	assert(v1Inv[0].ver.high == parseSemVer("1.0.0"), format("%s", v1Inv[0]));
 	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
 	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[0]));
 
-	assert(v1Inv[1].ver.low == SemVer("2.0.0"), format("%s", v1Inv[1]));
+	assert(v1Inv[1].ver.low == parseSemVer("2.0.0"), format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
 	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
@@ -526,10 +527,10 @@ private void test(const VersionConfiguration a,
 }
 
 unittest {
-	SemVer a = SemVer("0.0.0");
-	SemVer b = SemVer("1.0.0");
-	SemVer c = SemVer("2.0.0");
-	SemVer d = SemVer("3.0.0");
+	SemVer a = parseSemVer("0.0.0");
+	SemVer b = parseSemVer("1.0.0");
+	SemVer c = parseSemVer("2.0.0");
+	SemVer d = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
 			VersionRange(b, Inclusive.yes, c, Inclusive.no),
@@ -550,11 +551,11 @@ unittest {
 }
 
 unittest {
-	SemVer a = SemVer("0.0.0");
-	SemVer b = SemVer("1.0.0");
-	SemVer c = SemVer("2.0.0");
-	SemVer d = SemVer("3.0.0");
-	SemVer e = SemVer("4.0.0");
+	SemVer a = parseSemVer("0.0.0");
+	SemVer b = parseSemVer("1.0.0");
+	SemVer c = parseSemVer("2.0.0");
+	SemVer d = parseSemVer("3.0.0");
+	SemVer e = parseSemVer("4.0.0");
 
 	auto v1 = VersionConfiguration(
 			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
@@ -573,11 +574,11 @@ unittest {
 }
 
 unittest {
-	SemVer a = SemVer("0.0.0");
-	SemVer b = SemVer("1.0.0");
-	SemVer c = SemVer("2.0.0");
-	SemVer d = SemVer("3.0.0");
-	SemVer e = SemVer("4.0.0");
+	SemVer a = parseSemVer("0.0.0");
+	SemVer b = parseSemVer("1.0.0");
+	SemVer c = parseSemVer("2.0.0");
+	SemVer d = parseSemVer("3.0.0");
+	SemVer e = parseSemVer("4.0.0");
 
 	auto v1 = VersionConfiguration(
 			VersionRange(b, Inclusive.yes, c, Inclusive.yes),
@@ -623,11 +624,11 @@ unittest {
 }
 
 unittest {
-	SemVer a = SemVer("0.0.0");
-	SemVer b = SemVer("1.0.0");
-	SemVer c = SemVer("2.0.0");
-	SemVer d = SemVer("3.0.0");
-	SemVer e = SemVer("4.0.0");
+	SemVer a = parseSemVer("0.0.0");
+	SemVer b = parseSemVer("1.0.0");
+	SemVer c = parseSemVer("2.0.0");
+	SemVer d = parseSemVer("3.0.0");
+	SemVer e = parseSemVer("4.0.0");
 
 	auto sms = [a, b, c, d, e];
 	auto confs = ["", "!", "conf1", "conf2", "!conf1", "!conf2"];
