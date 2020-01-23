@@ -454,8 +454,7 @@ unittest {
     "name": "intel-intrinsics",
     "sourcePaths": [
         "source"
-    ],
-    "version": "1.0.30"
+    ]
 }
 `;
 

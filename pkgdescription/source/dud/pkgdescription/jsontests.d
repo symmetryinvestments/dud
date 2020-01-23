@@ -311,7 +311,7 @@ unittest {
     "subPackages": [
         {
             "dependencies": {
-                "gfm:core": "~>6.0"
+                "gfm:core": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "core"
@@ -323,8 +323,8 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:core": "*",
-                "gfm:math": "~>6.0"
+                "dplug:core": ">=0.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "dsp"
@@ -336,7 +336,7 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:core": "*"
+                "dplug:core": ">=0.0.0"
             },
             "importPaths": [
                 "client"
@@ -348,9 +348,9 @@ unittest {
         },
         {
             "dependencies": {
-                "derelict-util": "~>2.0",
-                "dplug:core": "*",
-                "dplug:vst": "*"
+                "derelict-util": ">=2.0.0 <3.0.0",
+                "dplug:core": ">=0.0.0",
+                "dplug:vst": ">=0.0.0"
             },
             "importPaths": [
                 "host"
@@ -362,7 +362,7 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:client": "*"
+                "dplug:client": ">=0.0.0"
             },
             "importPaths": [
                 "vst"
@@ -374,11 +374,11 @@ unittest {
         },
         {
             "dependencies": {
-                "dplug:client": "*"
+                "dplug:client": ">=0.0.0"
             },
             "dependencies-osx": {
-                "derelict-carbon": "~>0.0",
-                "derelict-cocoa": "~>0.0"
+                "derelict-carbon": ">=0.0.0 <1.0.0",
+                "derelict-cocoa": ">=0.0.0 <1.0.0"
             },
             "importPaths": [
                 "au"
@@ -390,14 +390,14 @@ unittest {
         },
         {
             "dependencies": {
-                "ae-graphics": "~>0.0",
-                "dplug:core": "*",
-                "gfm:core": "~>6.0",
-                "gfm:math": "~>6.0"
+                "ae-graphics": ">=0.0.0 <1.0.0",
+                "dplug:core": ">=0.0.0",
+                "gfm:core": ">=6.0.0 <7.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0"
             },
             "dependencies-osx": {
-                "derelict-carbon": "~>0.0",
-                "derelict-cocoa": "~>0.0"
+                "derelict-carbon": ">=0.0.0 <1.0.0",
+                "derelict-cocoa": ">=0.0.0 <1.0.0"
             },
             "importPaths": [
                 "window"
@@ -419,12 +419,12 @@ unittest {
         },
         {
             "dependencies": {
-                "ae-graphics": "~>0.0",
-                "dplug:client": "*",
-                "dplug:core": "*",
-                "dplug:window": "*",
-                "gfm:math": "~>6.0",
-                "imageformats": "~>6.0"
+                "ae-graphics": ">=0.0.0 <1.0.0",
+                "dplug:client": ">=0.0.0",
+                "dplug:core": ">=0.0.0",
+                "dplug:window": ">=0.0.0",
+                "gfm:math": ">=6.0.0 <7.0.0",
+                "imageformats": ">=6.0.0 <7.0.0"
             },
             "importPaths": [
                 "gui"
@@ -578,8 +578,7 @@ unittest {
 	"name" : "Foo",
     "toolchainRequirements": {
         "ldc": ">=1.15.0"
-    },
-    "version": "~master"
+    }
 }
 
 `;
