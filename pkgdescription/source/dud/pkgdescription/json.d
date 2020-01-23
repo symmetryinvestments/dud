@@ -393,9 +393,8 @@ JSONValue dependencyToJ(const Dependency dep) {
 		static if(is(MemType == string)) {{
 			// no need to handle this, this is stored as a json key
 		}} else static if(is(MemType == Nullable!VersionRange)) {{
-			const Nullable!VersionRange nvs = __traits(getMember, dep, mem);
-			if(!nvs.isNull()) {
-				ret[Mem] = nvs.get().toString();
+			if(!__traits(getMember, dep, mem).isNull()) {
+				ret[Mem] = __traits(getMember, dep, mem).get().toString();
 			}
 		}} else static if(is(MemType == UnprocessedPath)) {{
 			const UnprocessedPath p = __traits(getMember, dep, mem);
@@ -403,9 +402,8 @@ JSONValue dependencyToJ(const Dependency dep) {
 				ret[Mem] = p.path;
 			}
 		}} else static if(is(MemType == Nullable!bool)) {{
-			const Nullable!bool b = __traits(getMember, dep, mem);
-			if(!b.isNull()) {
-				ret[Mem] = b;
+			if(!__traits(getMember, dep, mem).isNull()) {
+				ret[Mem] = __traits(getMember, dep, mem).get();
 			}
 		}} else static if(is(MemType == Platform[])) {{
 			// not handled here
@@ -621,7 +619,7 @@ JSONValue packageDescriptionToJ(const PackageDescription pkg) {
 		alias put = JSONPut!mem;
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
 		static if(is(MemType : Nullable!Args, Args...)) {
-			if(!__traits(getMember, pkg, mem).isNull) {
+			if(!__traits(getMember, pkg, mem).isNull()) {
 				JSONValue tmp = put(__traits(getMember, pkg, mem).get());
 				if(tmp.type != JSONType.null_) {
 					ret[Mem] = tmp;
