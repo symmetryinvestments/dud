@@ -1,6 +1,7 @@
 {
 	"name": "semver",
 	"targetType": "library",
+	"sourcePaths" : [ "source" ],
 	"dependencies": {
 		"exception": {
 			"path": "../exception",
