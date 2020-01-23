@@ -11,8 +11,8 @@ function buildConf() {
 }
 
 function test() {
-	echo "TESTING: $1 with $2"
 	cd $1
+	echo "TESTING: $1 with $2 PWD: $(pwd)"
 	unittest $2
 	local e=$?
 	if [[ $e -ne 0 ]]
