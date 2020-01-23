@@ -619,7 +619,7 @@ JSONValue packageDescriptionToJ(const PackageDescription pkg) {
 		alias put = JSONPut!mem;
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
 		static if(is(MemType : Nullable!Args, Args...)) {
-			if(!__traits(getMember, pkg, mem).isNull) {
+			if(!__traits(getMember, pkg, mem).isNull()) {
 				JSONValue tmp = put(__traits(getMember, pkg, mem).get());
 				if(tmp.type != JSONType.null_) {
 					ret[Mem] = tmp;

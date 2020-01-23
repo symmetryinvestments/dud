@@ -293,7 +293,7 @@ DependencyNoPlatform[string] select(const(Dependency[]) deps,
 SubPackageNoPlatform select(const(SubPackage) sp, const(Platform[]) platform) {
 	SubPackageNoPlatform ret;
 	if(!sp.inlinePkg.isNull()) {
-		ret.inlinePkg = nullable(select(sp.inlinePkg.get(), platform));
+		ret.inlinePkg.opAssign(select(sp.inlinePkg.get(), platform));
 	} else {
 		ret.path = select(sp.path, platform);
 	}
