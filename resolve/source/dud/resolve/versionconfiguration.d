@@ -5,8 +5,8 @@ import std.stdio;
 import std.exception : enforce;
 import std.array : empty;
 import std.format : format;
-import dud.semver;
-import dud.pkgdescription.versionspecifier;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
 @safe:
 
@@ -323,7 +323,7 @@ unittest {
 /** The algebraic datatype that stores a version range and a configuration
 */
 struct VersionConfiguration {
-	VersionSpecifier ver;
+	VersionRange ver;
 	NotConf conf;
 }
 
@@ -360,13 +360,13 @@ unittest {
 	SemVer c = SemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes), NotConf(""));
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes), NotConf(""));
 	auto v2 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no), NotConf(""));
+			VersionRange(a, Inclusive.yes, b, Inclusive.no), NotConf(""));
 	auto v3 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, c, Inclusive.no), NotConf(""));
+			VersionRange(a, Inclusive.yes, c, Inclusive.no), NotConf(""));
 	auto v4 = VersionConfiguration(
-			VersionSpecifier(b, Inclusive.yes, c, Inclusive.no), NotConf(""));
+			VersionRange(b, Inclusive.yes, c, Inclusive.no), NotConf(""));
 
 	auto r = relation(v1, v2);
 	assert(r == SetRelation.overlapping, format("%s", r));
@@ -388,13 +388,13 @@ unittest {
 	SemVer c = SemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
 			NotConf("conf1"));
 	auto v2 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			VersionRange(a, Inclusive.yes, b, Inclusive.no),
 			NotConf(""));
 	auto v3 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
 			NotConf("conf2"));
 
 	auto r = relation(v1, v2);
@@ -458,17 +458,17 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 	VersionConfiguration[2] ret;
 	ret[0] = vs.ver.low > SemVer("0.0.0")
 		? VersionConfiguration(
-			VersionSpecifier(
+			VersionRange(
 				SemVer("0.0.0"), Inclusive.yes,
 				vs.ver.low, vs.ver.inclusiveLow ? Inclusive.no : Inclusive.yes),
 			NotConf(vs.conf.conf, !vs.conf.isNot))
 		: VersionConfiguration(
-			VersionSpecifier(SemVer("0.0.0"), Inclusive.no,
+			VersionRange(SemVer("0.0.0"), Inclusive.no,
 				SemVer("0.0.0"), Inclusive.no),
 			NotConf(vs.conf.conf, !vs.conf.isNot));
 
 	VersionConfiguration tmp = VersionConfiguration(
-			VersionSpecifier(
+			VersionRange(
 				vs.ver.high, vs.ver.inclusiveHigh ? Inclusive.no : Inclusive.yes,
 				SemVer.MaxRelease, Inclusive.yes),
 			NotConf(vs.conf.conf, !vs.conf.isNot));
@@ -480,7 +480,7 @@ VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
-	auto v1 = VersionConfiguration(VersionSpecifier(a, Inclusive.yes, b,
+	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
 				Inclusive.yes), NotConf(""));
 
 	VersionConfiguration[2] v1Inv = v1.invert();
@@ -500,7 +500,7 @@ unittest {
 unittest {
 	SemVer a = SemVer("1.0.0");
 	SemVer b = SemVer("2.0.0");
-	auto v1 = VersionConfiguration(VersionSpecifier(a, Inclusive.yes, b,
+	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
 				Inclusive.no), NotConf(""));
 
 	VersionConfiguration[2] v1Inv = v1.invert();
@@ -532,19 +532,19 @@ unittest {
 	SemVer d = SemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(b, Inclusive.yes, c, Inclusive.no),
+			VersionRange(b, Inclusive.yes, c, Inclusive.no),
 			NotConf(""));
 
 	auto notV1 = v1.invert();
 	test(v1, notV1, SetRelation.disjoint);
 
 	auto v2 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
 			NotConf(""));
 	test(v2, notV1, SetRelation.overlapping);
 
 	auto v3 = VersionConfiguration(
-			VersionSpecifier(c, Inclusive.yes, d, Inclusive.yes),
+			VersionRange(c, Inclusive.yes, d, Inclusive.yes),
 			NotConf(""));
 	test(v3, notV1, SetRelation.subset);
 }
@@ -557,7 +557,7 @@ unittest {
 	SemVer e = SemVer("4.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
 			NotConf("conf1"));
 
 	auto notV1 = v1.invert();
@@ -565,7 +565,7 @@ unittest {
 
 	foreach(end; [c, d, e]) {
 		auto v2 = VersionConfiguration(
-				VersionSpecifier(b, Inclusive.yes, end, Inclusive.yes),
+				VersionRange(b, Inclusive.yes, end, Inclusive.yes),
 				NotConf(""));
 
 		test(v2, notV1, SetRelation.overlapping);
@@ -580,43 +580,43 @@ unittest {
 	SemVer e = SemVer("4.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionSpecifier(b, Inclusive.yes, c, Inclusive.yes),
+			VersionRange(b, Inclusive.yes, c, Inclusive.yes),
 			NotConf("conf1"));
 
 	auto notV1 = v1.invert();
 	test(v1, notV1, SetRelation.disjoint);
 
 	auto v2 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.yes),
+			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
 			NotConf(""));
 
 	test(v2, notV1, SetRelation.overlapping);
 
 	auto v3 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			VersionRange(a, Inclusive.yes, b, Inclusive.no),
 			NotConf(""));
 	test(v3, notV1, SetRelation.overlapping);
 
 	auto v4 = VersionConfiguration(
-			VersionSpecifier(a, Inclusive.yes, b, Inclusive.no),
+			VersionRange(a, Inclusive.yes, b, Inclusive.no),
 			NotConf("!conf1"));
 
 	test(v4, notV1, SetRelation.subset);
 
 	auto v5 = VersionConfiguration(
-			VersionSpecifier(d, Inclusive.no, e, Inclusive.no),
+			VersionRange(d, Inclusive.no, e, Inclusive.no),
 			NotConf(""));
 
 	test(v5, notV1, SetRelation.overlapping);
 
 	auto v6 = VersionConfiguration(
-			VersionSpecifier(d, Inclusive.no, e, Inclusive.no),
+			VersionRange(d, Inclusive.no, e, Inclusive.no),
 			NotConf("!conf1"));
 
 	test(v6, notV1, SetRelation.subset);
 
 	auto v7 = VersionConfiguration(
-			VersionSpecifier(b, Inclusive.no, c, Inclusive.no),
+			VersionRange(b, Inclusive.no, c, Inclusive.no),
 			NotConf("!conf1"));
 
 	test(v7, notV1, SetRelation.disjoint);
@@ -640,7 +640,7 @@ unittest {
 				foreach(inc0; incs) {
 					foreach(inc1; incs) {
 						verConfs ~= VersionConfiguration(
-								VersionSpecifier(sm0, inc0, sm1, inc1),
+								VersionRange(sm0, inc0, sm1, inc1),
 								NotConf(conf)
 							);
 					}
