@@ -99,10 +99,10 @@ unittest {
 }
 
 unittest {
-	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0");
-	const VersionRange b = parseVersionRange(">=1.0.0 <=3.0.0");
+	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0").get();
+	const VersionRange b = parseVersionRange(">=1.0.0 <=3.0.0").get();
 	const VersionRange c = intersectionOf(a, b);
-	const VersionRange r = parseVersionRange(">=1.0.0 <2.0.0");
+	const VersionRange r = parseVersionRange(">=1.0.0 <2.0.0").get();
 	assert(c == r, format("%s", c));
 }
 
@@ -125,15 +125,15 @@ unittest {
 }
 
 unittest {
-	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0");
-	const VersionRange b = parseVersionRange(">2.0.0 <=3.0.0");
+	const VersionRange a = parseVersionRange(">=1.0.0 <2.0.0").get();
+	const VersionRange b = parseVersionRange(">2.0.0 <=3.0.0").get();
 
 	const VersionUnion ab = VersionUnion([a, b]);
 	assert(ab.ranges.length == 2);
 	assert(ab.ranges[0] == a);
 	assert(ab.ranges[1] == b);
 
-	const VersionRange c = parseVersionRange(">=1.0.0 <=3.0.0");
+	const VersionRange c = parseVersionRange(">=1.0.0 <=3.0.0").get();
 	const VersionUnion abc = intersectionOf(ab, c);
 	assert(abc.ranges.length == 2, format("%s", abc.ranges.length));
 	assert(ab.ranges[0] == a);

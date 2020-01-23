@@ -96,8 +96,8 @@ unittest {
 }
 
 unittest {
-	const VersionRange vr1 = parseVersionRange(">=1.0.0 <2.0.0");
-	const VersionRange vr2 = parseVersionRange(">2.0.0 <=3.0.0");
+	const VersionRange vr1 = parseVersionRange(">=1.0.0 <2.0.0").get();
+	const VersionRange vr2 = parseVersionRange(">2.0.0 <=3.0.0").get();
 
 	const VersionUnion vu1 = VersionUnion([vr1, vr2]);
 	assert(vu1.ranges.length == 2);

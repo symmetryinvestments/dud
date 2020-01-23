@@ -2,6 +2,7 @@ module dud.semver.versionrangetest;
 
 @safe pure private:
 import std.format : format;
+import std.typecons : Nullable;
 import dud.semver.semver;
 import dud.semver.parse;
 import dud.semver.versionrange;
@@ -160,8 +161,9 @@ unittest {
 }
 
 unittest {
-	const VersionRange vr1 = parseVersionRange(">=1.0.0");
-	assert(vr1 != VersionRange.init);
+	Nullable!VersionRange vr1 = parseVersionRange(">=1.0.0");
+	assert(!vr1.isNull());
+	assert(vr1.get() != VersionRange.init);
 }
 
 unittest {
@@ -265,7 +267,9 @@ unittest {
 
 unittest {
 	const VersionRange vr1 = VersionRange("master");
-	const VersionRange vr2 = parseVersionRange(">=1.0.0");
+	Nullable!VersionRange vr2n = parseVersionRange(">=1.0.0");
+	assert(!vr2n.isNull());
+	const VersionRange vr2 = vr2n.get();
 	assert(vr1 < vr2);
 	assert(vr2 > vr1);
 	assert(vr1 <= vr1);
