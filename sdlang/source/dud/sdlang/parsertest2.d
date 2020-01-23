@@ -1,7 +1,6 @@
 module dud.sdlang.parsertest2;
 
-version(ExcessivTests):
-
+version(ExcessiveTestsSDLang):
 import std.algorithm.iteration : map, filter, each;
 import std.algorithm.searching : canFind;
 import std.array;
@@ -13,7 +12,7 @@ import std.format : formattedWrite;
 import dud.sdlang;
 import dud.testdata;
 
-@safe unittest {
+void main() {
 	string[] dubs = () @trusted { return allDubSDLFiles(); }();
 	size_t failCnt;
 	foreach(idx, f; dubs) {
