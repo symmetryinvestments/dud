@@ -5,6 +5,7 @@ import std.algorithm.searching : find;
 import std.algorithm.sorting : sort;
 import std.array : array, empty, front;
 import std.exception : enforce;
+import std.typecons : Nullable;
 import std.json;
 import std.format : format;
 import dud.pkgdescription : PackageDescription, jsonToPackageDescription;
@@ -54,7 +55,9 @@ struct DumpFileProvidier {
 	const(PackageDescriptionVersion)[] getPackages(string name,
 			string verRange)
 	{
-		return this.getPackages(name, parseVersionRange(verRange));
+		Nullable!VersionRange v = parseVersionRange(verRange);
+		enforce(!v.isNull());
+		return this.getPackages(name, v.get());
 	}
 
 	const(PackageDescriptionVersion)[] getPackages(string name,
@@ -84,7 +87,10 @@ struct DumpFileProvidier {
 	const(PackageDescription) getPackage(string name, string ver) {
 		this.makeSureIsLoaded();
 		auto pkgs = this.ensurePackageIsInCache(name);
-		const VersionRange vr = parseVersionRange(ver);
+		Nullable!VersionRange v = parseVersionRange(ver);
+		enforce(!v.isNull());
+		const VersionRange vr = v.get();
+
 		auto f = (*pkgs).find!((it, s) => it.ver == vr)(vr);
 		enforce(!f.empty, format("No version '%s' for package '%s' could"
 			~ " be found in versions [%s]", name, ver,
