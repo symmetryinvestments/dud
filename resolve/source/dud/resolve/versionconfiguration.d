@@ -8,6 +8,8 @@ import std.format : format;
 import dud.semver.semver;
 import dud.semver.parse;
 import dud.semver.versionrange;
+import dud.semver.versionunion;
+import dud.semver.setoperation : invert;
 
 @safe:
 
@@ -17,7 +19,7 @@ struct Conf {
 	string conf;
 	/// true means the inverse of the `conf` inverse of `conf.empty`
 	/// still means wildcard
-	bool isNot;
+	bool not;
 
 	this(string s) {
 		import std.algorithm.searching : startsWith;
@@ -28,14 +30,20 @@ struct Conf {
 
 	this(string s, bool b) {
 		this.conf = s;
-		this.isNot = b;
+		this.not = b;
 	}
+}
+
+Conf invert(const(Conf) c) {
+	return c.conf.empty
+		? Conf("", false)
+		: Conf(c.conf, !c.not);
 }
 
 /** The algebraic datatype that stores a version range and a configuration
 */
 struct VersionConfiguration {
-	VersionRange ver;
+	VersionUnion ver;
 	Conf conf;
 }
 
@@ -46,30 +54,30 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 
 	if(a.conf != b.conf
 			&& !a.conf.empty && !b.conf.empty
-			&& !a.isNot && !b.isNot)
+			&& !a.not && !b.not)
 	{
 		return SetRelation.disjoint;
 	}
 
-	if(a.conf == b.conf && !a.conf.empty && a.isNot != b.isNot) {
+	if(a.conf == b.conf && !a.conf.empty && a.not != b.not) {
 		return SetRelation.disjoint;
 	}
 
-	if(a.conf == b.conf && a.isNot == b.isNot) {
+	if(a.conf == b.conf && a.not == b.not) {
 		return SetRelation.subset;
 	}
 
 	if(!a.conf.empty && !b.conf.empty
 			&& a.conf != b.conf
-			&& a.isNot != b.isNot)
+			&& a.not != b.not)
 	{
 		return SetRelation.overlapping;
 	}
 
 	if(!a.conf.empty && !b.conf.empty
 			&& a.conf != b.conf
-			&& a.isNot == b.isNot
-			&& a.isNot)
+			&& a.not == b.not
+			&& a.not)
 	{
 		return SetRelation.overlapping;
 	}
@@ -334,8 +342,13 @@ if a and b overlap
 SetRelation relation(const(VersionConfiguration) a,
 		const(VersionConfiguration) b) pure
 {
-	static import dud.semver.versionrange;
-	const SetRelation ver = dud.semver.versionrange.relation(a.ver, b.ver);
+	import dud.semver.checks;
+	const SetRelation ver = allowsAll(b.ver, a.ver)
+		? SetRelation.subset
+		: allowsAny(b.ver, a.ver)
+			? SetRelation.overlapping
+			: SetRelation.disjoint;
+		//relation(a.ver, b.ver);
 	const SetRelation conf = relation(a.conf, b.conf);
 
 	//debug writefln("ver %s, conf %s", ver, conf);
@@ -361,13 +374,21 @@ unittest {
 	SemVer c = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes), Conf(""));
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+				, Conf("")
+			);
 	auto v2 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.no), Conf(""));
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
+				, Conf("")
+			);
 	auto v3 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, c, Inclusive.no), Conf(""));
+			VersionUnion([VersionRange(a, Inclusive.yes, c, Inclusive.no)])
+				, Conf("")
+			);
 	auto v4 = VersionConfiguration(
-			VersionRange(b, Inclusive.yes, c, Inclusive.no), Conf(""));
+			VersionUnion([VersionRange(b, Inclusive.yes, c, Inclusive.no)])
+				, Conf("")
+			);
 
 	auto r = relation(v1, v2);
 	assert(r == SetRelation.overlapping, format("%s", r));
@@ -389,13 +410,13 @@ unittest {
 	SemVer c = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)]),
 			Conf("conf1"));
 	auto v2 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.no),
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)]),
 			Conf(""));
 	auto v3 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)]),
 			Conf("conf2"));
 
 	auto r = relation(v1, v2);
@@ -455,28 +476,11 @@ SetRelation relation(const(VersionConfiguration) a,
 }
 
 
-VersionConfiguration[2] invert(const(VersionConfiguration) vs) {
-	VersionConfiguration[2] ret;
-	ret[0] = vs.ver.low > parseSemVer("0.0.0")
-		? VersionConfiguration(
-			VersionRange(
-				parseSemVer("0.0.0"), Inclusive.yes,
-				vs.ver.low, vs.ver.inclusiveLow ? Inclusive.no : Inclusive.yes),
-			Conf(vs.conf.conf, !vs.conf.isNot))
-		: VersionConfiguration(
-			VersionRange(parseSemVer("0.0.0"), Inclusive.no,
-				parseSemVer("0.0.0"), Inclusive.no),
-			Conf(vs.conf.conf, !vs.conf.isNot));
-
-	VersionConfiguration tmp = VersionConfiguration(
-			VersionRange(
-				vs.ver.high, vs.ver.inclusiveHigh ? Inclusive.no : Inclusive.yes,
-				SemVer.MaxRelease, Inclusive.yes),
-			Conf(vs.conf.conf, !vs.conf.isNot));
-
-	ret[1] = tmp;
-	return ret;
+VersionConfiguration invert(const(VersionConfiguration) vs) {
+	return VersionConfiguration(vs.ver.invert(), invert(vs.conf));
 }
+
+__EOF__
 
 unittest {
 	SemVer a = parseSemVer("1.0.0");
