@@ -27,7 +27,9 @@ struct Conf {
 }
 
 Conf invert(const(Conf) c) {
-	return Conf(c.conf, cast(Not)!c.not);
+	return c.conf.empty
+		? Conf("", Not.no)
+		: Conf(c.conf, cast(Not)!c.not);
 }
 
 bool allowsAny(const(Conf) a, const(Conf) b) {
@@ -80,7 +82,7 @@ unittest {
 	assert(invert(c2) == c1);
 	assert(invert(c3) == c4);
 	assert(invert(c4) == c3);
-	assert(invert(c5) == c6, format("%s %s", invert(c5), c6));
+	assert(invert(c5) == c5);
 	assert(invert(c6) == c5);
 }
 
