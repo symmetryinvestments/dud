@@ -7,38 +7,13 @@ import std.array : empty;
 import std.format : format;
 import dud.semver.semver;
 import dud.semver.parse;
+import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 import dud.semver.setoperation : invert;
+import dud.resolve.conf : Conf, Not, allowsAll, allowsAny, invert;
 
-@safe:
-
-struct Conf {
 @safe pure:
-	/// empty means wildcard
-	string conf;
-	/// true means the inverse of the `conf` inverse of `conf.empty`
-	/// still means wildcard
-	bool not;
-
-	this(string s) {
-		import std.algorithm.searching : startsWith;
-		const bool sw = s.startsWith("!");
-		s = sw ? s[1 .. $] : s;
-		this(s, sw);
-	}
-
-	this(string s, bool b) {
-		this.conf = s;
-		this.not = b;
-	}
-}
-
-Conf invert(const(Conf) c) {
-	return c.conf.empty
-		? Conf("", false)
-		: Conf(c.conf, !c.not);
-}
 
 /** The algebraic datatype that stores a version range and a configuration
 */
@@ -94,12 +69,12 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 }
 
 unittest {
-	Conf nc1 = Conf("");
-	Conf nc2 = Conf("conf1");
-	Conf nc3 = Conf("!conf1");
-	Conf nc4 = Conf("conf2");
-	Conf nc5 = Conf("!conf2");
-	Conf nc6 = Conf("!");
+	Conf nc1 = Conf("", Not.no);
+	Conf nc2 = Conf("conf1", Not.no);
+	Conf nc3 = Conf("conf1", Not.yes);
+	Conf nc4 = Conf("conf2", Not.no);
+	Conf nc5 = Conf("conf2", Not.yes);
+	Conf nc6 = Conf("", Not.yes);
 
 	SetRelation sr = relation(nc1, nc1);
 	assert(sr == SetRelation.subset, format("%s", sr));
@@ -324,8 +299,8 @@ unittest {
 @safe pure unittest {
 	Conf[] tt;
 	foreach(c1; ["", "conf", "conf2", "conf3"]) {
-		foreach(c2; ["", "!"]) {
-			tt ~= Conf(c2 ~ c1);
+		foreach(c2; [Not.no, Not.yes]) {
+			tt ~= Conf(c1, c2);
 		}
 	}
 
@@ -342,7 +317,6 @@ if a and b overlap
 SetRelation relation(const(VersionConfiguration) a,
 		const(VersionConfiguration) b) pure
 {
-	import dud.semver.checks;
 	const SetRelation ver = allowsAll(b.ver, a.ver)
 		? SetRelation.subset
 		: allowsAny(b.ver, a.ver)
