@@ -11,7 +11,8 @@ import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 import dud.semver.setoperation : invert;
-import dud.resolve.conf : Conf, Not, allowsAll, allowsAny, invert;
+import dud.resolve.conf : Conf, allowsAll, allowsAny, invert;
+import dud.resolve.positive;
 
 @safe pure:
 
@@ -69,12 +70,12 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 }
 
 unittest {
-	Conf nc1 = Conf("", Not.no);
-	Conf nc2 = Conf("conf1", Not.no);
-	Conf nc3 = Conf("conf1", Not.yes);
-	Conf nc4 = Conf("conf2", Not.no);
-	Conf nc5 = Conf("conf2", Not.yes);
-	Conf nc6 = Conf("", Not.yes);
+	Conf nc1 = Conf("", IsPositive.yes);
+	Conf nc2 = Conf("conf1", IsPositive.yes);
+	Conf nc3 = Conf("conf1", IsPositive.no);
+	Conf nc4 = Conf("conf2", IsPositive.yes);
+	Conf nc5 = Conf("conf2", IsPositive.no);
+	Conf nc6 = Conf("", IsPositive.no);
 
 	SetRelation sr = relation(nc1, nc1);
 	assert(sr == SetRelation.subset, format("%s", sr));
@@ -299,7 +300,7 @@ unittest {
 @safe pure unittest {
 	Conf[] tt;
 	foreach(c1; ["", "conf", "conf2", "conf3"]) {
-		foreach(c2; [Not.no, Not.yes]) {
+		foreach(c2; [IsPositive.no, IsPositive.yes]) {
 			tt ~= Conf(c1, c2);
 		}
 	}

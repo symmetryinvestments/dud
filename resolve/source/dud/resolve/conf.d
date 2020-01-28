@@ -4,9 +4,9 @@ import std.array : empty;
 import std.typecons : Flag;
 import std.format : format;
 
-@safe pure:
+import dud.resolve.positive;
 
-alias Not = Flag!"Not";
+@safe pure:
 
 struct Conf {
 @safe pure:
@@ -14,13 +14,13 @@ struct Conf {
 	string conf;
 	/// true means the inverse of the `conf` inverse of `conf.empty`
 	/// still means wildcard
-	Not not;
+	IsPositive not;
 
 	this(string s) {
-		this(s, Not.no);
+		this(s, IsPositive.yes);
 	}
 
-	this(string s, Not b) {
+	this(string s, IsPositive b) {
 		this.conf = s;
 		this.not = b;
 	}
@@ -28,28 +28,28 @@ struct Conf {
 
 Conf invert(const(Conf) c) {
 	return c.conf.empty
-		? Conf("", Not.no)
-		: Conf(c.conf, cast(Not)!c.not);
+		? Conf("", IsPositive.yes)
+		: Conf(c.conf, cast(IsPositive)!c.not);
 }
 
 bool allowsAny(const(Conf) a, const(Conf) b) {
-	if(a.not == Not.yes && a.conf.empty) {
+	if(a.not == IsPositive.no && a.conf.empty) {
 		return false;
 	}
 
-	if(b.not == Not.yes && b.conf.empty) {
+	if(b.not == IsPositive.no && b.conf.empty) {
 		return false;
 	}
 
-	if(a.not == Not.no && a.conf.empty) {
+	if(a.not == IsPositive.yes && a.conf.empty) {
 		return true;
 	}
 
-	if(b.not == Not.no && b.conf.empty) {
+	if(b.not == IsPositive.yes && b.conf.empty) {
 		return true;
 	}
 
-	return a.not == Not.no && b.not == Not.no
+	return a.not == IsPositive.yes && b.not == IsPositive.yes
 		? a.conf == b.conf
 		: a.not != b.not
 			? a.conf != b.conf
@@ -57,20 +57,20 @@ bool allowsAny(const(Conf) a, const(Conf) b) {
 }
 
 bool allowsAll(const(Conf) a, const(Conf) b) {
-	return a.not == Not.no && a.conf.empty
+	return a.not == IsPositive.yes && a.conf.empty
 		? true
-		: a.not == Not.yes && a.conf.empty
+		: a.not == IsPositive.no && a.conf.empty
 			? false
 			: a.not == b.not && a.conf == b.conf;
 }
 
 private {
-	const c1 = Conf("foo", Not.no);
-	const c2 = Conf("foo", Not.yes);
-	const c3 = Conf("bar", Not.no);
-	const c4 = Conf("bar", Not.yes);
-	const c5 = Conf("", Not.no);
-	const c6 = Conf("", Not.yes);
+	const c1 = Conf("foo", IsPositive.yes);
+	const c2 = Conf("foo", IsPositive.no);
+	const c3 = Conf("bar", IsPositive.yes);
+	const c4 = Conf("bar", IsPositive.no);
+	const c5 = Conf("", IsPositive.yes);
+	const c6 = Conf("", IsPositive.no);
 }
 
 //
