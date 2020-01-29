@@ -6,7 +6,7 @@ import dud.semver.versionrange;
 import dud.semver.checks;
 import dud.semver.versionunion;
 import dud.pkgdescription;
-import dud.resolve.versionconfiguration;
+import dud.resolve.versionconfiguration : VersionConfiguration, invert;
 import dud.resolve.providier;
 import dud.resolve.positive;
 import dud.resolve.conf;
@@ -19,7 +19,7 @@ struct Term {
 }
 
 Term invert(const(Term) t) {
-	VersionConfiguration vc = dud.resolve.versionconfiguration.invert(t.constraint);
+	VersionConfiguration vc = invert(t.constraint);
 	return Term(vc, t.pkg.dup(), cast(IsPositive)!t.isPositive);
 }
 

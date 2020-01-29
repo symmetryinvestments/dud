@@ -263,7 +263,7 @@ unittest {
 	assert(sr == SetRelation.disjoint, format("%s", sr));
 }
 
-@safe pure unittest {
+unittest {
 	Conf[] tt;
 	foreach(c1; ["", "conf", "conf2", "conf3"]) {
 		foreach(c2; [IsPositive.no, IsPositive.yes]) {
@@ -380,7 +380,9 @@ unittest {
 }
 
 VersionConfiguration invert(const(VersionConfiguration) vs) {
-	return VersionConfiguration(vs.ver.invert(), invert(vs.conf));
+	return VersionConfiguration(
+			invert(vs.ver),
+			invert(vs.conf));
 }
 
 unittest {
