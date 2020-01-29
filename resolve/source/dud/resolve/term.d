@@ -19,7 +19,7 @@ struct Term {
 }
 
 Term invert(const(Term) t) {
-	VersionConfiguration vc = invert(t.constraint);
+	VersionConfiguration vc = .invert(t.constraint);
 	return Term(vc, t.pkg.dup(), cast(IsPositive)!t.isPositive);
 }
 
