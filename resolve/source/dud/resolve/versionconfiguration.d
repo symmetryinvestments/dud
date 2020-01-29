@@ -23,6 +23,10 @@ struct VersionConfiguration {
 	Conf conf;
 }
 
+VersionConfiguration dup(const(VersionConfiguration) old) {
+	return VersionConfiguration(old.ver.dup, old.conf);
+}
+
 SetRelation relation(const(Conf) a, const(Conf) b) pure {
 	return allowsAll(b, a)
 		? SetRelation.subset
@@ -285,7 +289,7 @@ SetRelation relation(const(VersionConfiguration) a,
 		: allowsAny(b.ver, a.ver)
 			? SetRelation.overlapping
 			: SetRelation.disjoint;
-		//relation(a.ver, b.ver);
+
 	const SetRelation conf = relation(a.conf, b.conf);
 
 	//debug writefln("ver %s, conf %s", ver, conf);
@@ -375,235 +379,16 @@ unittest {
 	assert(r == SetRelation.subset, format("%s", r));
 }
 
-/// Ditto
-SetRelation relation(const(VersionConfiguration) a,
-		const(VersionConfiguration[2]) other) pure
-{
-	return relation(a, other[0], other[1]);
-}
-
-/// Ditto
-SetRelation relation(const(VersionConfiguration) a,
-		const(VersionConfiguration) b, const(VersionConfiguration) c) pure
-{
-	const SetRelation ab = relation(a, b);
-	const SetRelation ac = relation(a, c);
-
-	//debug {
-	//	const SetRelation bc = relation(b, c);
-	//	enforce(bc == SetRelation.disjoint, format(
-	//		"\nb: %s\nc: %s must be disjoint", b, c));
-	//}
-
-	//debug writefln("ab %s, ac %s", ab, ac);
-
-	if(ab == ac) {
-		return ab;
-	}
-
-	if(ab == SetRelation.subset || ac == SetRelation.subset) {
-		return SetRelation.subset;
-	}
-
-	if(ab == SetRelation.overlapping || ac == SetRelation.overlapping) {
-		return SetRelation.overlapping;
-	}
-
-	assert(false, format("\na: %s\nb: %s\nc: %s", a, b, c));
-}
-
-
 VersionConfiguration invert(const(VersionConfiguration) vs) {
 	return VersionConfiguration(vs.ver.invert(), invert(vs.conf));
 }
 
-__EOF__
-
 unittest {
-	SemVer a = parseSemVer("1.0.0");
-	SemVer b = parseSemVer("2.0.0");
-	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
-				Inclusive.yes), Conf(""));
-
-	VersionConfiguration[2] v1Inv = v1.invert();
-	assert(v1Inv[0].ver.low == parseSemVer("0.0.0"), format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.high == parseSemVer("1.0.0"), format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
-	assert(v1Inv[0].conf.isNot == true, format("%s", v1Inv[0]));
-
-	assert(v1Inv[1].ver.low == parseSemVer("2.0.0"), format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.inclusiveLow == Inclusive.no, format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
-	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[1]));
-}
-
-unittest {
-	SemVer a = parseSemVer("1.0.0");
-	SemVer b = parseSemVer("2.0.0");
-	auto v1 = VersionConfiguration(VersionRange(a, Inclusive.yes, b,
-				Inclusive.no), Conf(""));
-
-	VersionConfiguration[2] v1Inv = v1.invert();
-	assert(v1Inv[0].ver.low == parseSemVer("0.0.0"), format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.high == parseSemVer("1.0.0"), format("%s", v1Inv[0]));
-	assert(v1Inv[0].ver.inclusiveHigh == Inclusive.no, format("%s", v1Inv[0]));
-	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[0]));
-
-	assert(v1Inv[1].ver.low == parseSemVer("2.0.0"), format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.inclusiveLow == Inclusive.yes, format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.high == SemVer.MaxRelease, format("%s", v1Inv[1]));
-	assert(v1Inv[1].ver.inclusiveHigh == Inclusive.yes, format("%s", v1Inv[1]));
-	assert(v1Inv[1].conf.isNot == true, format("%s", v1Inv[1]));
-}
-
-private void test(const VersionConfiguration a,
-		const(VersionConfiguration[2]) o, const SetRelation exp)
-{
-	SetRelation sr = relation(a, o);
-	assert(sr == exp, format(
-		"\ngot: %s\nexp: %s\na: %s\nb: %s\nc: %s", sr, exp, a, o[0], o[1]));
-}
-
-unittest {
-	SemVer a = parseSemVer("0.0.0");
-	SemVer b = parseSemVer("1.0.0");
-	SemVer c = parseSemVer("2.0.0");
-	SemVer d = parseSemVer("3.0.0");
-
 	auto v1 = VersionConfiguration(
-			VersionRange(b, Inclusive.yes, c, Inclusive.no),
-			Conf(""));
+			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
+			Conf("")
+		);
 
-	auto notV1 = v1.invert();
-	test(v1, notV1, SetRelation.disjoint);
-
-	auto v2 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
-			Conf(""));
-	test(v2, notV1, SetRelation.overlapping);
-
-	auto v3 = VersionConfiguration(
-			VersionRange(c, Inclusive.yes, d, Inclusive.yes),
-			Conf(""));
-	test(v3, notV1, SetRelation.subset);
-}
-
-unittest {
-	SemVer a = parseSemVer("0.0.0");
-	SemVer b = parseSemVer("1.0.0");
-	SemVer c = parseSemVer("2.0.0");
-	SemVer d = parseSemVer("3.0.0");
-	SemVer e = parseSemVer("4.0.0");
-
-	auto v1 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
-			Conf("conf1"));
-
-	auto notV1 = v1.invert();
-	test(v1, notV1, SetRelation.disjoint);
-
-	foreach(end; [c, d, e]) {
-		auto v2 = VersionConfiguration(
-				VersionRange(b, Inclusive.yes, end, Inclusive.yes),
-				Conf(""));
-
-		test(v2, notV1, SetRelation.overlapping);
-	}
-}
-
-unittest {
-	SemVer a = parseSemVer("0.0.0");
-	SemVer b = parseSemVer("1.0.0");
-	SemVer c = parseSemVer("2.0.0");
-	SemVer d = parseSemVer("3.0.0");
-	SemVer e = parseSemVer("4.0.0");
-
-	auto v1 = VersionConfiguration(
-			VersionRange(b, Inclusive.yes, c, Inclusive.yes),
-			Conf("conf1"));
-
-	auto notV1 = v1.invert();
-	test(v1, notV1, SetRelation.disjoint);
-
-	auto v2 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.yes),
-			Conf(""));
-
-	test(v2, notV1, SetRelation.overlapping);
-
-	auto v3 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.no),
-			Conf(""));
-	test(v3, notV1, SetRelation.overlapping);
-
-	auto v4 = VersionConfiguration(
-			VersionRange(a, Inclusive.yes, b, Inclusive.no),
-			Conf("!conf1"));
-
-	test(v4, notV1, SetRelation.subset);
-
-	auto v5 = VersionConfiguration(
-			VersionRange(d, Inclusive.no, e, Inclusive.no),
-			Conf(""));
-
-	test(v5, notV1, SetRelation.overlapping);
-
-	auto v6 = VersionConfiguration(
-			VersionRange(d, Inclusive.no, e, Inclusive.no),
-			Conf("!conf1"));
-
-	test(v6, notV1, SetRelation.subset);
-
-	auto v7 = VersionConfiguration(
-			VersionRange(b, Inclusive.no, c, Inclusive.no),
-			Conf("!conf1"));
-
-	test(v7, notV1, SetRelation.disjoint);
-}
-
-unittest {
-	SemVer a = parseSemVer("0.0.0");
-	SemVer b = parseSemVer("1.0.0");
-	SemVer c = parseSemVer("2.0.0");
-	SemVer d = parseSemVer("3.0.0");
-	SemVer e = parseSemVer("4.0.0");
-
-	auto sms = [a, b, c, d, e];
-	auto confs = ["", "!", "conf1", "conf2", "!conf1", "!conf2"];
-	auto incs = [Inclusive.no, Inclusive.yes];
-
-	VersionConfiguration[] verConfs;
-	foreach(idx, sm0; sms[0 .. $ - 1]) {
-		foreach(sm1; sms[idx .. idx + 1]) {
-			foreach(conf; confs) {
-				foreach(inc0; incs) {
-					foreach(inc1; incs) {
-						verConfs ~= VersionConfiguration(
-								VersionRange(sm0, inc0, sm1, inc1),
-								Conf(conf)
-							);
-					}
-				}
-			}
-		}
-	}
-
-	foreach(ver0; verConfs) {
-		foreach(ver1; verConfs) {
-			auto sr = relation(ver0, ver1);
-			if(!ver1.conf.conf.empty && ver0.conf != ver1.conf) {
-				assert(sr == SetRelation.disjoint
-						|| sr == SetRelation.overlapping,
-					format("\ngot: %s\nver0: %s\nver1: %s", sr, ver0, ver1));
-			}
-		}
-
-		auto notVer0 = ver0.invert();
-		foreach(ver1; verConfs) {
-			relation(ver1, notVer0);
-		}
-	}
+	auto v2 = v1.invert();
+	assert(relation(v1, v2) == SetRelation.disjoint);
 }

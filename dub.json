@@ -7,6 +7,9 @@
         "pkgdescription": {
             "path": "pkgdescription"
         }
+        "resolve": {
+            "path": "resolve"
+        }
     },
     "description": "A dub replacement",
     "license": "LGPL3",

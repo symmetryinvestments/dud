@@ -9,6 +9,7 @@ import std.typecons : Nullable;
 import std.json;
 import std.format : format;
 import dud.pkgdescription : PackageDescription, jsonToPackageDescription;
+import dud.pkgdescription.duplicate;
 import dud.semver.semver;
 import dud.semver.versionrange;
 
@@ -18,19 +19,25 @@ interface PackageProvidier {
 	const(PackageDescription)[] getPackage(string name,
 			const(VersionRange) verRange);
 
-	const(PackageDescription) getPackage(string name, string ver);
+	const(PackageDescriptionVersionRange) getPackage(string name, string ver);
 }
 
-struct PackageDescriptionVersion {
+struct PackageDescriptionVersionRange {
 	PackageDescription pkg;
 	VersionRange ver;
+}
+
+PackageDescriptionVersionRange dup(const(PackageDescriptionVersionRange) i) {
+	return PackageDescriptionVersionRange(
+			dud.pkgdescription.duplicate.dup(i.pkg),
+			i.ver.dup());
 }
 
 struct DumpFileProvidier {
 	// the cache either holds all or non
 	bool isLoaded;
 	const string dumpFileName;
-	PackageDescriptionVersion[][string] cache;
+	PackageDescriptionVersionRange[][string] cache;
 	JSONValue[string] parsedPackages;
 
 	this(string dumpFileName) {
@@ -52,7 +59,7 @@ struct DumpFileProvidier {
 		}
 	}
 
-	const(PackageDescriptionVersion)[] getPackages(string name,
+	const(PackageDescriptionVersionRange)[] getPackages(string name,
 			string verRange)
 	{
 		Nullable!VersionRange v = parseVersionRange(verRange);
@@ -60,7 +67,7 @@ struct DumpFileProvidier {
 		return this.getPackages(name, v.get());
 	}
 
-	const(PackageDescriptionVersion)[] getPackages(string name,
+	const(PackageDescriptionVersionRange)[] getPackages(string name,
 			const(VersionRange) verRange)
 	{
 		import dud.semver.checks : allowsAny;
@@ -72,7 +79,7 @@ struct DumpFileProvidier {
 			.array;
 	}
 
-	PackageDescriptionVersion[]* ensurePackageIsInCache(string name) {
+	PackageDescriptionVersionRange[]* ensurePackageIsInCache(string name) {
 		auto pkgs = name in this.cache;
 		if(pkgs is null) {
 			auto ptr = name in parsedPackages;
@@ -91,15 +98,15 @@ struct DumpFileProvidier {
 		enforce(!v.isNull());
 		const VersionRange vr = v.get();
 
-		auto f = (*pkgs).find!((it, s) => it.ver == vr)(vr);
+		auto f = (*pkgs).find!((it, s) => it.ver == s)(vr);
 		enforce(!f.empty, format("No version '%s' for package '%s' could"
-			~ " be found in versions [%s]", name, ver,
+			~ " be found in versions [%s]", name, vr,
 			(*pkgs).map!(it => it.ver)));
 		return f.front.pkg;
 	}
 }
 
-private PackageDescriptionVersion[] dumpJSONToPackage(JSONValue jv) {
+private PackageDescriptionVersionRange[] dumpJSONToPackage(JSONValue jv) {
 	enforce(jv.type == JSONType.object, format("Expected object got '%s'",
 			jv.type));
 	auto vers = "versions" in jv;
@@ -115,8 +122,10 @@ private PackageDescriptionVersion[] dumpJSONToPackage(JSONValue jv) {
 
 			auto ver = "version" in it;
 			enforce(ver !is null && (*ver).type == JSONType.string);
-			VersionRange vr = parseVersionRange((*ver).str());
-			return PackageDescriptionVersion(pkg, vr);
+			Nullable!VersionRange v = parseVersionRange((*ver).str());
+			enforce(!v.isNull());
+			const VersionRange vr = v.get();
+			return PackageDescriptionVersionRange(pkg, vr.dup);
 		})
 		.array
 		.sort!((a, b) => a.ver > b.ver)

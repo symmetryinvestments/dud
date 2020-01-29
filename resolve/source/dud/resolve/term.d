@@ -3,13 +3,35 @@ module dud.resolve.term;
 import std.exception : enforce;
 
 import dud.semver.versionrange;
+import dud.semver.checks;
+import dud.semver.versionunion;
 import dud.pkgdescription;
 import dud.resolve.versionconfiguration;
+import dud.resolve.providier;
 import dud.resolve.positive;
+import dud.resolve.conf;
 
-@safe:
+@safe pure:
 struct Term {
-	const VersionConfiguration constraint;
-	const PackageDescription pkg;
-	const IsPositive isPositive;
+	VersionConfiguration constraint;
+	PackageDescriptionVersionRange pkg;
+	IsPositive isPositive;
+}
+
+Term invert(const(Term) t) {
+	VersionConfiguration vc = dud.resolve.versionconfiguration.invert(t.constraint);
+	return Term(vc, t.pkg.dup(), cast(IsPositive)!t.isPositive);
+}
+
+unittest {
+	Term t1;
+	t1.pkg.ver = parseVersionRange("1.2.3").get();
+	t1.isPositive = IsPositive.yes;
+	t1.constraint = VersionConfiguration(
+			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
+			Conf("")
+		);
+
+	Term t2 = t1.invert();
+	assert(!allowsAny(t1.constraint.ver, t2.constraint.ver));
 }
