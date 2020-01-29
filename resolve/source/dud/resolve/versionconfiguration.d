@@ -29,51 +29,6 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 		: allowsAny(b, a)
 			? SetRelation.overlapping
 			: SetRelation.disjoint;
-
-	/*if(a.conf == b.conf && a.conf.empty) {
-		return SetRelation.subset;
-	}
-
-	if(a.conf != b.conf
-			&& !a.conf.empty && !b.conf.empty
-			&& !a.not && !b.not)
-	{
-		return SetRelation.disjoint;
-	}
-
-	if(a.conf == b.conf && !a.conf.empty && a.not != b.not) {
-		return SetRelation.disjoint;
-	}
-
-	if(a.conf == b.conf && a.not == b.not) {
-		return SetRelation.subset;
-	}
-
-	if(!a.conf.empty && !b.conf.empty
-			&& a.conf != b.conf
-			&& a.not != b.not)
-	{
-		return SetRelation.overlapping;
-	}
-
-	if(!a.conf.empty && !b.conf.empty
-			&& a.conf != b.conf
-			&& a.not == b.not
-			&& a.not)
-	{
-		return SetRelation.overlapping;
-	}
-
-	if(a.conf.empty && !b.conf.empty) {
-		return SetRelation.overlapping;
-	}
-
-	if(!a.conf.empty && b.conf.empty) {
-		return SetRelation.subset;
-	}
-
-	assert(false, format("a %s, b %s", a, b));
-*/
 }
 
 unittest {
