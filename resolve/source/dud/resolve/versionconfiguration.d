@@ -24,7 +24,13 @@ struct VersionConfiguration {
 }
 
 SetRelation relation(const(Conf) a, const(Conf) b) pure {
-	if(a.conf == b.conf && a.conf.empty) {
+	return allowsAll(b, a)
+		? SetRelation.subset
+		: allowsAny(b, a)
+			? SetRelation.overlapping
+			: SetRelation.disjoint;
+
+	/*if(a.conf == b.conf && a.conf.empty) {
 		return SetRelation.subset;
 	}
 
@@ -67,6 +73,7 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 	}
 
 	assert(false, format("a %s, b %s", a, b));
+*/
 }
 
 unittest {
@@ -95,7 +102,7 @@ unittest {
 	assert(sr == SetRelation.overlapping, format("%s", sr));
 
 	sr = relation(nc1, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc1 b
 
@@ -129,7 +136,7 @@ unittest {
 	assert(sr == SetRelation.overlapping, format("%s", sr));
 
 	sr = relation(nc2, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc2 b
 
@@ -143,7 +150,7 @@ unittest {
 	assert(sr == SetRelation.overlapping, format("%s", sr));
 
 	sr = relation(nc6, nc2);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc3
 
@@ -154,7 +161,7 @@ unittest {
 	assert(sr == SetRelation.overlapping, format("%s", sr));
 
 	sr = relation(nc3, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc3 b
 
@@ -174,7 +181,7 @@ unittest {
 	assert(sr == SetRelation.overlapping, format("%s", sr));
 
 	sr = relation(nc6, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc4
 
@@ -194,7 +201,7 @@ unittest {
 	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc4, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc4 b
 
@@ -214,7 +221,7 @@ unittest {
 	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc5
 
@@ -234,7 +241,7 @@ unittest {
 	assert(sr == SetRelation.subset, format("%s", sr));
 
 	sr = relation(nc5, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc5 b
 
@@ -254,7 +261,7 @@ unittest {
 	assert(sr == SetRelation.subset, format("%s", sr));
 
 	sr = relation(nc6, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc6
 
@@ -262,39 +269,39 @@ unittest {
 	assert(sr == SetRelation.subset, format("%s", sr));
 
 	sr = relation(nc6, nc2);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	// nc6 b
 
 	sr = relation(nc1, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc2, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc3, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc4, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc5, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 
 	sr = relation(nc6, nc6);
-	assert(sr == SetRelation.subset, format("%s", sr));
+	assert(sr == SetRelation.disjoint, format("%s", sr));
 }
 
 @safe pure unittest {
