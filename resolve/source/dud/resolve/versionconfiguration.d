@@ -10,7 +10,7 @@ import dud.semver.parse;
 import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
-import dud.semver.setoperation : invert;
+static import dud.semver.setoperation;
 import dud.resolve.conf : Conf, allowsAll, allowsAny, invert;
 import dud.resolve.positive;
 
@@ -19,8 +19,16 @@ import dud.resolve.positive;
 /** The algebraic datatype that stores a version range and a configuration
 */
 struct VersionConfiguration {
+@safe pure:
 	VersionUnion ver;
 	Conf conf;
+
+	VersionConfiguration invert() const {
+		static import dud.resolve.conf;
+		return VersionConfiguration(
+				dud.semver.setoperation.invert(this.ver),
+				dud.resolve.conf.invert(this.conf));
+	}
 }
 
 VersionConfiguration dup(const(VersionConfiguration) old) {
@@ -377,12 +385,6 @@ unittest {
 
 	r = relation(v3, v3);
 	assert(r == SetRelation.subset, format("%s", r));
-}
-
-VersionConfiguration invert(const(VersionConfiguration) vs) {
-	return VersionConfiguration(
-			invert(vs.ver),
-			invert(vs.conf));
 }
 
 unittest {
