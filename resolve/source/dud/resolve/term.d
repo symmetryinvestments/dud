@@ -42,5 +42,7 @@ unittest {
 }
 
 SetRelation relation(const(Term) a, const(Term) b) {
-	assert(false);
+	static import dud.resolve.versionconfiguration;
+	enforce(a.pkg.pkg.name == other.pkg.pkg.name);
+	return dud.resolve.versionconfiguration.relation(a, b);
 }
