@@ -23,6 +23,11 @@ Term invert(const(Term) t) {
 	return Term(vc, t.pkg.dup(), cast(IsPositive)!t.isPositive);
 }
 
+bool satisfies(const(Term) that, const(Term) other) {
+	return that.pkg.pkg.name == other.pkg.pkg.name
+		&& relation(other, that) == SetRelation.subset;
+}
+
 unittest {
 	Term t1;
 	t1.pkg.ver = parseVersionRange("1.2.3").get();
@@ -34,4 +39,8 @@ unittest {
 
 	Term t2 = t1.invert();
 	assert(!allowsAny(t1.constraint.ver, t2.constraint.ver));
+}
+
+SetRelation relation(const(Term) a, const(Term) b) {
+	assert(false);
 }
