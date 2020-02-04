@@ -25,6 +25,46 @@ struct Conf {
 		this.conf = s;
 		this.isPositive = b;
 	}
+
+	Conf dup() const {
+		return Conf(this.conf, this.isPositive);
+	}
+
+	int opCmp(const(Conf) other) const nothrow @nogc {
+		return this.conf < other.conf
+			? -1
+			: this.conf > other.conf
+				? 1
+				: this.isPositive < other.isPositive
+					? -1
+					: this.isPositive > other.isPositive
+						? 1
+						: 0;
+	}
+
+	bool opEquals(const(Conf) other) const nothrow @nogc {
+		return this.conf == other.conf && this.isPositive == other.isPositive;
+	}
+}
+
+struct Confs {
+@safe pure:
+	Conf[] confs;
+	IsPositive isPositive;
+
+	this(const(Conf)[] input) {
+		import std.algorithm.iteration : each;
+		input.each!(it => this.insert(it));
+	}
+
+	void insert(const(Conf) c) {
+		import std.algorithm.searching : canFind;
+		import std.algorithm.sorting : sort;
+		if(!canFind(this.confs, c)) {
+			this.confs ~= c.dup();
+			this.confs.sort();
+		}
+	}
 }
 
 Conf invert(const(Conf) c) {
@@ -65,35 +105,35 @@ bool allowsAll(const(Conf) a, const(Conf) b) {
 			: a.isPositive == b.isPositive && a.conf == b.conf;
 }
 
-Conf intersectionOf(const(Conf) a, const(Conf) b) {
+Confs intersectionOf(const(Conf) a, const(Conf) b) {
 	if((a.isPositive == IsPositive.no && a.conf.empty)
 		|| (b.isPositive == IsPositive.no && b.conf.empty))
 	{
-		return Conf("", IsPositive.no);
+		return Confs([Conf("", IsPositive.no)]);
 	}
 
 	const bool aEqB = a.conf == b.conf;
 
 	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.yes) {
-		return a.conf.empty && b.conf.empty
+		return Confs([a.conf.empty && b.conf.empty
 			? Conf("", IsPositive.yes)
 			: !a.conf.empty && !b.conf.empty
 				? Conf(aEqB ? a.conf : "", cast(IsPositive)aEqB)
 				: !a.conf.empty && b.conf.empty
 					? Conf(a.conf, IsPositive.yes)
-					: Conf(b.conf, IsPositive.yes);
+					: Conf(b.conf, IsPositive.yes)]);
 	}
 
 	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.no) {
-		return a.conf.empty || b.conf.empty
-			? Conf("", IsPositive.no)
-			: Conf(aEqB ? a.conf : "", IsPositive.no);
+		return aEqB
+			? Confs([a.dup()])
+			: Confs([a.dup(), b.dup()]);
 	}
 
 	if(a.isPositive != b.isPositive) {
 		return aEqB
-			? Conf("", IsPositive.no)
-			: Conf(a.isPositive ? a.conf : b.conf, IsPositive.yes);
+			? Confs([Conf("", IsPositive.no)])
+			: Confs([a.dup(), b.dup()]);
 	}
 
 	assert(false, format("intersectionOf a: %s, b: %s failed", a, b));
@@ -123,12 +163,30 @@ private {
 //
 
 unittest {
-	assert(intersectionOf(c1, c1) == c1);
-	assert(intersectionOf(c1, c2) == c6);
-	assert(intersectionOf(c1, c3) == c6);
-	assert(intersectionOf(c1, c4) == c1);
-	assert(intersectionOf(c1, c5) == c1);
-	assert(intersectionOf(c1, c6) == c6);
+	void test(const(Conf) a, const(Conf) b, const(Confs) exp,
+			int line = __LINE__)
+	{
+		import std.exception : enforce;
+		import core.exception : AssertError;
+		const(Confs) rslt = intersectionOf(a, b);
+		enforce!AssertError(rslt == exp,
+			format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b, exp, rslt),
+			__FILE__, line);
+	}
+
+	test(c1, c1, Confs([c1]));
+	test(c1, c2, Confs([c6]));
+	test(c1, c3, Confs([c6]));
+	test(c1, c4, Confs([c1, c4]));
+	test(c1, c5, Confs([c1]));
+	test(c1, c6, Confs([c6]));
+
+	test(c2, c1, Confs([c6]));
+	test(c2, c2, Confs([c2]));
+	test(c2, c3, Confs([c3]));
+	test(c2, c4, Confs([c6]));
+	test(c2, c5, Confs([c2]));
+	test(c2, c6, Confs([c6]));
 }
 
 //
