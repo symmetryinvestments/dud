@@ -15,7 +15,7 @@ struct Conf {
 	string conf;
 	/// true means the inverse of the `conf` inverse of `conf.empty`
 	/// still means wildcard
-	IsPositive not;
+	IsPositive isPositive;
 
 	this(string s) {
 		this(s, IsPositive.yes);
@@ -23,46 +23,80 @@ struct Conf {
 
 	this(string s, IsPositive b) {
 		this.conf = s;
-		this.not = b;
+		this.isPositive = b;
 	}
 }
 
 Conf invert(const(Conf) c) {
 	return c.conf.empty
 		? Conf("", IsPositive.yes)
-		: Conf(c.conf, cast(IsPositive)!c.not);
+		: Conf(c.conf, cast(IsPositive)!c.isPositive);
 }
 
 bool allowsAny(const(Conf) a, const(Conf) b) {
-	if(a.not == IsPositive.no && a.conf.empty) {
+	if(a.isPositive == IsPositive.no && a.conf.empty) {
 		return false;
 	}
 
-	if(b.not == IsPositive.no && b.conf.empty) {
+	if(b.isPositive == IsPositive.no && b.conf.empty) {
 		return false;
 	}
 
-	if(a.not == IsPositive.yes && a.conf.empty) {
+	if(a.isPositive == IsPositive.yes && a.conf.empty) {
 		return true;
 	}
 
-	if(b.not == IsPositive.yes && b.conf.empty) {
+	if(b.isPositive == IsPositive.yes && b.conf.empty) {
 		return true;
 	}
 
-	return a.not == IsPositive.yes && b.not == IsPositive.yes
+	return a.isPositive == IsPositive.yes && b.isPositive == IsPositive.yes
 		? a.conf == b.conf
-		: a.not != b.not
+		: a.isPositive != b.isPositive
 			? a.conf != b.conf
 			: true;
 }
 
 bool allowsAll(const(Conf) a, const(Conf) b) {
-	return a.not == IsPositive.yes && a.conf.empty
+	return a.isPositive == IsPositive.yes && a.conf.empty
 		? true
-		: a.not == IsPositive.no && a.conf.empty
+		: a.isPositive == IsPositive.no && a.conf.empty
 			? false
-			: a.not == b.not && a.conf == b.conf;
+			: a.isPositive == b.isPositive && a.conf == b.conf;
+}
+
+Conf intersectionOf(const(Conf) a, const(Conf) b) {
+	if((a.isPositive == IsPositive.no && a.conf.empty)
+		|| (b.isPositive == IsPositive.no && b.conf.empty))
+	{
+		return Conf("", IsPositive.no);
+	}
+
+	const bool aEqB = a.conf == b.conf;
+
+	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.yes) {
+		return a.conf.empty && b.conf.empty
+			? Conf("", IsPositive.yes)
+			: !a.conf.empty && !b.conf.empty
+				? Conf(aEqB ? a.conf : "", cast(IsPositive)aEqB)
+				: !a.conf.empty && b.conf.empty
+					? Conf(a.conf, IsPositive.yes)
+					: Conf(b.conf, IsPositive.yes);
+	}
+
+	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.no) {
+		return a.conf.empty || b.conf.empty
+			? Conf("", IsPositive.no)
+			: Conf(aEqB ? a.conf : "", IsPositive.no);
+	}
+
+	if(a.isPositive != b.isPositive) {
+		return aEqB
+			? Conf("", IsPositive.no)
+			: Conf(a.isPositive ? a.conf : b.conf, IsPositive.yes);
+	}
+
+	assert(false, format("intersectionOf a: %s, b: %s failed", a, b));
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
@@ -75,6 +109,140 @@ SetRelation relation(const(Conf) a, const(Conf) b) pure {
 			? SetRelation.overlapping
 			: SetRelation.disjoint;
 }
+private {
+	const c1 = Conf("foo", IsPositive.yes);
+	const c2 = Conf("foo", IsPositive.no);
+	const c3 = Conf("bar", IsPositive.yes);
+	const c4 = Conf("bar", IsPositive.no);
+	const c5 = Conf("", IsPositive.yes);
+	const c6 = Conf("", IsPositive.no);
+}
+
+//
+// intersectionOf
+//
+
+unittest {
+	assert(intersectionOf(c1, c1) == c1);
+	assert(intersectionOf(c1, c2) == c6);
+	assert(intersectionOf(c1, c3) == c6);
+	assert(intersectionOf(c1, c4) == c1);
+	assert(intersectionOf(c1, c5) == c1);
+	assert(intersectionOf(c1, c6) == c6);
+}
+
+//
+// invert
+//
+
+unittest {
+	assert(invert(c1) == c2);
+	assert(invert(c2) == c1);
+	assert(invert(c3) == c4);
+	assert(invert(c4) == c3);
+	assert(invert(c5) == c5);
+	assert(invert(c6) == c5);
+}
+
+//
+// allowsAny
+//
+
+unittest {
+	assert( allowsAny(c1, c1));
+	assert(!allowsAny(c1, c2));
+	assert(!allowsAny(c1, c3));
+	assert( allowsAny(c1, c4));
+	assert( allowsAny(c1, c5));
+	assert(!allowsAny(c1, c6));
+
+	assert(!allowsAny(c2, c1));
+	assert( allowsAny(c2, c2));
+	assert( allowsAny(c2, c3));
+	assert( allowsAny(c2, c4));
+	assert( allowsAny(c2, c5));
+	assert(!allowsAny(c2, c6));
+
+	assert(!allowsAny(c3, c1));
+	assert( allowsAny(c3, c2));
+	assert( allowsAny(c3, c3));
+	assert(!allowsAny(c3, c4));
+	assert( allowsAny(c3, c5));
+	assert(!allowsAny(c3, c6));
+
+	assert( allowsAny(c4, c1));
+	assert( allowsAny(c4, c2));
+	assert(!allowsAny(c4, c3));
+	assert( allowsAny(c4, c4));
+	assert( allowsAny(c4, c5));
+	assert(!allowsAny(c4, c6));
+
+	assert( allowsAny(c5, c1));
+	assert( allowsAny(c5, c2));
+	assert( allowsAny(c5, c3));
+	assert( allowsAny(c5, c4));
+	assert( allowsAny(c5, c5));
+	assert(!allowsAny(c5, c6));
+
+	assert(!allowsAny(c6, c1));
+	assert(!allowsAny(c6, c2));
+	assert(!allowsAny(c6, c3));
+	assert(!allowsAny(c6, c4));
+	assert(!allowsAny(c6, c5));
+	assert(!allowsAny(c6, c6));
+}
+
+//
+// allowsAll
+//
+
+unittest {
+	assert( allowsAll(c1, c1));
+	assert(!allowsAll(c1, c2));
+	assert(!allowsAll(c1, c3));
+	assert(!allowsAll(c1, c4));
+	assert(!allowsAll(c1, c5));
+	assert(!allowsAll(c1, c6));
+
+	assert(!allowsAll(c2, c1));
+	assert( allowsAll(c2, c2));
+	assert(!allowsAll(c2, c3));
+	assert(!allowsAll(c2, c4));
+	assert(!allowsAll(c2, c5));
+	assert(!allowsAll(c2, c6));
+
+	assert(!allowsAll(c3, c1));
+	assert(!allowsAll(c3, c2));
+	assert( allowsAll(c3, c3));
+	assert(!allowsAll(c3, c4));
+	assert(!allowsAll(c3, c5));
+	assert(!allowsAll(c3, c6));
+
+	assert(!allowsAll(c4, c1));
+	assert(!allowsAll(c4, c2));
+	assert(!allowsAll(c4, c3));
+	assert( allowsAll(c4, c4));
+	assert(!allowsAll(c4, c5));
+	assert(!allowsAll(c4, c6));
+
+	assert( allowsAll(c5, c1));
+	assert( allowsAll(c5, c2));
+	assert( allowsAll(c5, c3));
+	assert( allowsAll(c5, c4));
+	assert( allowsAll(c5, c5));
+	assert( allowsAll(c5, c6));
+
+	assert(!allowsAll(c6, c1));
+	assert(!allowsAll(c6, c2));
+	assert(!allowsAll(c6, c3));
+	assert(!allowsAll(c6, c4));
+	assert(!allowsAll(c6, c5));
+	assert(!allowsAll(c6, c6));
+}
+
+//
+// relation
+//
 
 unittest {
 	Conf nc1 = Conf("", IsPositive.yes);
@@ -319,120 +487,3 @@ unittest {
 	}
 }
 
-private {
-	const c1 = Conf("foo", IsPositive.yes);
-	const c2 = Conf("foo", IsPositive.no);
-	const c3 = Conf("bar", IsPositive.yes);
-	const c4 = Conf("bar", IsPositive.no);
-	const c5 = Conf("", IsPositive.yes);
-	const c6 = Conf("", IsPositive.no);
-}
-
-//
-// invert
-//
-
-unittest {
-	assert(invert(c1) == c2);
-	assert(invert(c2) == c1);
-	assert(invert(c3) == c4);
-	assert(invert(c4) == c3);
-	assert(invert(c5) == c5);
-	assert(invert(c6) == c5);
-}
-
-//
-// allowsAny
-//
-
-unittest {
-	assert( allowsAny(c1, c1));
-	assert(!allowsAny(c1, c2));
-	assert(!allowsAny(c1, c3));
-	assert( allowsAny(c1, c4));
-	assert( allowsAny(c1, c5));
-	assert(!allowsAny(c1, c6));
-
-	assert(!allowsAny(c2, c1));
-	assert( allowsAny(c2, c2));
-	assert( allowsAny(c2, c3));
-	assert( allowsAny(c2, c4));
-	assert( allowsAny(c2, c5));
-	assert(!allowsAny(c2, c6));
-
-	assert(!allowsAny(c3, c1));
-	assert( allowsAny(c3, c2));
-	assert( allowsAny(c3, c3));
-	assert(!allowsAny(c3, c4));
-	assert( allowsAny(c3, c5));
-	assert(!allowsAny(c3, c6));
-
-	assert( allowsAny(c4, c1));
-	assert( allowsAny(c4, c2));
-	assert(!allowsAny(c4, c3));
-	assert( allowsAny(c4, c4));
-	assert( allowsAny(c4, c5));
-	assert(!allowsAny(c4, c6));
-
-	assert( allowsAny(c5, c1));
-	assert( allowsAny(c5, c2));
-	assert( allowsAny(c5, c3));
-	assert( allowsAny(c5, c4));
-	assert( allowsAny(c5, c5));
-	assert(!allowsAny(c5, c6));
-
-	assert(!allowsAny(c6, c1));
-	assert(!allowsAny(c6, c2));
-	assert(!allowsAny(c6, c3));
-	assert(!allowsAny(c6, c4));
-	assert(!allowsAny(c6, c5));
-	assert(!allowsAny(c6, c6));
-}
-
-//
-// allowsAll
-//
-
-unittest {
-	assert( allowsAll(c1, c1));
-	assert(!allowsAll(c1, c2));
-	assert(!allowsAll(c1, c3));
-	assert(!allowsAll(c1, c4));
-	assert(!allowsAll(c1, c5));
-	assert(!allowsAll(c1, c6));
-
-	assert(!allowsAll(c2, c1));
-	assert( allowsAll(c2, c2));
-	assert(!allowsAll(c2, c3));
-	assert(!allowsAll(c2, c4));
-	assert(!allowsAll(c2, c5));
-	assert(!allowsAll(c2, c6));
-
-	assert(!allowsAll(c3, c1));
-	assert(!allowsAll(c3, c2));
-	assert( allowsAll(c3, c3));
-	assert(!allowsAll(c3, c4));
-	assert(!allowsAll(c3, c5));
-	assert(!allowsAll(c3, c6));
-
-	assert(!allowsAll(c4, c1));
-	assert(!allowsAll(c4, c2));
-	assert(!allowsAll(c4, c3));
-	assert( allowsAll(c4, c4));
-	assert(!allowsAll(c4, c5));
-	assert(!allowsAll(c4, c6));
-
-	assert( allowsAll(c5, c1));
-	assert( allowsAll(c5, c2));
-	assert( allowsAll(c5, c3));
-	assert( allowsAll(c5, c4));
-	assert( allowsAll(c5, c5));
-	assert( allowsAll(c5, c6));
-
-	assert(!allowsAll(c6, c1));
-	assert(!allowsAll(c6, c2));
-	assert(!allowsAll(c6, c3));
-	assert(!allowsAll(c6, c4));
-	assert(!allowsAll(c6, c5));
-	assert(!allowsAll(c6, c6));
-}

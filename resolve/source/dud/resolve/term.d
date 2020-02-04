@@ -15,6 +15,8 @@ import dud.resolve.conf;
 struct Term {
 	VersionConfiguration constraint;
 	PackageDescriptionVersionRange pkg;
+
+	/// is only an indicator `contraint` is used to store both stats
 	IsPositive isPositive;
 }
 
@@ -43,6 +45,6 @@ unittest {
 
 SetRelation relation(const(Term) a, const(Term) b) {
 	static import dud.resolve.versionconfiguration;
-	enforce(a.pkg.pkg.name == other.pkg.pkg.name);
-	return dud.resolve.versionconfiguration.relation(a, b);
+	enforce(a.pkg.pkg.name == b.pkg.pkg.name);
+	return dud.resolve.versionconfiguration.relation(a.constraint, b.constraint);
 }
