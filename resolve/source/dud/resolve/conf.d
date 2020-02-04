@@ -135,13 +135,11 @@ Confs intersectionOf(const(Conf) a, const(Conf) b) {
 			: Confs([a.dup(), b.dup()]);
 	}
 
-	if(a.isPositive != b.isPositive) {
-		return aEqB
-			? Confs([Conf("", IsPositive.no)])
-			: Confs([a.dup(), b.dup()]);
-	}
-
-	assert(false, format("intersectionOf a: %s, b: %s failed", a, b));
+	// a.isPositive != b.isPositive
+	assert(a.isPositive != b.isPositive);
+	return aEqB
+		? Confs([Conf("", IsPositive.no)])
+		: Confs([a.dup(), b.dup()]);
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
