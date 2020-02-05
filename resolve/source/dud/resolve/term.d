@@ -38,7 +38,7 @@ unittest {
 	t1.isPositive = IsPositive.yes;
 	t1.constraint = VersionConfiguration(
 			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
-			Conf("")
+			Confs([Conf("", IsPositive.yes)])
 		);
 
 	Term t2 = t1.invert();

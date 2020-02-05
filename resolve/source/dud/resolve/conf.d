@@ -47,31 +47,6 @@ struct Conf {
 	}
 }
 
-struct Confs {
-@safe pure:
-	Conf[] confs;
-	IsPositive isPositive;
-
-	this(const(Conf)[] input) {
-		import std.algorithm.iteration : each;
-		input.each!(it => this.insert(it));
-	}
-
-	void insert(const(Conf) c) {
-		import std.algorithm.searching : canFind;
-		import std.algorithm.sorting : sort;
-		immutable all = Conf("", IsPositive.yes);
-		if(c != all && !canFind(this.confs, c)) {
-			this.confs ~= c.dup();
-			this.confs.sort();
-		}
-		immutable none = Conf("", IsPositive.no);
-		if(canFind(this.confs, none)) {
-			this.confs = [none.dup()];
-		}
-	}
-}
-
 Conf invert(const(Conf) c) {
 	// If no configuration is selected aka
 	// c.conf.empty && c.isPositive == IsPositive.yes what does it even mean

@@ -22,19 +22,19 @@ unittest {
 
 	auto v1 = VersionConfiguration(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
-				, Conf("")
+				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v2 = VersionConfiguration(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
-				, Conf("")
+				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v3 = VersionConfiguration(
 			VersionUnion([VersionRange(a, Inclusive.yes, c, Inclusive.no)])
-				, Conf("")
+				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v4 = VersionConfiguration(
 			VersionUnion([VersionRange(b, Inclusive.yes, c, Inclusive.no)])
-				, Conf("")
+				, Confs([Conf("", IsPositive.yes)])
 			);
 
 	auto r = relation(v1, v2);
@@ -56,14 +56,14 @@ unittest {
 	SemVer c = parseSemVer("3.0.0");
 
 	auto v1 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)]),
-			Conf("conf1"));
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+			, Confs([Conf("conf1", IsPositive.yes)]));
 	auto v2 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)]),
-			Conf(""));
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
+			, Confs([Conf("", IsPositive.yes)]));
 	auto v3 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)]),
-			Conf("conf2"));
+			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+			, Confs([Conf("conf2", IsPositive.yes)]));
 
 	auto r = relation(v1, v2);
 	assert(r == SetRelation.overlapping, format("%s", r));
@@ -86,8 +86,8 @@ unittest {
 
 unittest {
 	auto v1 = VersionConfiguration(
-			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
-			Conf("")
+			VersionUnion([ parseVersionRange(">=1.0.0").get() ])
+			, Confs([Conf("", IsPositive.yes)])
 		);
 
 	auto v2 = v1.invert();

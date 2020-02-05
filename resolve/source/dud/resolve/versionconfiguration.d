@@ -11,7 +11,7 @@ import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 static import dud.semver.setoperation;
-import dud.resolve.conf : Conf, allowsAll, allowsAny, invert;
+import dud.resolve.conf : Confs, allowsAll, allowsAny, invert;
 import dud.resolve.positive;
 
 @safe pure:
@@ -21,11 +21,11 @@ import dud.resolve.positive;
 struct VersionConfiguration {
 @safe pure:
 	VersionUnion ver;
-	Conf conf;
+	Confs conf;
 }
 
 VersionConfiguration dup(const(VersionConfiguration) old) {
-	return VersionConfiguration(old.ver.dup, old.conf);
+	return VersionConfiguration(old.ver.dup, old.conf.dup);
 }
 
 VersionConfiguration invert(const(VersionConfiguration) conf) {
@@ -33,6 +33,14 @@ VersionConfiguration invert(const(VersionConfiguration) conf) {
 	return VersionConfiguration(
 			dud.semver.setoperation.invert(conf.ver),
 			dud.resolve.conf.invert(conf.conf));
+}
+
+bool allowsAny(const(VersionConfiguration) a, const(VersionConfiguration) b) {
+	return allowsAny(a.ver, b.ver) && allowsAny(a.conf, b.conf);
+}
+
+bool allowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b) {
+	return allowsAll(a.ver, b.ver) && allowsAll(a.conf, b.conf);
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
