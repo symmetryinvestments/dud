@@ -17,6 +17,69 @@ private {
 }
 
 //
+// differenceOf
+//
+
+unittest {
+	const(Confs) rslt = differenceOf(c1, c1);
+	assert(rslt == Confs([c6]));
+}
+
+//
+// opCmp
+//
+
+unittest {
+	assert(c6 < c1);
+	assert(c6 < c2);
+	assert(c6 < c3);
+	assert(c6 < c4);
+	assert(c6 < c5);
+	assert(c6 >= c6);
+	assert(c6 <= c6);
+
+	assert(c5 < c1);
+	assert(c5 < c2);
+	assert(c5 < c3);
+	assert(c5 < c4);
+	assert(c5 <= c5);
+	assert(c5 >= c5);
+	assert(c5 > c6);
+
+	assert(c4 < c1);
+	assert(c4 < c2);
+	assert(c4 < c3);
+	assert(c4 >= c4);
+	assert(c4 <= c4);
+	assert(c4 > c5);
+	assert(c4 > c6);
+
+	assert(c3 < c1);
+	assert(c3 < c2);
+	assert(c3 >= c3);
+	assert(c3 <= c3);
+	assert(c3 > c4);
+	assert(c3 > c5);
+	assert(c3 > c6);
+
+	assert(c2 < c1);
+	assert(c2 <= c2);
+	assert(c2 >= c2);
+	assert(c2 > c3);
+	assert(c2 > c4);
+	assert(c2 > c5);
+	assert(c2 > c6);
+
+	assert(c1 <= c1);
+	assert(c1 >= c1);
+	assert(c1 > c2);
+	assert(c1 > c3);
+	assert(c1 > c4);
+	assert(c1 > c5);
+	assert(c1 > c6);
+}
+
+//
 // intersectionOf
 //
 

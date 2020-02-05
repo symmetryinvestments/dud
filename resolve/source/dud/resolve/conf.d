@@ -135,11 +135,15 @@ Confs intersectionOf(const(Conf) a, const(Conf) b) {
 			: Confs([a.dup(), b.dup()]);
 	}
 
-	// a.isPositive != b.isPositive
 	assert(a.isPositive != b.isPositive);
 	return aEqB
 		? Confs([Conf("", IsPositive.no)])
 		: Confs([a.dup(), b.dup()]);
+}
+
+Confs differenceOf(const(Conf) a, const(Conf) b) {
+	Conf inv = invert(b);
+	return intersectionOf(a, inv);
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
