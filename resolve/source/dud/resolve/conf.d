@@ -73,7 +73,11 @@ struct Confs {
 }
 
 Conf invert(const(Conf) c) {
-	return c.conf.empty
+	// If no configuration is selected aka
+	// c.conf.empty && c.isPositive == IsPositive.yes what does it even mean
+	// to invert that selection.
+	// Currently, the answer is that it is a no op
+	return c.conf.empty && c.isPositive == IsPositive.yes
 		? Conf("", IsPositive.yes)
 		: Conf(c.conf, cast(IsPositive)!c.isPositive);
 }

@@ -7,22 +7,57 @@ import dud.resolve.conf;
 import dud.resolve.positive;
 import dud.semver.versionrange;
 
-private {
-	const c1 = Conf("foo", IsPositive.yes);
-	const c2 = Conf("foo", IsPositive.no);
-	const c3 = Conf("bar", IsPositive.yes);
-	const c4 = Conf("bar", IsPositive.no);
-	const c5 = Conf("", IsPositive.yes);
-	const c6 = Conf("", IsPositive.no);
+private:
+
+void testImpl(const(Conf) a, const(Conf) b, const(Confs) exp, const(Confs) rslt,
+		int line)
+{
+	import std.exception : enforce;
+	import core.exception : AssertError;
+	enforce!AssertError(rslt == exp,
+		format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b, exp, rslt),
+		__FILE__, line);
 }
+
+void testIntersection(const(Conf) a, const(Conf) b, const(Confs) exp,
+		int line = __LINE__)
+{
+	const(Confs) rslt = intersectionOf(a, b);
+	testImpl(a, b, exp, rslt, line);
+}
+
+void testDifference(const(Conf) a, const(Conf) b, const(Confs) exp,
+		int line = __LINE__)
+{
+	const(Confs) rslt = differenceOf(a, b);
+	testImpl(a, b, exp, rslt, line);
+}
+
+const c1 = Conf("foo", IsPositive.yes);
+const c2 = Conf("foo", IsPositive.no);
+const c3 = Conf("bar", IsPositive.yes);
+const c4 = Conf("bar", IsPositive.no);
+const c5 = Conf("", IsPositive.yes);
+const c6 = Conf("", IsPositive.no);
 
 //
 // differenceOf
 //
 
 unittest {
-	const(Confs) rslt = differenceOf(c1, c1);
-	assert(rslt == Confs([c6]));
+	testDifference(c1, c1, Confs([c6]));
+	testDifference(c1, c2, Confs([c1]));
+	testDifference(c1, c3, Confs([c1, c4]));
+	testDifference(c1, c4, Confs([c6]));
+	testDifference(c1, c5, Confs([c1]));
+	testDifference(c1, c6, Confs([c1]));
+
+	testDifference(c2, c1, Confs([c2]));
+	testDifference(c2, c2, Confs([c6]));
+	testDifference(c2, c3, Confs([c2, c4]));
+	testDifference(c2, c4, Confs([c2, c3]));
+	testDifference(c2, c5, Confs([c2]));
+	testDifference(c2, c6, Confs([c2]));
 }
 
 //
@@ -84,58 +119,47 @@ unittest {
 //
 
 unittest {
-	void test(const(Conf) a, const(Conf) b, const(Confs) exp,
-			int line = __LINE__)
-	{
-		import std.exception : enforce;
-		import core.exception : AssertError;
-		const(Confs) rslt = intersectionOf(a, b);
-		enforce!AssertError(rslt == exp,
-			format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b, exp, rslt),
-			__FILE__, line);
-	}
+	testIntersection(c6, c1, Confs([c6]));
+	testIntersection(c6, c2, Confs([c6]));
+	testIntersection(c6, c3, Confs([c6]));
+	testIntersection(c6, c4, Confs([c6]));
+	testIntersection(c6, c5, Confs([c6]));
+	testIntersection(c6, c6, Confs([c6]));
 
-	test(c6, c1, Confs([c6]));
-	test(c6, c2, Confs([c6]));
-	test(c6, c3, Confs([c6]));
-	test(c6, c4, Confs([c6]));
-	test(c6, c5, Confs([c6]));
-	test(c6, c6, Confs([c6]));
+	testIntersection(c5, c1, Confs([c1]));
+	testIntersection(c5, c2, Confs([c2]));
+	testIntersection(c5, c3, Confs([c3]));
+	testIntersection(c5, c4, Confs([c4]));
+	testIntersection(c5, c5, Confs([]));
+	testIntersection(c5, c6, Confs([c6]));
 
-	test(c5, c1, Confs([c1]));
-	test(c5, c2, Confs([c2]));
-	test(c5, c3, Confs([c3]));
-	test(c5, c4, Confs([c4]));
-	test(c5, c5, Confs([]));
-	test(c5, c6, Confs([c6]));
+	testIntersection(c4, c1, Confs([c1, c4]));
+	testIntersection(c4, c2, Confs([c4, c2]));
+	testIntersection(c4, c3, Confs([c6]));
+	testIntersection(c4, c4, Confs([c4]));
+	testIntersection(c4, c5, Confs([c4]));
+	testIntersection(c4, c6, Confs([c6]));
 
-	test(c4, c1, Confs([c1, c4]));
-	test(c4, c2, Confs([c4, c2]));
-	test(c4, c3, Confs([c6]));
-	test(c4, c4, Confs([c4]));
-	test(c4, c5, Confs([c4]));
-	test(c4, c6, Confs([c6]));
+	testIntersection(c3, c1, Confs([c6]));
+	testIntersection(c3, c2, Confs([c2, c3]));
+	testIntersection(c3, c3, Confs([c3]));
+	testIntersection(c3, c4, Confs([c6]));
+	testIntersection(c3, c5, Confs([c3]));
+	testIntersection(c3, c6, Confs([c6]));
 
-	test(c3, c1, Confs([c6]));
-	test(c3, c2, Confs([c2, c3]));
-	test(c3, c3, Confs([c3]));
-	test(c3, c4, Confs([c6]));
-	test(c3, c5, Confs([c3]));
-	test(c3, c6, Confs([c6]));
+	testIntersection(c2, c1, Confs([c6]));
+	testIntersection(c2, c2, Confs([c2]));
+	testIntersection(c2, c3, Confs([c2, c3]));
+	testIntersection(c2, c4, Confs([c2, c4]));
+	testIntersection(c2, c5, Confs([c2]));
+	testIntersection(c2, c6, Confs([c6]));
 
-	test(c2, c1, Confs([c6]));
-	test(c2, c2, Confs([c2]));
-	test(c2, c3, Confs([c2, c3]));
-	test(c2, c4, Confs([c2, c4]));
-	test(c2, c5, Confs([c2]));
-	test(c2, c6, Confs([c6]));
-
-	test(c1, c1, Confs([c1]));
-	test(c1, c2, Confs([c6]));
-	test(c1, c3, Confs([c6]));
-	test(c1, c4, Confs([c1, c4]));
-	test(c1, c5, Confs([c1]));
-	test(c1, c6, Confs([c6]));
+	testIntersection(c1, c1, Confs([c1]));
+	testIntersection(c1, c2, Confs([c6]));
+	testIntersection(c1, c3, Confs([c6]));
+	testIntersection(c1, c4, Confs([c1, c4]));
+	testIntersection(c1, c5, Confs([c1]));
+	testIntersection(c1, c6, Confs([c6]));
 }
 
 //
