@@ -1,5 +1,7 @@
 module dud.resolve.versionconfigurationtest;
 
+@safe pure:
+
 import dud.resolve.versionconfiguration;
 import dud.resolve.conf;
 import dud.resolve.positive;
@@ -9,10 +11,10 @@ import dud.semver.parse;
 import dud.semver.versionunion;
 import dud.semver.versionrange;
 
-@safe pure:
 import std.format : format;
 
-/// Ditto
+private:
+
 unittest {
 	SemVer a = parseSemVer("1.0.0");
 	SemVer b = parseSemVer("2.0.0");
@@ -48,7 +50,6 @@ unittest {
 	assert(r == SetRelation.overlapping, format("%s", r));
 }
 
-/// Ditto
 unittest {
 	SemVer a = parseSemVer("1.0.0");
 	SemVer b = parseSemVer("2.0.0");

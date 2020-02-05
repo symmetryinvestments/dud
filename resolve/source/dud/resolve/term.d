@@ -2,11 +2,9 @@ module dud.resolve.term;
 
 import std.exception : enforce;
 
-import dud.semver.versionrange;
-import dud.semver.checks;
-import dud.semver.versionunion;
 import dud.pkgdescription;
-import dud.resolve.versionconfiguration : VersionConfiguration;
+import dud.semver.versionrange : SetRelation;
+import dud.resolve.versionconfiguration : invert, VersionConfiguration;
 import dud.resolve.providier;
 import dud.resolve.positive;
 import dud.resolve.conf;
@@ -31,6 +29,10 @@ bool satisfies(const(Term) that, const(Term) other) {
 }
 
 unittest {
+	import dud.semver.versionrange;
+	import dud.semver.versionunion;
+	import dud.semver.checks;
+
 	Term t1;
 	t1.pkg.ver = parseVersionRange("1.2.3").get();
 	t1.isPositive = IsPositive.yes;

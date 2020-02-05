@@ -22,19 +22,18 @@ struct VersionConfiguration {
 @safe pure:
 	VersionUnion ver;
 	Conf conf;
-
-	VersionConfiguration invert() const {
-		static import dud.resolve.conf;
-		return VersionConfiguration(
-				dud.semver.setoperation.invert(this.ver),
-				dud.resolve.conf.invert(this.conf));
-	}
 }
 
 VersionConfiguration dup(const(VersionConfiguration) old) {
 	return VersionConfiguration(old.ver.dup, old.conf);
 }
 
+VersionConfiguration invert(const(VersionConfiguration) conf) {
+	static import dud.resolve.conf;
+	return VersionConfiguration(
+			dud.semver.setoperation.invert(conf.ver),
+			dud.resolve.conf.invert(conf.conf));
+}
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
 if a and b overlap
@@ -60,9 +59,7 @@ SetRelation relation(const(VersionConfiguration) a,
 		return SetRelation.overlapping;
 	}
 
-	if(ver == SetRelation.subset && conf == SetRelation.subset) {
-		return SetRelation.subset;
-	}
-
-	assert(false, format("a: %s, b: %s", a, b));
+	assert(ver == SetRelation.subset && conf == SetRelation.subset,
+			format("a: %s, b: %s", a, b));
+	return SetRelation.subset;
 }
