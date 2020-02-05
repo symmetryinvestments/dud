@@ -2,45 +2,52 @@ module dud.resolve.term;
 
 import std.exception : enforce;
 
-import dud.semver.versionrange;
 import dud.pkgdescription;
-import dud.resolve.versionconfiguration;
+import dud.semver.versionrange : SetRelation;
+import dud.resolve.versionconfiguration : invert, VersionConfiguration;
+import dud.resolve.providier;
+import dud.resolve.positive;
+import dud.resolve.conf;
+import dud.resolve.confs;
 
-@safe:
+@safe pure:
 struct Term {
-	const bool isPositive;
-	const VersionConfiguration constraint;
-	const PackageDescription pkg;
+	VersionConfiguration constraint;
+	PackageDescriptionVersionRange pkg;
 
-	bool satisfies(ref const(Term) other) const {
-		if(this.pkg.name != other.pkg.name) {
-			return false;
-		}
-
-		return true;
-	}
-
-	SetRelation relation(ref const(Term) other) const {
-		enforce(this.pkg.name == other.pkg.name);
-
-		const SetRelation sr = dud.resolve.versionconfiguration
-				.relation(this.constraint, other.constraint);
-		if(this.isPositive) {
-			if(other.isPositive) {
-				return sr;
-			} else {
-			}
-		} else {
-			if(other.isPositive) {
-			} else {
-			}
-		}
-
-		assert(false);
-	}
+	/// is only an indicator `contraint` is used to store both stats
+	IsPositive isPositive;
 }
 
-Term inverse(const Term old) {
-	return Term(!old.isPositive, old.constraint, old.pkg);
+Term invert(const(Term) t) {
+	VersionConfiguration vc = t.constraint.invert();
+	return Term(vc, t.pkg.dup(), cast(IsPositive)!t.isPositive);
 }
 
+bool satisfies(const(Term) that, const(Term) other) {
+	return that.pkg.pkg.name == other.pkg.pkg.name
+		&& relation(other, that) == SetRelation.subset;
+}
+
+unittest {
+	import dud.semver.versionrange;
+	import dud.semver.versionunion;
+	import dud.semver.checks;
+
+	Term t1;
+	t1.pkg.ver = parseVersionRange("1.2.3").get();
+	t1.isPositive = IsPositive.yes;
+	t1.constraint = VersionConfiguration(
+			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
+			Confs([Conf("", IsPositive.yes)])
+		);
+
+	Term t2 = t1.invert();
+	assert(!allowsAny(t1.constraint.ver, t2.constraint.ver));
+}
+
+SetRelation relation(const(Term) a, const(Term) b) {
+	static import dud.resolve.versionconfiguration;
+	enforce(a.pkg.pkg.name == b.pkg.pkg.name);
+	return dud.resolve.versionconfiguration.relation(a.constraint, b.constraint);
+}

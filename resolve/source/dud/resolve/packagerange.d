@@ -1,4 +1,4 @@
-module dud.resolver.packagerange;
+module dud.resolve.packagerange;
 
 import dud.pkgdescription;
 import dud.resolve.versionconfiguration;

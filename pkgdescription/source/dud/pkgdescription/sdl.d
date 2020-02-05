@@ -308,7 +308,7 @@ void sGetSemVer(Tag t, string key, ref SemVer ret) {
 void sGetSemVer(ValueRange v, string key, ref SemVer ver) {
 	string s;
 	sGetString(v, "SemVer", s);
-	ver = nullable(parseSemVer(s));
+	ver = nullable(parseSemVer(s)).get();
 }
 
 void semVerToS(Out)(auto ref Out o, const string key, const SemVer sv,

@@ -10,7 +10,7 @@ import dud.semver.semver;
 import dud.semver.versionrange;
 import dud.pkgdescription;
 
-@safe:
+@safe pure:
 
 PackageDescription dup(const ref PackageDescription pkg) {
 	PackageDescription ret;
