@@ -81,8 +81,13 @@ unittest {
 	testRelation(v1, v1, SetRelation.subset);
 	testRelation(v1, v2, SetRelation.overlapping);
 	testRelation(v1, v3, SetRelation.disjoint);
+
+	testRelation(v2, v1, SetRelation.subset);
 	testRelation(v2, v2, SetRelation.subset);
 	testRelation(v2, v3, SetRelation.subset);
+
+	testRelation(v3, v1, SetRelation.disjoint);
+	testRelation(v3, v2, SetRelation.overlapping);
 	testRelation(v3, v3, SetRelation.subset);
 }
 
