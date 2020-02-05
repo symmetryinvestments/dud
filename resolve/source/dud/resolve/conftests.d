@@ -2,6 +2,9 @@ module dud.resolve.conftests;
 
 @safe pure:
 import std.format : format;
+import std.algorithm.iteration : map;
+import std.exception : enforce;
+import core.exception : AssertError;
 
 import dud.resolve.conf;
 import dud.resolve.confs;
@@ -13,8 +16,6 @@ private:
 void testImpl(const(Conf) a, const(Conf) b, const(Confs) exp, const(Confs) rslt,
 		int line)
 {
-	import std.exception : enforce;
-	import core.exception : AssertError;
 	enforce!AssertError(rslt == exp,
 		format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b, exp, rslt),
 		__FILE__, line);
@@ -40,6 +41,53 @@ const c3 = Conf("bar", IsPositive.yes);
 const c4 = Conf("bar", IsPositive.no);
 const c5 = Conf("", IsPositive.yes);
 const c6 = Conf("", IsPositive.no);
+
+unittest {
+	void testAllowAll(const(Confs) a, const(Conf) b, const bool exp,
+			int line = __LINE__)
+	{
+		struct Indivitual {
+			@safe pure:
+			const(Conf) a;
+			const(Conf) b;
+
+			string toString() const {
+				return format("\ta: %s\tb: %s\t%s", a, b, allowsAll(a, b));
+			}
+		}
+
+		const bool rslt = allowsAll(a, b);
+		enforce!AssertError(rslt == exp,
+			format("\na: %s\nb: %s\nexp: %s\nrsl: %s\nall:\n%(%s\n%)", a, b, exp,
+				rslt, a.confs.map!(it => Indivitual(it, b))),
+			__FILE__, line);
+	}
+
+	const(Confs) c12 = Confs([c1, c2]);
+	testAllowAll(c12, c1, false);
+	testAllowAll(c12, c2, false);
+	testAllowAll(c12, c3, false);
+	testAllowAll(c12, c4, false);
+	testAllowAll(c12, c5, false);
+	testAllowAll(c12, c6, false);
+
+	const(Confs) c13 = Confs([c1, c3]);
+	testAllowAll(c13, c1, false);
+	testAllowAll(c13, c2, false);
+	testAllowAll(c13, c3, false);
+	testAllowAll(c13, c4, false);
+	testAllowAll(c13, c5, false);
+	testAllowAll(c13, c6, false);
+
+	const(Confs) c24 = Confs([c2, c4]);
+	testAllowAll(c24, c1, false);
+	testAllowAll(c24, c2, false);
+	testAllowAll(c24, c3, false);
+	testAllowAll(c24, c4, false);
+	testAllowAll(c24, c5, false);
+	testAllowAll(c24, c6, false);
+	testAllowAll(c24, Conf("zzz", IsPositive.yes), true);
+}
 
 //
 // differenceOf
@@ -276,6 +324,15 @@ unittest {
 // relation
 //
 
+void testSet(const(Conf) a, const(Conf) b, SetRelation exp,
+		int line = __LINE__)
+{
+	const(SetRelation) rslt = relation(a, b);
+	enforce!AssertError(rslt == exp,
+		format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b, exp, rslt),
+		__FILE__, line);
+}
+
 unittest {
 	Conf nc1 = Conf("", IsPositive.yes);
 	Conf nc2 = Conf("conf1", IsPositive.yes);
@@ -284,224 +341,42 @@ unittest {
 	Conf nc5 = Conf("conf2", IsPositive.no);
 	Conf nc6 = Conf("", IsPositive.no);
 
-	SetRelation sr = relation(nc1, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	// nc1 a
-
-	sr = relation(nc1, nc2);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc1, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc1, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc1, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc1, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc1 b
-
-	sr = relation(nc2, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc3, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc4, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc5, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc6, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	// nc2
-
-	sr = relation(nc2, nc2);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc2, nc3);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc2, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc2, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc2, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc2 b
-
-	sr = relation(nc3, nc2);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc4, nc2);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc5, nc2);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc6, nc2);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc3
-
-	sr = relation(nc3, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc3, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc3, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc3 b
-
-	sr = relation(nc1, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc2, nc3);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc3, nc3);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc4, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc5, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc6, nc3);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc4
-
-	sr = relation(nc4, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc4, nc2);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc4, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc4, nc4);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc4, nc5);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc4, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc4 b
-
-	sr = relation(nc1, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc2, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc3, nc4);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc4, nc4);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc5, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc5
-
-	sr = relation(nc5, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc5, nc2);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc5, nc3);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc5, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc5, nc5);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc5, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc5 b
-
-	sr = relation(nc1, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc2, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc3, nc5);
-	assert(sr == SetRelation.overlapping, format("%s", sr));
-
-	sr = relation(nc4, nc5);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc5, nc5);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc6, nc5);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc6
-
-	sr = relation(nc6, nc1);
-	assert(sr == SetRelation.subset, format("%s", sr));
-
-	sr = relation(nc6, nc2);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc3);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc4);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc5);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	// nc6 b
-
-	sr = relation(nc1, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc2, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc3, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc4, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc5, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
-
-	sr = relation(nc6, nc6);
-	assert(sr == SetRelation.disjoint, format("%s", sr));
+	testSet(nc1, nc1, SetRelation.subset);
+	testSet(nc1, nc2, SetRelation.overlapping);
+	testSet(nc1, nc3, SetRelation.overlapping);
+	testSet(nc1, nc4, SetRelation.overlapping);
+	testSet(nc1, nc5, SetRelation.overlapping);
+	testSet(nc1, nc6, SetRelation.disjoint);
+	testSet(nc2, nc1, SetRelation.subset);
+	testSet(nc2, nc2, SetRelation.subset);
+	testSet(nc2, nc3, SetRelation.disjoint);
+	testSet(nc2, nc4, SetRelation.disjoint);
+	testSet(nc2, nc5, SetRelation.overlapping);
+	testSet(nc2, nc6, SetRelation.disjoint);
+	testSet(nc3, nc1, SetRelation.subset);
+	testSet(nc3, nc2, SetRelation.disjoint);
+	testSet(nc3, nc3, SetRelation.subset);
+	testSet(nc3, nc4, SetRelation.overlapping);
+	testSet(nc3, nc5, SetRelation.overlapping);
+	testSet(nc3, nc6, SetRelation.disjoint);
+	testSet(nc4, nc1, SetRelation.subset);
+	testSet(nc4, nc2, SetRelation.disjoint);
+	testSet(nc4, nc3, SetRelation.overlapping);
+	testSet(nc4, nc4, SetRelation.subset);
+	testSet(nc4, nc5, SetRelation.disjoint);
+	testSet(nc4, nc6, SetRelation.disjoint);
+	testSet(nc5, nc1, SetRelation.subset);
+	testSet(nc5, nc2, SetRelation.overlapping);
+	testSet(nc5, nc3, SetRelation.overlapping);
+	testSet(nc5, nc4, SetRelation.disjoint);
+	testSet(nc5, nc5, SetRelation.subset);
+	testSet(nc5, nc6, SetRelation.disjoint);
+	testSet(nc6, nc1, SetRelation.subset);
+	testSet(nc6, nc2, SetRelation.disjoint);
+	testSet(nc6, nc3, SetRelation.disjoint);
+	testSet(nc6, nc4, SetRelation.disjoint);
+	testSet(nc6, nc5, SetRelation.disjoint);
+	testSet(nc6, nc6, SetRelation.disjoint);
 }
 
 unittest {

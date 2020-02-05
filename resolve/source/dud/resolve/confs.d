@@ -1,6 +1,7 @@
 module dud.resolve.confs;
 
-import std.algorithm.searching : all;
+import std.algorithm.iteration : filter;
+import std.algorithm.searching : all, any;
 import std.array : array, empty;
 import std.format : format;
 import std.typecons : Flag;
@@ -58,11 +59,23 @@ bool allowsAll(const(Confs) a, const(Confs) b) {
 				b.confs.all!(bIt => dud.resolve.conf.allowsAll(aIt, bIt)));
 }
 
+bool allowsAll(const(Confs) a, const(Conf) b) {
+	static import dud.resolve.conf;
+	return a.confs
+		.all!(it => dud.resolve.conf.allowsAll(it, b));
+}
+
 bool allowsAny(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
 	return a.confs
 		.all!(aIt =>
 				b.confs.all!(bIt => dud.resolve.conf.allowsAny(aIt, bIt)));
+}
+
+bool allowsAny(const(Confs) a, const(Conf) b) {
+	static import dud.resolve.conf;
+	return a.confs
+		.any!(it => dud.resolve.conf.allowsAny(it, b));
 }
 
 SetRelation relation(const(Confs) a, const(Confs) b) {
@@ -86,4 +99,12 @@ SetRelation relation(const(Confs) a, const(Confs) b) {
 	}
 
 	return SetRelation.disjoint;
+}
+
+Confs intersectionOf(const(Confs) a, const(Confs) b) {
+	import std.algorithm.iteration : each;
+	Confs ret;
+	a.confs.filter!(it => !allowsAll(b, it)).each!(it => ret.insert(it));
+	b.confs.filter!(it => !allowsAll(a, it)).each!(it => ret.insert(it));
+	return ret;
 }

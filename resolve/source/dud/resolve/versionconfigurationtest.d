@@ -50,17 +50,10 @@ unittest {
 				, Confs([Conf("", IsPositive.yes)])
 			);
 
-	auto r = relation(v1, v2);
-	assert(r == SetRelation.overlapping, format("%s", r));
-
-	r = relation(v1, v3);
-	assert(r == SetRelation.subset, format("%s", r));
-
-	r = relation(v2, v4);
-	assert(r == SetRelation.disjoint, format("%s", r));
-
-	r = relation(v1, v4);
-	assert(r == SetRelation.overlapping, format("%s", r));
+	testRelation(v1, v2, SetRelation.overlapping);
+	testRelation(v1, v3, SetRelation.subset);
+	testRelation(v2, v4, SetRelation.disjoint);
+	testRelation(v1, v4, SetRelation.overlapping);
 }
 
 unittest {
