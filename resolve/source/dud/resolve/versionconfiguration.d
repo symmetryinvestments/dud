@@ -11,7 +11,7 @@ import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 static import dud.semver.setoperation;
-import dud.resolve.conf : Confs, allowsAll, allowsAny, invert;
+import dud.resolve.confs : Confs, allowsAll, allowsAny, invert;
 import dud.resolve.positive;
 
 @safe pure:
@@ -29,10 +29,10 @@ VersionConfiguration dup(const(VersionConfiguration) old) {
 }
 
 VersionConfiguration invert(const(VersionConfiguration) conf) {
-	static import dud.resolve.conf;
+	static import dud.resolve.confs;
 	return VersionConfiguration(
 			dud.semver.setoperation.invert(conf.ver),
-			dud.resolve.conf.invert(conf.conf));
+			dud.resolve.confs.invert(conf.conf));
 }
 
 bool allowsAny(const(VersionConfiguration) a, const(VersionConfiguration) b) {
@@ -49,14 +49,14 @@ if a and b overlap
 SetRelation relation(const(VersionConfiguration) a,
 		const(VersionConfiguration) b) pure
 {
-	static import dud.resolve.conf;
+	static import dud.resolve.confs;
 	const SetRelation ver = allowsAll(b.ver, a.ver)
 		? SetRelation.subset
 		: allowsAny(b.ver, a.ver)
 			? SetRelation.overlapping
 			: SetRelation.disjoint;
 
-	const SetRelation conf = dud.resolve.conf.relation(a.conf, b.conf);
+	const SetRelation conf = dud.resolve.confs.relation(a.conf, b.conf);
 
 	//debug writefln("ver %s, conf %s", ver, conf);
 	if(ver == SetRelation.disjoint || conf == SetRelation.disjoint) {

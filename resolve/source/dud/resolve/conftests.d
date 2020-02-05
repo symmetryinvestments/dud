@@ -4,6 +4,7 @@ module dud.resolve.conftests;
 import std.format : format;
 
 import dud.resolve.conf;
+import dud.resolve.confs;
 import dud.resolve.positive;
 import dud.semver.versionrange;
 

@@ -6,6 +6,7 @@ import std.format : format;
 
 import dud.resolve.positive;
 import dud.semver.versionrange;
+import dud.resolve.confs;
 
 @safe pure:
 

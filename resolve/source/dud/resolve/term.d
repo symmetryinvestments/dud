@@ -8,6 +8,7 @@ import dud.resolve.versionconfiguration : invert, VersionConfiguration;
 import dud.resolve.providier;
 import dud.resolve.positive;
 import dud.resolve.conf;
+import dud.resolve.confs;
 
 @safe pure:
 struct Term {
