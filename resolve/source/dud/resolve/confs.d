@@ -15,14 +15,11 @@ import dud.semver.versionrange;
 struct Confs {
 @safe pure:
 	Conf[] confs;
-	IsPositive isPositive;
+	//IsPositive isPositive;
 
 	this(const(Conf)[] input) {
 		import std.algorithm.iteration : each;
 		input.each!(it => this.insert(it));
-		if(this.confs.empty) {
-			this.confs ~= Conf("", IsPositive.yes);
-		}
 	}
 
 	Confs dup() const {

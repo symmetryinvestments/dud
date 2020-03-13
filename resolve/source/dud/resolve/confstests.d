@@ -43,6 +43,35 @@ const cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
 	 c46, c56];
 
 // invert
+
+unittest {
+	void test(const(Confs) a, const(Confs) exp, int line = __LINE__) {
+		const inv = a.invert();
+		enforce!AssertError(inv == exp, format("\ninp: %s\nrsl: %s\nexp: %s", a,
+				inv, exp), __FILE__, line);
+	}
+
+	test(c12, c12);
+	test(c13, c24);
+	test(c14, c23);
+	test(c15, c25); // c5 is special
+	test(c16, Confs.init); // c6 makes everything false
+
+	test(c23, c14);
+	test(c24, c13);
+	test(c25, c15);
+	test(c26, Confs.init);
+
+	test(c34, c34);
+	test(c35, c45);
+	test(c36, Confs.init);
+
+	test(c45, c35);
+	test(c46, Confs.init);
+
+	test(c56, Confs.init);
+}
+
 unittest {
 	const c = Confs([c1]).invert();
 	const e = Confs([c2]);
