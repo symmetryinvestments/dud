@@ -1,6 +1,6 @@
 module dud.resolve.confs;
 
-import std.algorithm.iteration : filter;
+import std.algorithm.iteration : each, filter;
 import std.algorithm.searching : all, any;
 import std.array : array, empty;
 import std.format : format;
@@ -100,9 +100,14 @@ SetRelation relation(const(Confs) a, const(Confs) b) {
 }
 
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
-	import std.algorithm.iteration : each;
 	Confs ret;
 	a.confs.filter!(it => !allowsAll(b, it)).each!(it => ret.insert(it));
 	b.confs.filter!(it => !allowsAll(a, it)).each!(it => ret.insert(it));
+	return ret;
+}
+
+Confs differenceOf(const(Confs) a, const(Confs) b) {
+	Confs ret = a.dup();
+	b.invert().confs.each!(it => ret.insert(it));
 	return ret;
 }
