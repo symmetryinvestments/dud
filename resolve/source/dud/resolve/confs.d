@@ -20,6 +20,9 @@ struct Confs {
 	this(const(Conf)[] input) {
 		import std.algorithm.iteration : each;
 		input.each!(it => this.insert(it));
+		if(this.confs.empty) {
+			this.confs ~= Conf("", IsPositive.yes);
+		}
 	}
 
 	Confs dup() const {

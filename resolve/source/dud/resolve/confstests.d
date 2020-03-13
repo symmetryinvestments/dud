@@ -19,6 +19,68 @@ const c4 = Conf("bar", IsPositive.no);
 const c5 = Conf("", IsPositive.yes);
 const c6 = Conf("", IsPositive.no);
 
+const(Confs) c12 = Confs([c1, c2]);
+const(Confs) c13 = Confs([c1, c3]);
+const(Confs) c14 = Confs([c1, c4]);
+const(Confs) c15 = Confs([c1, c5]);
+const(Confs) c16 = Confs([c1, c6]);
+
+const(Confs) c23 = Confs([c2, c3]);
+const(Confs) c24 = Confs([c2, c4]);
+const(Confs) c25 = Confs([c2, c5]);
+const(Confs) c26 = Confs([c2, c6]);
+
+const(Confs) c34 = Confs([c3, c4]);
+const(Confs) c35 = Confs([c3, c5]);
+const(Confs) c36 = Confs([c3, c6]);
+
+const(Confs) c45 = Confs([c4, c5]);
+const(Confs) c46 = Confs([c4, c6]);
+
+const(Confs) c56 = Confs([c5, c6]);
+
+const cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
+	 c46, c56];
+
+// invert
+unittest {
+	const c = Confs([c1]).invert();
+	const e = Confs([c2]);
+	assert(c == e, format("\n%s\n%s", c, e));
+}
+
+unittest {
+	const nc12 = c12.invert();
+	assert(nc12.confs.length == 2);
+	assert(nc12.confs[0] == c2);
+	assert(nc12.confs[1] == c1);
+}
+
+// differenceOf
+
+unittest {
+	const c11 = Confs([c1]);
+	const c33 = Confs([c3]);
+	const c13 = differenceOf(c11, c33);
+	assert(c13.confs.length == 2);
+	assert(c13.confs[0] == c4, format("%s", c13.confs[0]));
+	assert(c13.confs[1] == c1, format("%s", c13.confs[1]));
+}
+
+unittest {
+	foreach(it; cs) {
+		foreach(jt; cs) {
+			const r = differenceOf(it, jt);
+			if(it == jt) {
+				assert(!allowsAny(r, jt), format("%s", r));
+				assert(!allowsAny(r, it), format("%s", r));
+			}
+		}
+	}
+}
+
+// allowAll
+
 unittest {
 	void testAllowAll(const(Confs) a, const(Confs) b, const bool exp,
 			int line = __LINE__)
@@ -43,29 +105,6 @@ unittest {
 					.joiner),
 			__FILE__, line);
 	}
-
-	const(Confs) c12 = Confs([c1, c2]);
-	const(Confs) c13 = Confs([c1, c3]);
-	const(Confs) c14 = Confs([c1, c4]);
-	const(Confs) c15 = Confs([c1, c5]);
-	const(Confs) c16 = Confs([c1, c6]);
-
-	const(Confs) c23 = Confs([c2, c3]);
-	const(Confs) c24 = Confs([c2, c4]);
-	const(Confs) c25 = Confs([c2, c5]);
-	const(Confs) c26 = Confs([c2, c6]);
-
-	const(Confs) c34 = Confs([c3, c4]);
-	const(Confs) c35 = Confs([c3, c5]);
-	const(Confs) c36 = Confs([c3, c6]);
-
-	const(Confs) c45 = Confs([c4, c5]);
-	const(Confs) c46 = Confs([c4, c6]);
-
-	const(Confs) c56 = Confs([c5, c6]);
-
-	auto cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
-		 c46, c56];
 
 	foreach(it; cs) {
 		foreach(jt; cs) {
@@ -97,7 +136,6 @@ unittest {
 			__FILE__, line);
 	}
 
-	const(Confs) c12 = Confs([c1, c2]);
 	testAllowAll(c12, c1, false);
 	testAllowAll(c12, c2, false);
 	testAllowAll(c12, c3, false);
@@ -105,7 +143,6 @@ unittest {
 	testAllowAll(c12, c5, false);
 	testAllowAll(c12, c6, false);
 
-	const(Confs) c13 = Confs([c1, c3]);
 	testAllowAll(c13, c1, false);
 	testAllowAll(c13, c2, false);
 	testAllowAll(c13, c3, false);
@@ -113,7 +150,6 @@ unittest {
 	testAllowAll(c13, c5, false);
 	testAllowAll(c13, c6, false);
 
-	const(Confs) c24 = Confs([c2, c4]);
 	testAllowAll(c24, c1, false);
 	testAllowAll(c24, c2, false);
 	testAllowAll(c24, c3, false);
