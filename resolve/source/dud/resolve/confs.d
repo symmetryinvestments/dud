@@ -55,8 +55,7 @@ Confs invert(const(Confs) input) {
 bool allowsAll(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
 	return a.confs
-		.all!(aIt =>
-				b.confs.all!(bIt => dud.resolve.conf.allowsAll(aIt, bIt)));
+		.all!(aIt => b.confs.all!(bIt => dud.resolve.conf.allowsAll(aIt, bIt)));
 }
 
 bool allowsAll(const(Confs) a, const(Conf) b) {
@@ -68,8 +67,7 @@ bool allowsAll(const(Confs) a, const(Conf) b) {
 bool allowsAny(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
 	return a.confs
-		.all!(aIt =>
-				b.confs.all!(bIt => dud.resolve.conf.allowsAny(aIt, bIt)));
+		.all!(aIt => b.confs.all!(bIt => dud.resolve.conf.allowsAny(aIt, bIt)));
 }
 
 bool allowsAny(const(Confs) a, const(Conf) b) {
