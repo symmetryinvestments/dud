@@ -5,6 +5,7 @@ import std.algorithm.searching : all, any;
 import std.array : array, empty;
 import std.format : format;
 import std.typecons : Flag;
+import std.range : chain;
 
 import dud.resolve.positive;
 import dud.resolve.conf;
@@ -41,6 +42,14 @@ struct Confs {
 			this.confs = [none.dup()];
 		}
 	}
+}
+
+Confs normalize(const(Confs) input) {
+	Confs ret;
+	input.confs
+		.filter!(it => allowsAll(input, it) || it.isPositive == IsPositive.no)
+		.each!(it => ret.insert(it));
+	return ret;
 }
 
 Confs invert(const(Confs) input) {
@@ -112,6 +121,10 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	Confs ret;
 	a.confs.filter!(it => allowsAll(b, it)).each!(it => ret.insert(it));
 	b.confs.filter!(it => allowsAll(a, it)).each!(it => ret.insert(it));
+	chain(a.confs, b.confs)
+		.filter!(it => it.isPositive == IsPositive.no)
+		.each!(it => ret.insert(it));
+
 	return ret;
 }
 

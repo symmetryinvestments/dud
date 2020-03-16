@@ -42,34 +42,49 @@ const(Confs) c56 = Confs([c5, c6]);
 const cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
 	 c46, c56];
 
+// normalize
+unittest {
+	void testNorm(const(Confs) a, const(Confs) exp, int line = __LINE__) {
+		const inv = normalize(a);
+		enforce!AssertError(inv == exp, format("\ninp: %s\nrsl: %s\nexp: %s", a,
+				inv, exp), __FILE__, line);
+	}
+
+	testNorm(c12, Confs([c2]));
+	testNorm(c13, c13);
+	testNorm(c14, Confs([c4]));
+	testNorm(c15, c15);
+	testNorm(c16, Confs([c6]));
+}
+
 // invert
 
 unittest {
-	void test(const(Confs) a, const(Confs) exp, int line = __LINE__) {
+	void testInvert(const(Confs) a, const(Confs) exp, int line = __LINE__) {
 		const inv = a.invert();
 		enforce!AssertError(inv == exp, format("\ninp: %s\nrsl: %s\nexp: %s", a,
 				inv, exp), __FILE__, line);
 	}
 
-	test(c12, c12);
-	test(c13, c24);
-	test(c14, c23);
-	test(c15, c25); // c5 is special
-	test(c16, Confs.init); // c6 makes everything false
+	testInvert(c12, c12);
+	testInvert(c13, c24);
+	testInvert(c14, c23);
+	testInvert(c15, c25); // c5 is special
+	testInvert(c16, Confs.init); // c6 makes everything false
 
-	test(c23, c14);
-	test(c24, c13);
-	test(c25, c15);
-	test(c26, Confs.init);
+	testInvert(c23, c14);
+	testInvert(c24, c13);
+	testInvert(c25, c15);
+	testInvert(c26, Confs.init);
 
-	test(c34, c34);
-	test(c35, c45);
-	test(c36, Confs.init);
+	testInvert(c34, c34);
+	testInvert(c35, c45);
+	testInvert(c36, Confs.init);
 
-	test(c45, c35);
-	test(c46, Confs.init);
+	testInvert(c45, c35);
+	testInvert(c46, Confs.init);
 
-	test(c56, Confs.init);
+	testInvert(c56, Confs.init);
 }
 
 unittest {
@@ -104,6 +119,10 @@ unittest {
 
 unittest {
 	testInter(c12, c12, Confs.init);
+	testInter(c12, c13, Confs.init);
+	testInter(c12, c14, Confs.init);
+	testInter(c12, c15, Confs.init);
+	testInter(c12, c16, Confs.init);
 }
 
 // differenceOf
@@ -155,9 +174,11 @@ unittest {
 					.joiner),
 			__FILE__, line);
 	}
+	testAllowAll(Confs.init, Confs.init, false);
 
 	foreach(it; cs) {
 		testAllowAll(Confs.init, it, false);
+		testAllowAll(it, Confs.init, true);
 		foreach(jt; cs) {
 			if(it != jt) {
 				testAllowAll(it, jt, false);
