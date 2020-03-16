@@ -101,8 +101,8 @@ SetRelation relation(const(Confs) a, const(Confs) b) {
 
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	Confs ret;
-	a.confs.filter!(it => !allowsAll(b, it)).each!(it => ret.insert(it));
-	b.confs.filter!(it => !allowsAll(a, it)).each!(it => ret.insert(it));
+	a.confs.filter!(it => allowsAll(b, it)).each!(it => ret.insert(it));
+	b.confs.filter!(it => allowsAll(a, it)).each!(it => ret.insert(it));
 	return ret;
 }
 

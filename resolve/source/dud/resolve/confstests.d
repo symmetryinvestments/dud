@@ -85,6 +85,21 @@ unittest {
 	assert(nc12.confs[1] == c1);
 }
 
+// intersectionOf
+
+unittest {
+	void test(const(Confs) a, const(Confs) b, const(Confs) exp, int line = __LINE__) {
+		const inter = intersectionOf(a, b);
+		enforce!AssertError(inter == exp, format(
+				"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
+				__FILE__, line);
+	}
+
+	test(Confs([c1, c3]), Confs([c1]), Confs([c1]));
+	test(Confs([c1]), Confs([c1]), Confs([c1]));
+	test(Confs([c3]), Confs([c1]), Confs.init);
+}
+
 // differenceOf
 
 unittest {

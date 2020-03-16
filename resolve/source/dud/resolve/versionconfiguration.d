@@ -71,3 +71,14 @@ SetRelation relation(const(VersionConfiguration) a,
 			format("a: %s, b: %s", a, b));
 	return SetRelation.subset;
 }
+
+VersionConfiguration intersectionOf(const(VersionConfiguration) a,
+		const(VersionConfiguration) b)
+{
+	static import dud.semver.setoperation;
+	static import dud.resolve.confs;
+	return VersionConfiguration(
+			dud.semver.setoperation.intersectionOf(a.ver, b.ver),
+			dud.resolve.confs.intersectionOf(a.conf, b.conf)
+		);
+}
