@@ -118,7 +118,7 @@ unittest {
 }
 
 //
-// intersectionOf
+// intersectionOf { x : x in A and x in B }
 //
 
 unittest {

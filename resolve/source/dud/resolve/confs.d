@@ -54,26 +54,35 @@ Confs invert(const(Confs) input) {
 
 bool allowsAll(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
-	return a.confs
-		.all!(aIt => b.confs.all!(bIt => dud.resolve.conf.allowsAll(aIt, bIt)));
+	return !a.confs.empty
+		&& a.confs
+			.all!(
+				aIt => b.confs.all!(
+					bIt => dud.resolve.conf.allowsAll(aIt, bIt)
+				)
+			);
 }
 
 bool allowsAll(const(Confs) a, const(Conf) b) {
 	static import dud.resolve.conf;
-	return a.confs
-		.all!(it => dud.resolve.conf.allowsAll(it, b));
+	return !a.confs.empty && a.confs.all!(it => dud.resolve.conf.allowsAll(it, b));
 }
 
 bool allowsAny(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
-	return a.confs
-		.all!(aIt => b.confs.all!(bIt => dud.resolve.conf.allowsAny(aIt, bIt)));
+	return !a.confs.empty
+		&& a.confs
+			.all!(
+				aIt => b.confs.all!(
+					bIt => dud.resolve.conf.allowsAny(aIt, bIt)
+				)
+			);
 }
 
 bool allowsAny(const(Confs) a, const(Conf) b) {
 	static import dud.resolve.conf;
-	return a.confs
-		.any!(it => dud.resolve.conf.allowsAny(it, b));
+	return !a.confs.empty
+		&& a.confs.any!(it => dud.resolve.conf.allowsAny(it, b));
 }
 
 SetRelation relation(const(Confs) a, const(Confs) b) {

@@ -87,17 +87,23 @@ unittest {
 
 // intersectionOf
 
-unittest {
-	void test(const(Confs) a, const(Confs) b, const(Confs) exp, int line = __LINE__) {
-		const inter = intersectionOf(a, b);
-		enforce!AssertError(inter == exp, format(
-				"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
-				__FILE__, line);
-	}
+void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
+		int line = __LINE__)
+{
+	const inter = intersectionOf(a, b);
+	enforce!AssertError(inter == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
+			__FILE__, line);
+}
 
-	test(Confs([c1, c3]), Confs([c1]), Confs([c1]));
-	test(Confs([c1]), Confs([c1]), Confs([c1]));
-	test(Confs([c3]), Confs([c1]), Confs.init);
+unittest {
+	testInter(Confs([c1, c3]), Confs([c1]), Confs([c1]));
+	testInter(Confs([c1]), Confs([c1]), Confs([c1]));
+	testInter(Confs([c3]), Confs([c1]), Confs.init);
+}
+
+unittest {
+	testInter(c12, c12, Confs.init);
 }
 
 // differenceOf
@@ -151,6 +157,7 @@ unittest {
 	}
 
 	foreach(it; cs) {
+		testAllowAll(Confs.init, it, false);
 		foreach(jt; cs) {
 			if(it != jt) {
 				testAllowAll(it, jt, false);
