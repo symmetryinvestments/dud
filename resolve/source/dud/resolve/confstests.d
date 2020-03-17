@@ -20,7 +20,6 @@ const c5 = Conf("", IsPositive.yes);
 const c6 = Conf("", IsPositive.no);
 
 const(Confs) c12 = Confs([c1, c2]);
-__EOF__
 const(Confs) c13 = Confs([c1, c3]);
 const(Confs) c14 = Confs([c1, c4]);
 const(Confs) c15 = Confs([c1, c5]);
@@ -42,6 +41,17 @@ const(Confs) c56 = Confs([c5, c6]);
 
 const cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
 	 c46, c56];
+
+// testing the test data
+unittest {
+	foreach(idx, it; cs) {
+		assert(it != Confs.init, format("%s", idx));
+		Confs d = it.dup();
+		assert(d == it, format("idx: %s\nold: %s\nnew: %s", idx, it, d));
+	}
+}
+
+__EOF__
 
 // normalize
 unittest {
@@ -95,10 +105,10 @@ unittest {
 }
 
 unittest {
+	assert(c12 != Confs.init);
 	const nc12 = c12.invert();
-	assert(nc12.confs.length == 2);
+	assert(nc12.confs.length == 1, format("%s", nc12));
 	assert(nc12.confs[0] == c2);
-	assert(nc12.confs[1] == c1);
 }
 
 // intersectionOf

@@ -1,5 +1,7 @@
 module dud.resolve.versionconfiguration;
 
+__EOF__
+
 import std.array : empty;
 import std.stdio;
 import std.exception : enforce;

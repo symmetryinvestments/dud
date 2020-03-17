@@ -2,6 +2,8 @@ module dud.resolve.versionconfigurationtest;
 
 @safe pure:
 
+__EOF__
+
 import dud.resolve.versionconfiguration;
 import dud.resolve.conf;
 import dud.resolve.confs;
@@ -59,6 +61,8 @@ unittest {
 	testRelation(v1, v4, SetRelation.overlapping);
 }
 
+__EOF__
+
 unittest {
 	auto v1 = VersionConfiguration(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
@@ -92,8 +96,6 @@ unittest {
 	auto v2 = v1.invert();
 	assert(relation(v1, v2) == SetRelation.disjoint);
 }
-
-__EOF__
 
 unittest {
 	auto v1 = VersionConfiguration(

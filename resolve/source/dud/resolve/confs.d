@@ -6,6 +6,7 @@ import std.array : array, empty, front;
 import std.format : format;
 import std.typecons : Flag;
 import std.range : chain;
+import std.stdio;
 
 import dud.resolve.positive;
 import dud.resolve.conf;
@@ -13,16 +14,15 @@ import dud.semver.versionrange;
 
 @safe pure:
 
+private immutable nothing = Conf("", IsPositive.no);
+
 struct Confs {
 @safe pure:
 	Conf[] confs;
-	//IsPositive isPositive;
 
-	this(Conf[] input) {
+	this(const(Conf)[] input) {
 		import std.algorithm.iteration : each;
-		input
-			.filter!(it => allowsAllImpl(confs, it))
-			.each!(it => this.insert(it));
+		this.insert(input);
 	}
 
 	Confs dup() const {
@@ -31,29 +31,91 @@ struct Confs {
 		return Confs(this.confs.map!(it => it.dup).array);
 	}
 
+	void insert(const(Conf[]) cs) {
+		cs.each!(it => this.insert(it));
+	}
+
 	void insert(const(Conf) c) {
-		import std.algorithm.searching : canFind;
 		import std.algorithm.sorting : sort;
 
-		// See if the negativ is present, than there is no point in inserting it
-		if(c.isPositive == IsPositive.yes) {
-			const inv = Conf(c.conf, IsPositive.no);
-			if(canFind(this.confs, inv)) {
-				return;
-			}
+		// Negativ all means nothing can be added anymore
+		if(!this.confs.empty && this.confs.front == nothing) {
+			return;
 		}
 
-		immutable all = Conf("", IsPositive.yes);
-		if(c != all && !canFind(this.confs, c)) {
-			this.confs ~= c.dup();
-			this.confs.sort();
+		// Got a new nothing
+		if(c == nothing) {
+			this.confs = [ nothing.dup() ];
+			return;
 		}
-		immutable none = Conf("", IsPositive.no);
-		if(canFind(this.confs, none)) {
-			this.confs = [none.dup()];
+
+		if(isOkayToInset(this.confs, c)) {
+			this.confs ~= c;
+			this.confs = normalize(this.confs);
+			this.confs.sort();
 		}
 	}
 }
+
+private bool isOkayToInset(const(Conf[]) arr, const(Conf) it) {
+	import std.algorithm.searching : canFind;
+
+	const isNeg = it.isPositive == IsPositive.no;
+	const negPr = !isNegativPresent(arr, it);
+	const cf = !canFind(arr, it);
+
+	return (isNeg || negPr) && cf;
+}
+
+private bool isNegativPresent(const(Conf[]) arr, const(Conf) it) {
+	return arr
+		.filter!(a => a.isPositive == IsPositive.no)
+		.any!(a => a.conf == it.conf);
+}
+
+private Conf[] normalize(Conf[] arr) {
+	return arr
+		.filter!(it => !isNegativPresent(arr, it) || it.isPositive == IsPositive.no)
+		.array;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+__EOF__
 
 Confs normalize(const(Confs) input) {
 	Confs ret;
@@ -93,18 +155,26 @@ bool allowsAll(const(Confs) a, const(Conf) b) {
 
 private bool allowsAllImpl(const(Conf[]) a, const(Conf) b) {
 	static import dud.resolve.conf;
-	return !a.empty && a.any!(it => dud.resolve.conf.allowsAll(it, b));
+	return a.empty || a.all!(it => dud.resolve.conf.allowsAll(it, b));
 }
 
 bool allowsAny(const(Confs) a, const(Confs) b) {
+	return allowsAnyImpl(a.confs, b);
+}
+
+private bool allowsAnyImpl(const(Conf[]) as, const(Conf) b) {
 	static import dud.resolve.conf;
-	return !a.confs.empty
-		&& a.confs
+	return !as.empty
+		&& as
 			.all!(
 				aIt => b.confs.all!(
 					bIt => dud.resolve.conf.allowsAny(aIt, bIt)
 				)
 			);
+}
+
+private bool anyDisallow(const(Conf[]) as, const(Conf) b) {
+	return as.any!(a => a.conf == b.conf && a.isPositive == IsPositive.no);
 }
 
 bool allowsAny(const(Confs) a, const(Conf) b) {

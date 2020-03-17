@@ -1,5 +1,7 @@
 module dud.resolve.term;
 
+__EOF__
+
 import std.exception : enforce;
 
 import dud.pkgdescription;

@@ -59,8 +59,8 @@ unittest {
 	testDifference(c2, c2, Confs([c6]));
 	testDifference(c2, c3, Confs([c2, c4]));
 	testDifference(c2, c4, Confs([c2, c3]));
-	testDifference(c2, c5, Confs([c2]));
-	testDifference(c2, c6, Confs([c2]));
+	testDifference(c2, c5, Confs([c2, c5]));
+	testDifference(c2, c6, Confs([c2, c5]));
 }
 
 //
@@ -130,17 +130,17 @@ unittest {
 	testIntersection(c6, c6, Confs([c6]));
 
 	testIntersection(c5, c1, Confs([c1]));
-	testIntersection(c5, c2, Confs([c2]));
+	testIntersection(c5, c2, Confs([c2, c5]));
 	testIntersection(c5, c3, Confs([c3]));
-	testIntersection(c5, c4, Confs([c4]));
-	testIntersection(c5, c5, Confs([]));
+	testIntersection(c5, c4, Confs([c4, c5]));
+	testIntersection(c5, c5, Confs([c5]));
 	testIntersection(c5, c6, Confs([c6]));
 
 	testIntersection(c4, c1, Confs([c1, c4]));
 	testIntersection(c4, c2, Confs([c4, c2]));
 	testIntersection(c4, c3, Confs([c6]));
 	testIntersection(c4, c4, Confs([c4]));
-	testIntersection(c4, c5, Confs([c4]));
+	testIntersection(c4, c5, Confs([c4, c5]));
 	testIntersection(c4, c6, Confs([c6]));
 
 	testIntersection(c3, c1, Confs([c6]));
@@ -154,7 +154,7 @@ unittest {
 	testIntersection(c2, c2, Confs([c2]));
 	testIntersection(c2, c3, Confs([c2, c3]));
 	testIntersection(c2, c4, Confs([c2, c4]));
-	testIntersection(c2, c5, Confs([c2]));
+	testIntersection(c2, c5, Confs([c2, c5]));
 	testIntersection(c2, c6, Confs([c6]));
 
 	testIntersection(c1, c1, Confs([c1]));
