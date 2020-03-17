@@ -20,6 +20,7 @@ const c5 = Conf("", IsPositive.yes);
 const c6 = Conf("", IsPositive.no);
 
 const(Confs) c12 = Confs([c1, c2]);
+__EOF__
 const(Confs) c13 = Confs([c1, c3]);
 const(Confs) c14 = Confs([c1, c4]);
 const(Confs) c15 = Confs([c1, c5]);
@@ -52,7 +53,7 @@ unittest {
 
 	testNorm(c12, Confs([c2]));
 	testNorm(c13, c13);
-	testNorm(c14, Confs([c4]));
+	testNorm(c14, c14);
 	testNorm(c15, c15);
 	testNorm(c16, Confs([c6]));
 }
@@ -118,8 +119,8 @@ unittest {
 }
 
 unittest {
-	testInter(c12, c12, Confs.init);
-	testInter(c12, c13, Confs.init);
+	testInter(c12, c12, Confs([c2]));
+	testInter(c12, c13, Confs([c2, c3]));
 	testInter(c12, c14, Confs.init);
 	testInter(c12, c15, Confs.init);
 	testInter(c12, c16, Confs.init);

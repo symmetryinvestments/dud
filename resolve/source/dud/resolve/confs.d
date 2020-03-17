@@ -2,7 +2,7 @@ module dud.resolve.confs;
 
 import std.algorithm.iteration : each, filter;
 import std.algorithm.searching : all, any;
-import std.array : array, empty;
+import std.array : array, empty, front;
 import std.format : format;
 import std.typecons : Flag;
 import std.range : chain;
@@ -18,9 +18,11 @@ struct Confs {
 	Conf[] confs;
 	//IsPositive isPositive;
 
-	this(const(Conf)[] input) {
+	this(Conf[] input) {
 		import std.algorithm.iteration : each;
-		input.each!(it => this.insert(it));
+		input
+			.filter!(it => allowsAllImpl(confs, it))
+			.each!(it => this.insert(it));
 	}
 
 	Confs dup() const {
@@ -32,6 +34,15 @@ struct Confs {
 	void insert(const(Conf) c) {
 		import std.algorithm.searching : canFind;
 		import std.algorithm.sorting : sort;
+
+		// See if the negativ is present, than there is no point in inserting it
+		if(c.isPositive == IsPositive.yes) {
+			const inv = Conf(c.conf, IsPositive.no);
+			if(canFind(this.confs, inv)) {
+				return;
+			}
+		}
+
 		immutable all = Conf("", IsPositive.yes);
 		if(c != all && !canFind(this.confs, c)) {
 			this.confs ~= c.dup();
@@ -46,10 +57,20 @@ struct Confs {
 
 Confs normalize(const(Confs) input) {
 	Confs ret;
-	input.confs
-		.filter!(it => allowsAll(input, it) || it.isPositive == IsPositive.no)
-		.each!(it => ret.insert(it));
+	normalizeImpl(input).each!(it => ret.insert(it));
 	return ret;
+}
+
+private auto normalizeImpl(const(Conf)[] input) {
+	bool test(const(Conf) i) {
+		return allowsAllImpl(input, i) || i.isPositive == IsPositive.no;
+	}
+
+	return input.filter!(test)();
+}
+
+private auto normalizeImpl(const(Confs) input) {
+	return normalizeImpl(input.confs);
 }
 
 Confs invert(const(Confs) input) {
@@ -63,18 +84,16 @@ Confs invert(const(Confs) input) {
 
 bool allowsAll(const(Confs) a, const(Confs) b) {
 	static import dud.resolve.conf;
-	return !a.confs.empty
-		&& a.confs
-			.all!(
-				aIt => b.confs.all!(
-					bIt => dud.resolve.conf.allowsAll(aIt, bIt)
-				)
-			);
+	return !a.confs.empty && b.confs.all!(bIt => allowsAll(a, b));
 }
 
 bool allowsAll(const(Confs) a, const(Conf) b) {
+	return allowsAllImpl(a.confs, b);
+}
+
+private bool allowsAllImpl(const(Conf[]) a, const(Conf) b) {
 	static import dud.resolve.conf;
-	return !a.confs.empty && a.confs.all!(it => dud.resolve.conf.allowsAll(it, b));
+	return !a.empty && a.any!(it => dud.resolve.conf.allowsAll(it, b));
 }
 
 bool allowsAny(const(Confs) a, const(Confs) b) {
