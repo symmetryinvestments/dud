@@ -17,6 +17,8 @@ import dud.semver.versionrange;
 private immutable nothing = Conf("", IsPositive.no);
 
 struct Confs {
+	import std.algorithm.iteration : map;
+
 @safe pure:
 	Conf[] confs;
 
@@ -27,7 +29,6 @@ struct Confs {
 
 	Confs dup() const {
 		import std.array : array;
-		import std.algorithm.iteration : map;
 		return Confs(this.confs.map!(it => it.dup).array);
 	}
 
@@ -54,6 +55,10 @@ struct Confs {
 			this.confs = normalize(this.confs);
 			this.confs.sort();
 		}
+	}
+
+	Confs invert() const {
+		return this.confs.map!(it => it.invert()).array.Confs;
 	}
 }
 

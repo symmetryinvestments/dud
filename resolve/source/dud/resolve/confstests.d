@@ -51,51 +51,34 @@ unittest {
 	}
 }
 
-__EOF__
-
-// normalize
-unittest {
-	void testNorm(const(Confs) a, const(Confs) exp, int line = __LINE__) {
-		const inv = normalize(a);
-		enforce!AssertError(inv == exp, format("\ninp: %s\nrsl: %s\nexp: %s", a,
-				inv, exp), __FILE__, line);
-	}
-
-	testNorm(c12, Confs([c2]));
-	testNorm(c13, c13);
-	testNorm(c14, c14);
-	testNorm(c15, c15);
-	testNorm(c16, Confs([c6]));
-}
-
 // invert
 
 unittest {
 	void testInvert(const(Confs) a, const(Confs) exp, int line = __LINE__) {
 		const inv = a.invert();
-		enforce!AssertError(inv == exp, format("\ninp: %s\nrsl: %s\nexp: %s", a,
-				inv, exp), __FILE__, line);
+		enforce!AssertError(inv == exp, format("\ninp: %s\nexp: %s\nrst: %s", a,
+				exp, inv), __FILE__, line);
 	}
 
-	testInvert(c12, c12);
+	testInvert(c12, Confs([c1]));
 	testInvert(c13, c24);
 	testInvert(c14, c23);
 	testInvert(c15, c25); // c5 is special
-	testInvert(c16, Confs.init); // c6 makes everything false
+	testInvert(c16, Confs([c5])); // c6 makes everything false
 
 	testInvert(c23, c14);
 	testInvert(c24, c13);
 	testInvert(c25, c15);
-	testInvert(c26, Confs.init);
+	testInvert(c26, Confs([c5]));
 
-	testInvert(c34, c34);
+	testInvert(c34, Confs([c3]));
 	testInvert(c35, c45);
-	testInvert(c36, Confs.init);
+	testInvert(c36, Confs([c5]));
 
 	testInvert(c45, c35);
-	testInvert(c46, Confs.init);
+	testInvert(c46, Confs([c5]));
 
-	testInvert(c56, Confs.init);
+	testInvert(c56, Confs([c5]));
 }
 
 unittest {
@@ -108,8 +91,10 @@ unittest {
 	assert(c12 != Confs.init);
 	const nc12 = c12.invert();
 	assert(nc12.confs.length == 1, format("%s", nc12));
-	assert(nc12.confs[0] == c2);
+	assert(nc12.confs[0] == c1);
 }
+
+__EOF__
 
 // intersectionOf
 
