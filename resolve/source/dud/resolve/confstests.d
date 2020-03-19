@@ -1,7 +1,8 @@
 module dud.resolve.confstests;
 
 import std.format : format;
-import std.algorithm.iteration : map, joiner;
+import std.algorithm.iteration : map, joiner, filter;
+import std.algorithm.searching : canFind;
 import std.exception : enforce;
 import core.exception : AssertError;
 
@@ -176,6 +177,40 @@ unittest {
 	testAllowAll(c22, c2, false);
 }
 
+// allowsAny
+
+void testAllowAny(const(Confs) a, const(Conf) b, const bool exp,
+		int line = __LINE__)
+{
+	const rsl = allowsAny(a, b);
+	enforce!AssertError(rsl == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, rsl, exp),
+			__FILE__, line);
+}
+
+void testAllowAny(const(Confs) a, const(Confs) b, const bool exp,
+		int line = __LINE__)
+{
+	const rsl = allowsAny(a, b);
+	enforce!AssertError(rsl == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, rsl, exp),
+			__FILE__, line);
+}
+
+unittest {
+	testAllowAny(c13, c1, true);
+	testAllowAny(c13, c3, true);
+	testAllowAny(c13, c5, true);
+}
+
+unittest {
+	foreach(it; cs) {
+		foreach(c; it.confs.filter!(it => it.isPositive == IsPositive.yes)) {
+			testAllowAny(it, c, true);
+		}
+	}
+}
+
 // intersectionOf
 
 void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
@@ -216,6 +251,17 @@ unittest {
 	foreach(a; cs) {
 		foreach(b; cs) {
 			const ab = intersectionOf(a, b);
+			const(Conf)[] many = a.confs ~ b.confs;
+			foreach(it; many) {
+				if(canFind(a.confs, it) && canFind(b.confs, it)) {
+					assert(canFind(ab.confs, it));
+				}
+				if(it.isPositive == IsPositive.no) {
+					assert(canFind(ab.confs, Conf("", IsPositive.no))
+							|| canFind(ab.confs, it),
+						format("%s %s", ab, it));
+				}
+			}
 		}
 	}
 }

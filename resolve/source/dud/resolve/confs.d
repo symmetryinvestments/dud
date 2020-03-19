@@ -95,6 +95,18 @@ bool allowsAll(const(Confs) a, const(Confs) b) {
 		&& b.confs.all!(it => allowsAll(a, it));
 }
 
+bool allowsAny(const(Confs) a, const(Conf) b) {
+	return b.isPositive == IsPositive.yes
+		&& (b.conf == ""
+			|| a.confs.any!(
+				it => it.isPositive == IsPositive.yes && it.conf == b.conf)
+			);
+}
+
+bool allowsAny(const(Confs) a, const(Confs) b) {
+	return b.confs.all!(it => allowsAll(a, it));
+}
+
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	Conf[] allNeg = chain(a.confs, b.confs)
 		.filter!(it => it.isPositive == IsPositive.no)
@@ -115,142 +127,8 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 __EOF__
 
-Confs normalize(const(Confs) input) {
-	Confs ret;
-	normalizeImpl(input).each!(it => ret.insert(it));
-	return ret;
-}
-
-private auto normalizeImpl(const(Conf)[] input) {
-	bool test(const(Conf) i) {
-		return allowsAllImpl(input, i) || i.isPositive == IsPositive.no;
-	}
-
-	return input.filter!(test)();
-}
-
-private auto normalizeImpl(const(Confs) input) {
-	return normalizeImpl(input.confs);
-}
-
-Confs invert(const(Confs) input) {
-	import std.algorithm.iteration : map;
-	import std.array : array;
-	return Confs(input.confs
-			.map!(it => dud.resolve.conf.invert(it))
-			.array
-		);
-}
-
-bool allowsAll(const(Confs) a, const(Confs) b) {
-	static import dud.resolve.conf;
-	return !a.confs.empty && b.confs.all!(bIt => allowsAll(a, b));
-}
-
-bool allowsAll(const(Confs) a, const(Conf) b) {
-	return allowsAllImpl(a.confs, b);
-}
-
-private bool allowsAllImpl(const(Conf[]) a, const(Conf) b) {
-	static import dud.resolve.conf;
-	return a.empty || a.all!(it => dud.resolve.conf.allowsAll(it, b));
-}
-
-bool allowsAny(const(Confs) a, const(Confs) b) {
-	return allowsAnyImpl(a.confs, b);
-}
-
-private bool allowsAnyImpl(const(Conf[]) as, const(Conf) b) {
-	static import dud.resolve.conf;
-	return !as.empty
-		&& as
-			.all!(
-				aIt => b.confs.all!(
-					bIt => dud.resolve.conf.allowsAny(aIt, bIt)
-				)
-			);
-}
-
-private bool anyDisallow(const(Conf[]) as, const(Conf) b) {
-	return as.any!(a => a.conf == b.conf && a.isPositive == IsPositive.no);
-}
-
-bool allowsAny(const(Confs) a, const(Conf) b) {
-	static import dud.resolve.conf;
-	return !a.confs.empty
-		&& a.confs.any!(it => dud.resolve.conf.allowsAny(it, b));
-}
-
-SetRelation relation(const(Confs) a, const(Confs) b) {
-	static import dud.resolve.conf;
-	import std.algorithm.iteration : joiner, map;
-
-	SetRelation[] rslt = a.confs
-		.map!(aIt =>
-				b.confs.map!(bIt => dud.resolve.conf.relation(bIt, aIt)))
-		.joiner
-		.array;
-
-	if(rslt.all!(it => it == SetRelation.subset)) {
-		return SetRelation.subset;
-	}
-
-	if(rslt.all!(it =>
-				it == SetRelation.subset || it == SetRelation.overlapping))
-	{
-		return SetRelation.overlapping;
-	}
-
-	return SetRelation.disjoint;
-}
-
-Confs intersectionOf(const(Confs) a, const(Confs) b) {
-	Confs ret;
-	a.confs.filter!(it => allowsAll(b, it)).each!(it => ret.insert(it));
-	b.confs.filter!(it => allowsAll(a, it)).each!(it => ret.insert(it));
-	chain(a.confs, b.confs)
-		.filter!(it => it.isPositive == IsPositive.no)
-		.each!(it => ret.insert(it));
-
-	return ret;
-}
-
 Confs differenceOf(const(Confs) a, const(Confs) b) {
-	Confs ret = a.dup();
-	b.invert().confs.each!(it => ret.insert(it));
-	return ret;
+
 }
