@@ -109,7 +109,9 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 		.map!(it => it.dup())
 		.array;
 
-	Confs ret = Confs(allNeg ~ inBoth);
+	Conf[] comb = allNeg ~ inBoth;
+
+	Confs ret = Confs(comb.empty ? [Conf("", IsPositive.no)] : comb);
 	return ret;
 }
 

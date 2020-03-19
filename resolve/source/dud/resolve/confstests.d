@@ -190,7 +190,7 @@ void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
 unittest {
 	testInter(Confs([c1, c3]), Confs([c1]), Confs([c1]));
 	testInter(Confs([c1]), Confs([c1]), Confs([c1]));
-	testInter(Confs([c3]), Confs([c1]), Confs.init);
+	testInter(Confs([c3]), Confs([c1]), Confs([c6]));
 }
 
 unittest {
@@ -198,6 +198,26 @@ unittest {
 	testInter(c13, c35, Confs([c3]));
 	testInter(c35, c35, Confs([c3, c5]));
 	testInter(c56, c56, Confs([c6]));
+
+	Confs a = Confs([c1, c3]);
+	Confs b = Confs([c1, c3, c5]);
+
+	testInter(a, b, a);
+}
+
+unittest { // if the intersection is empty we should see nothing value
+	const a = Confs([c1]);
+	const b = Confs([c3]);
+
+	testInter(a, b, Confs([c6]));
+}
+
+unittest {
+	foreach(a; cs) {
+		foreach(b; cs) {
+			const ab = intersectionOf(a, b);
+		}
+	}
 }
 
 __EOF__
