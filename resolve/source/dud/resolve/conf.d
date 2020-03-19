@@ -77,9 +77,7 @@ bool allowsAny(const(Conf) a, const(Conf) b) {
 
 	return a.isPositive == IsPositive.yes && b.isPositive == IsPositive.yes
 		? a.conf == b.conf
-		: a.isPositive != b.isPositive
-			? a.conf != b.conf
-			: true;
+		: false;
 }
 
 bool allowsAll(const(Conf) a, const(Conf) b) {
@@ -87,7 +85,9 @@ bool allowsAll(const(Conf) a, const(Conf) b) {
 		? true
 		: a.isPositive == IsPositive.no && a.conf.empty
 			? false
-			: a.isPositive == b.isPositive && a.conf == b.conf;
+			: a.isPositive == IsPositive.yes && a.isPositive == b.isPositive
+				? a.conf == b.conf
+				: false;
 }
 
 Confs intersectionOf(const(Conf) a, const(Conf) b) {

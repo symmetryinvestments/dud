@@ -94,56 +94,6 @@ unittest {
 	assert(nc12.confs[0] == c1);
 }
 
-__EOF__
-
-// intersectionOf
-
-void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
-		int line = __LINE__)
-{
-	const inter = intersectionOf(a, b);
-	enforce!AssertError(inter == exp, format(
-			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
-			__FILE__, line);
-}
-
-unittest {
-	testInter(Confs([c1, c3]), Confs([c1]), Confs([c1]));
-	testInter(Confs([c1]), Confs([c1]), Confs([c1]));
-	testInter(Confs([c3]), Confs([c1]), Confs.init);
-}
-
-unittest {
-	testInter(c12, c12, Confs([c2]));
-	testInter(c12, c13, Confs([c2, c3]));
-	testInter(c12, c14, Confs.init);
-	testInter(c12, c15, Confs.init);
-	testInter(c12, c16, Confs.init);
-}
-
-// differenceOf
-
-unittest {
-	const c11 = Confs([c1]);
-	const c33 = Confs([c3]);
-	const c13 = differenceOf(c11, c33);
-	assert(c13.confs.length == 2);
-	assert(c13.confs[0] == c4, format("%s", c13.confs[0]));
-	assert(c13.confs[1] == c1, format("%s", c13.confs[1]));
-}
-
-unittest {
-	foreach(it; cs) {
-		foreach(jt; cs) {
-			const r = differenceOf(it, jt);
-			if(it == jt) {
-				assert(!allowsAny(r, jt), format("%s", r));
-				assert(!allowsAny(r, it), format("%s", r));
-			}
-		}
-	}
-}
-
 // allowAll
 
 unittest {
@@ -174,11 +124,8 @@ unittest {
 
 	foreach(it; cs) {
 		testAllowAll(Confs.init, it, false);
-		testAllowAll(it, Confs.init, true);
 		foreach(jt; cs) {
-			if(it != jt) {
-				testAllowAll(it, jt, false);
-			}
+			allowsAll(it, jt);
 		}
 	}
 }
@@ -226,5 +173,55 @@ unittest {
 	testAllowAll(c24, c6, false);
 
 	const(Confs) c22 = Confs([c2, c2]);
-	testAllowAll(c22, c2, true);
+	testAllowAll(c22, c2, false);
 }
+
+// intersectionOf
+
+void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
+		int line = __LINE__)
+{
+	const inter = intersectionOf(a, b);
+	enforce!AssertError(inter == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
+			__FILE__, line);
+}
+
+unittest {
+	testInter(Confs([c1, c3]), Confs([c1]), Confs([c1]));
+	testInter(Confs([c1]), Confs([c1]), Confs([c1]));
+	testInter(Confs([c3]), Confs([c1]), Confs.init);
+}
+
+unittest {
+	testInter(c13, c13, c13);
+	testInter(c13, c35, Confs([c3]));
+	testInter(c35, c35, Confs([c3, c5]));
+	testInter(c56, c56, Confs([c6]));
+}
+
+__EOF__
+
+// differenceOf
+
+unittest {
+	const c11 = Confs([c1]);
+	const c33 = Confs([c3]);
+	const c13 = differenceOf(c11, c33);
+	assert(c13.confs.length == 2);
+	assert(c13.confs[0] == c4, format("%s", c13.confs[0]));
+	assert(c13.confs[1] == c1, format("%s", c13.confs[1]));
+}
+
+unittest {
+	foreach(it; cs) {
+		foreach(jt; cs) {
+			const r = differenceOf(it, jt);
+			if(it == jt) {
+				assert(!allowsAny(r, jt), format("%s", r));
+				assert(!allowsAny(r, it), format("%s", r));
+			}
+		}
+	}
+}
+

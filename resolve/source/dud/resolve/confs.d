@@ -1,7 +1,7 @@
 module dud.resolve.confs;
 
-import std.algorithm.iteration : each, filter;
-import std.algorithm.searching : all, any;
+import std.algorithm.iteration : each, filter, map;
+import std.algorithm.searching : all, any, canFind;
 import std.array : array, empty, front;
 import std.format : format;
 import std.typecons : Flag;
@@ -50,7 +50,7 @@ struct Confs {
 			return;
 		}
 
-		if(isOkayToInset(this.confs, c)) {
+		if(isOkayToInsert(this.confs, c)) {
 			this.confs ~= c;
 			this.confs = normalize(this.confs);
 			this.confs.sort();
@@ -62,9 +62,7 @@ struct Confs {
 	}
 }
 
-private bool isOkayToInset(const(Conf[]) arr, const(Conf) it) {
-	import std.algorithm.searching : canFind;
-
+private bool isOkayToInsert(const(Conf[]) arr, const(Conf) it) {
 	const isNeg = it.isPositive == IsPositive.no;
 	const negPr = !isNegativPresent(arr, it);
 	const cf = !canFind(arr, it);
@@ -80,13 +78,40 @@ private bool isNegativPresent(const(Conf[]) arr, const(Conf) it) {
 
 private Conf[] normalize(Conf[] arr) {
 	return arr
-		.filter!(it => !isNegativPresent(arr, it) || it.isPositive == IsPositive.no)
+		.filter!(
+			it => !isNegativPresent(arr, it) || it.isPositive == IsPositive.no)
 		.array;
 }
 
+bool allowsAll(const(Confs) a, const(Conf) b) {
+	static import dud.resolve.conf;
+	return !a.confs.empty
+		&& a.confs.all!(it => dud.resolve.conf.allowsAll(it, b));
+}
 
+bool allowsAll(const(Confs) a, const(Confs) b) {
+	return !a.confs.empty
+		&& !b.confs.empty
+		&& b.confs.all!(it => allowsAll(a, it));
+}
 
+Confs intersectionOf(const(Confs) a, const(Confs) b) {
+	Conf[] allNeg = chain(a.confs, b.confs)
+		.filter!(it => it.isPositive == IsPositive.no)
+		.map!(it => it.dup())
+		.array;
 
+	Conf[] inBoth = chain(a.confs, b.confs)
+		.filter!(it => isOkayToInsert(allNeg, it)
+				&& canFind(a.confs, it)
+				&& canFind(b.confs, it)
+			)
+		.map!(it => it.dup())
+		.array;
+
+	Confs ret = Confs(allNeg ~ inBoth);
+	return ret;
+}
 
 
 

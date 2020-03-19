@@ -186,28 +186,28 @@ unittest {
 	assert( allowsAny(c1, c1));
 	assert(!allowsAny(c1, c2));
 	assert(!allowsAny(c1, c3));
-	assert( allowsAny(c1, c4));
+	assert(!allowsAny(c1, c4));
 	assert( allowsAny(c1, c5));
 	assert(!allowsAny(c1, c6));
 
 	assert(!allowsAny(c2, c1));
-	assert( allowsAny(c2, c2));
-	assert( allowsAny(c2, c3));
-	assert( allowsAny(c2, c4));
+	assert(!allowsAny(c2, c2));
+	assert(!allowsAny(c2, c3));
+	assert(!allowsAny(c2, c4));
 	assert( allowsAny(c2, c5));
 	assert(!allowsAny(c2, c6));
 
 	assert(!allowsAny(c3, c1));
-	assert( allowsAny(c3, c2));
+	assert(!allowsAny(c3, c2));
 	assert( allowsAny(c3, c3));
 	assert(!allowsAny(c3, c4));
 	assert( allowsAny(c3, c5));
 	assert(!allowsAny(c3, c6));
 
-	assert( allowsAny(c4, c1));
-	assert( allowsAny(c4, c2));
+	assert(!allowsAny(c4, c1));
+	assert(!allowsAny(c4, c2));
 	assert(!allowsAny(c4, c3));
-	assert( allowsAny(c4, c4));
+	assert(!allowsAny(c4, c4));
 	assert( allowsAny(c4, c5));
 	assert(!allowsAny(c4, c6));
 
@@ -239,7 +239,7 @@ unittest {
 	assert(!allowsAll(c1, c6));
 
 	assert(!allowsAll(c2, c1));
-	assert( allowsAll(c2, c2));
+	assert(!allowsAll(c2, c2));
 	assert(!allowsAll(c2, c3));
 	assert(!allowsAll(c2, c4));
 	assert(!allowsAll(c2, c5));
@@ -255,7 +255,7 @@ unittest {
 	assert(!allowsAll(c4, c1));
 	assert(!allowsAll(c4, c2));
 	assert(!allowsAll(c4, c3));
-	assert( allowsAll(c4, c4));
+	assert(!allowsAll(c4, c4));
 	assert(!allowsAll(c4, c5));
 	assert(!allowsAll(c4, c6));
 
@@ -305,25 +305,25 @@ unittest {
 	testSet(nc2, nc2, SetRelation.subset);
 	testSet(nc2, nc3, SetRelation.disjoint);
 	testSet(nc2, nc4, SetRelation.disjoint);
-	testSet(nc2, nc5, SetRelation.overlapping);
+	testSet(nc2, nc5, SetRelation.disjoint);
 	testSet(nc2, nc6, SetRelation.disjoint);
 	testSet(nc3, nc1, SetRelation.subset);
 	testSet(nc3, nc2, SetRelation.disjoint);
-	testSet(nc3, nc3, SetRelation.subset);
-	testSet(nc3, nc4, SetRelation.overlapping);
-	testSet(nc3, nc5, SetRelation.overlapping);
+	testSet(nc3, nc3, SetRelation.disjoint);
+	testSet(nc3, nc4, SetRelation.disjoint);
+	testSet(nc3, nc5, SetRelation.disjoint);
 	testSet(nc3, nc6, SetRelation.disjoint);
 	testSet(nc4, nc1, SetRelation.subset);
 	testSet(nc4, nc2, SetRelation.disjoint);
-	testSet(nc4, nc3, SetRelation.overlapping);
+	testSet(nc4, nc3, SetRelation.disjoint);
 	testSet(nc4, nc4, SetRelation.subset);
 	testSet(nc4, nc5, SetRelation.disjoint);
 	testSet(nc4, nc6, SetRelation.disjoint);
 	testSet(nc5, nc1, SetRelation.subset);
-	testSet(nc5, nc2, SetRelation.overlapping);
-	testSet(nc5, nc3, SetRelation.overlapping);
+	testSet(nc5, nc2, SetRelation.disjoint);
+	testSet(nc5, nc3, SetRelation.disjoint);
 	testSet(nc5, nc4, SetRelation.disjoint);
-	testSet(nc5, nc5, SetRelation.subset);
+	testSet(nc5, nc5, SetRelation.disjoint);
 	testSet(nc5, nc6, SetRelation.disjoint);
 	testSet(nc6, nc1, SetRelation.subset);
 	testSet(nc6, nc2, SetRelation.disjoint);
