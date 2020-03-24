@@ -104,7 +104,7 @@ bool allowsAny(const(Confs) a, const(Conf) b) {
 }
 
 bool allowsAny(const(Confs) a, const(Confs) b) {
-	return b.confs.all!(it => allowsAll(a, it));
+	return b.confs.any!(it => allowsAny(a, it));
 }
 
 Confs intersectionOf(const(Confs) a, const(Confs) b) {

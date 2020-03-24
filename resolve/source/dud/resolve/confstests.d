@@ -40,8 +40,20 @@ const(Confs) c46 = Confs([c4, c6]);
 
 const(Confs) c56 = Confs([c5, c6]);
 
-const cs = [c12, c13, c14, c15, c16, c23, c24, c25, c26, c34, c35, c36, c45,
-	 c46, c56];
+const cs = buildConfs();
+
+Confs[] buildConfs() {
+	Confs[] ret;
+	const cs = [c1, c2, c3, c4, c5, c6];
+	foreach(it; cs) {
+		foreach(jt; cs) {
+			foreach(kt; cs) {
+				ret ~= Confs([it, jt, kt]);
+			}
+		}
+	}
+	return ret;
+}
 
 // testing the test data
 unittest {
@@ -121,7 +133,21 @@ unittest {
 					.joiner),
 			__FILE__, line);
 	}
+
 	testAllowAll(Confs.init, Confs.init, false);
+	testAllowAll(Confs([c1, c5]), Confs([c1]), true);
+	testAllowAll(Confs([c5]), Confs([c1, c5]), true);
+	testAllowAll(Confs([c5]), Confs([c1, c3]), true);
+	testAllowAll(Confs([c1]), Confs([c1, c3, c5]), false);
+	testAllowAll(Confs([c3]), Confs([c1, c3, c5]), false);
+	testAllowAll(Confs([c3]), Confs([c3]), true);
+	testAllowAll(Confs([c1]), Confs([c1]), true);
+	testAllowAll(Confs([c2]), Confs([c2]), false);
+	testAllowAll(Confs([c2]), Confs([c1]), false);
+	testAllowAll(Confs([c2]), Confs([c3]), false);
+	testAllowAll(Confs([c2]), Confs([c4]), false);
+	testAllowAll(Confs([c2]), Confs([c5]), false);
+	testAllowAll(Confs([c2]), Confs([c6]), false);
 
 	foreach(it; cs) {
 		testAllowAll(Confs.init, it, false);
@@ -178,22 +204,24 @@ unittest {
 }
 
 // allowsAny
+struct IndivitualAny {
+	@safe pure:
+	const(Conf) a;
+	const(Conf) b;
+
+	string toString() const {
+		return format("\ta: %s\tb: %s\t%s", a, b, allowsAny(a, b));
+	}
+}
 
 void testAllowAny(const(Confs) a, const(Conf) b, const bool exp,
 		int line = __LINE__)
 {
 	const rsl = allowsAny(a, b);
 	enforce!AssertError(rsl == exp, format(
-			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, rsl, exp),
-			__FILE__, line);
-}
-
-void testAllowAny(const(Confs) a, const(Confs) b, const bool exp,
-		int line = __LINE__)
-{
-	const rsl = allowsAny(a, b);
-	enforce!AssertError(rsl == exp, format(
-			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, rsl, exp),
+			"\na: %s\nb: %s\nint: %s\nexp: %s\neach:%(%s\n%)", a, b, rsl, exp,
+			a.confs
+				.map!(aIt => IndivitualAny(aIt, b))),
 			__FILE__, line);
 }
 
@@ -201,6 +229,29 @@ unittest {
 	testAllowAny(c13, c1, true);
 	testAllowAny(c13, c3, true);
 	testAllowAny(c13, c5, true);
+	testAllowAny(c12, c5, true);
+}
+
+void testAllowAny(const(Confs) a, const(Confs) b, const bool exp,
+		int line = __LINE__)
+{
+	const rsl = allowsAny(a, b);
+	enforce!AssertError(rsl == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s\neach:%(%s\n%)", a, b, rsl, exp,
+			a.confs
+				.map!(aIt => b.confs.map!(bIt => IndivitualAny(aIt, bIt)))
+				.joiner),
+			__FILE__, line);
+}
+
+unittest {
+	testAllowAny(c12, c12, false);
+	testAllowAny(c12, c13, false);
+	testAllowAny(c12, c14, false);
+	testAllowAny(c12, c15, true);
+	testAllowAny(c12, c16, false);
+
+	testAllowAny(c13, c14, true);
 }
 
 unittest {
@@ -278,12 +329,15 @@ unittest {
 }
 
 unittest {
+	const none = Confs([Conf("", IsPositive.no)]);
 	foreach(it; cs) {
 		foreach(jt; cs) {
 			const r = differenceOf(it, jt);
-			if(it == jt) {
-				assert(!allowsAny(r, jt), format("%s", r));
-				assert(!allowsAny(r, it), format("%s", r));
+			if(it == jt && it != none) {
+				testAllowAny(r, it, true);
+				testAllowAny(r, jt, true);
+				//assert(!allowsAny(r, it), format("%s", r));
+				//assert(!allowsAny(r, jt), format("%s", r));
 			}
 		}
 	}
