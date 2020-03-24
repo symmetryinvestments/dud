@@ -266,8 +266,6 @@ unittest {
 	}
 }
 
-__EOF__
-
 // differenceOf
 
 unittest {

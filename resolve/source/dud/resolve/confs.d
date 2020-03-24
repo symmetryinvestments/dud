@@ -127,8 +127,13 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	return ret;
 }
 
-__EOF__
-
 Confs differenceOf(const(Confs) a, const(Confs) b) {
+	Conf[] neg = b.confs
+		.map!(it => it.isPositive == IsPositive.no
+				? it.dup
+				: Conf(it.conf, IsPositive.no))
+		.array;
 
+	Conf[] ret = a.confs.map!(it => it.dup).array ~ neg;
+	return Confs(ret);
 }
