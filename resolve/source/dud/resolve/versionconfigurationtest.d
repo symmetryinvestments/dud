@@ -63,6 +63,9 @@ immutable vc6 = VersionConfiguration(
 // allowsAny
 unittest {
 	assert(allowsAny(vc1, vc2));
+	assert(allowsAny(vc1, vc3));
+	assert(allowsAny(vc1, vc4));
+	assert(allowsAny(vc1, vc5));
 	assert(!allowsAny(vc5, vc6));
 }
 
