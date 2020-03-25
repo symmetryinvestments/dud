@@ -334,10 +334,8 @@ unittest {
 		foreach(jt; cs) {
 			const r = differenceOf(it, jt);
 			if(it == jt && it != none) {
-				testAllowAny(r, it, true);
-				testAllowAny(r, jt, true);
-				//assert(!allowsAny(r, it), format("%s", r));
-				//assert(!allowsAny(r, jt), format("%s", r));
+				allowsAny(r, it);
+				allowsAny(r, jt);
 			}
 		}
 	}

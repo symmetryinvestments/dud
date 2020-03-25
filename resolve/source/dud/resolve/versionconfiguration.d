@@ -1,7 +1,5 @@
 module dud.resolve.versionconfiguration;
 
-__EOF__
-
 import std.array : empty;
 import std.stdio;
 import std.exception : enforce;
@@ -13,7 +11,7 @@ import dud.semver.checks : allowsAll, allowsAny;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 static import dud.semver.setoperation;
-import dud.resolve.confs : Confs, allowsAll, allowsAny, invert;
+import dud.resolve.confs : Confs;
 import dud.resolve.positive;
 
 @safe pure:
@@ -34,16 +32,24 @@ VersionConfiguration invert(const(VersionConfiguration) conf) {
 	static import dud.resolve.confs;
 	return VersionConfiguration(
 			dud.semver.setoperation.invert(conf.ver),
-			dud.resolve.confs.invert(conf.conf));
+			conf.conf.invert());
 }
 
 bool allowsAny(const(VersionConfiguration) a, const(VersionConfiguration) b) {
-	return allowsAny(a.ver, b.ver) && allowsAny(a.conf, b.conf);
+	static import dud.resolve.confs;
+	static import dud.semver.checks;
+	return dud.semver.checks.allowsAny(a.ver, b.ver)
+		&& dud.resolve.confs.allowsAny(a.conf, b.conf);
 }
 
 bool allowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b) {
-	return allowsAll(a.ver, b.ver) && allowsAll(a.conf, b.conf);
+	static import dud.resolve.confs;
+	static import dud.semver.checks;
+	return dud.semver.checks.allowsAll(a.ver, b.ver)
+		&& dud.resolve.confs.allowsAll(a.conf, b.conf);
 }
+
+__EOF__
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
 if a and b overlap

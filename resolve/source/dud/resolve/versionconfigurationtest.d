@@ -2,8 +2,6 @@ module dud.resolve.versionconfigurationtest;
 
 @safe pure:
 
-__EOF__
-
 import dud.resolve.versionconfiguration;
 import dud.resolve.conf;
 import dud.resolve.confs;
@@ -19,6 +17,57 @@ import std.stdio;
 
 private:
 
+immutable SemVer s10 = SemVer(1,0,0);
+immutable SemVer s15 = SemVer(1,5,0);
+immutable SemVer s20 = SemVer(2,0,0);
+immutable SemVer s25 = SemVer(2,5,0);
+immutable SemVer s30 = SemVer(3,0,0);
+
+immutable Conf c1 = Conf("", IsPositive.yes);
+immutable Conf c2 = Conf("", IsPositive.no);
+immutable Conf c3 = Conf("foo", IsPositive.yes);
+immutable Conf c4 = Conf("foo", IsPositive.no);
+immutable Conf c5 = Conf("bar", IsPositive.yes);
+immutable Conf c6 = Conf("bar", IsPositive.no);
+
+immutable vc1 = VersionConfiguration(
+		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
+		Confs([c1, c3])
+	);
+
+immutable vc2 = VersionConfiguration(
+		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
+		Confs([c3])
+	);
+
+immutable vc3 = VersionConfiguration(
+		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
+		Confs([c1])
+	);
+
+immutable vc4 = VersionConfiguration(
+		VersionUnion([VersionRange(s20, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c1, c3])
+	);
+
+immutable vc5 = VersionConfiguration(
+		VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)]),
+		Confs([c1, c3])
+	);
+
+immutable vc6 = VersionConfiguration(
+		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c1, c3])
+	);
+
+// allowsAny
+unittest {
+	assert(allowsAny(vc1, vc2));
+	assert(!allowsAny(vc5, vc6));
+}
+
+
+/+
 void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
 		const(SetRelation) exp, int line = __LINE__)
 {
@@ -30,12 +79,6 @@ void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
 		__FILE__, line);
 
 }
-
-immutable SemVer a = parseSemVer("1.0.0");
-immutable SemVer b = parseSemVer("2.0.0");
-immutable SemVer c = parseSemVer("3.0.0");
-immutable SemVer d = parseSemVer("1.5.0");
-immutable SemVer e = parseSemVer("2.5.0");
 
 unittest {
 	auto v1 = VersionConfiguration(
@@ -116,3 +159,4 @@ unittest {
 	testRelation(v3, v12, SetRelation.subset);
 	testRelation(v12, v3, SetRelation.subset);
 }
++/
