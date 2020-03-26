@@ -49,6 +49,16 @@ bool allowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b) {
 		&& dud.resolve.confs.allowsAll(a.conf, b.conf);
 }
 
+VersionConfiguration intersectionOf(const(VersionConfiguration) a,
+		const(VersionConfiguration) b)
+{
+	static import dud.resolve.confs;
+	static import dud.semver.setoperation;
+	return VersionConfiguration(
+			dud.semver.setoperation.intersectionOf(a.ver, b.ver),
+			dud.resolve.confs.intersectionOf(a.conf, b.conf));
+}
+
 __EOF__
 
 /** Return if a is a subset of b, or if a and b are disjoint, or

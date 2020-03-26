@@ -60,14 +60,99 @@ immutable vc6 = VersionConfiguration(
 		Confs([c1, c3])
 	);
 
-// allowsAny
+// allowsAll
+
 unittest {
-	assert(allowsAny(vc1, vc2));
-	assert(allowsAny(vc1, vc3));
-	assert(allowsAny(vc1, vc4));
-	assert(allowsAny(vc1, vc5));
-	assert(!allowsAny(vc5, vc6));
+	assert(!allowsAll(vc6, vc1));
+	assert(!allowsAll(vc6, vc2));
+	assert(!allowsAll(vc6, vc3));
+	assert(!allowsAll(vc6, vc4));
+	assert(!allowsAll(vc6, vc5));
+	assert(!allowsAll(vc6, vc6));
+
+	assert(!allowsAll(vc5, vc1));
+	assert(!allowsAll(vc5, vc2));
+	assert(!allowsAll(vc5, vc3));
+	assert(!allowsAll(vc5, vc4));
+	assert(!allowsAll(vc5, vc5));
+	assert(!allowsAll(vc5, vc6));
+
+	assert(!allowsAll(vc4, vc1));
+	assert(!allowsAll(vc4, vc2));
+	assert(!allowsAll(vc4, vc3));
+	assert(!allowsAll(vc4, vc4));
+	assert(!allowsAll(vc4, vc5));
+	assert(!allowsAll(vc4, vc6));
+
+	assert( allowsAll(vc3, vc1));
+	assert( allowsAll(vc3, vc2));
+	assert( allowsAll(vc3, vc3));
+	assert(!allowsAll(vc3, vc4));
+	assert(!allowsAll(vc3, vc5));
+	assert(!allowsAll(vc3, vc6));
+
+	assert(!allowsAll(vc2, vc1));
+	assert( allowsAll(vc2, vc2));
+	assert(!allowsAll(vc2, vc3));
+	assert(!allowsAll(vc2, vc4));
+	assert(!allowsAll(vc2, vc5));
+	assert(!allowsAll(vc2, vc6));
+
+	assert(!allowsAll(vc1, vc1));
+	assert( allowsAll(vc1, vc2));
+	assert(!allowsAll(vc1, vc3));
+	assert(!allowsAll(vc1, vc4));
+	assert(!allowsAll(vc1, vc5));
+	assert(!allowsAll(vc1, vc6));
 }
+
+// allowsAny
+
+unittest {
+	assert( allowsAny(vc6, vc1));
+	assert( allowsAny(vc6, vc2));
+	assert( allowsAny(vc6, vc3));
+	assert( allowsAny(vc6, vc4));
+	assert(!allowsAny(vc6, vc5));
+	assert( allowsAny(vc6, vc6));
+
+	assert( allowsAny(vc5, vc1));
+	assert( allowsAny(vc5, vc2));
+	assert( allowsAny(vc5, vc3));
+	assert(!allowsAny(vc5, vc4));
+	assert( allowsAny(vc5, vc5));
+	assert(!allowsAny(vc5, vc6));
+
+	assert( allowsAny(vc4, vc1));
+	assert( allowsAny(vc4, vc2));
+	assert( allowsAny(vc4, vc3));
+	assert( allowsAny(vc4, vc4));
+	assert(!allowsAny(vc4, vc5));
+	assert( allowsAny(vc4, vc6));
+
+	assert( allowsAny(vc3, vc1));
+	assert(!allowsAny(vc3, vc2));
+	assert( allowsAny(vc3, vc3));
+	assert( allowsAny(vc3, vc4));
+	assert( allowsAny(vc3, vc5));
+	assert( allowsAny(vc3, vc6));
+
+	assert( allowsAny(vc2, vc1));
+	assert( allowsAny(vc2, vc2));
+	assert( allowsAny(vc2, vc3));
+	assert( allowsAny(vc2, vc4));
+	assert( allowsAny(vc2, vc5));
+	assert( allowsAny(vc2, vc6));
+
+	assert( allowsAny(vc1, vc1));
+	assert( allowsAny(vc1, vc2));
+	assert( allowsAny(vc1, vc3));
+	assert( allowsAny(vc1, vc4));
+	assert( allowsAny(vc1, vc5));
+	assert( allowsAny(vc1, vc6));
+}
+
+// intersectionOf
 
 
 /+
