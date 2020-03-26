@@ -23,6 +23,8 @@ immutable SemVer s20 = SemVer(2,0,0);
 immutable SemVer s25 = SemVer(2,5,0);
 immutable SemVer s30 = SemVer(3,0,0);
 
+immutable allS = [s10, s15, s20, s25, s30];
+
 immutable Conf c1 = Conf("", IsPositive.yes);
 immutable Conf c2 = Conf("", IsPositive.no);
 immutable Conf c3 = Conf("foo", IsPositive.yes);
@@ -30,37 +32,101 @@ immutable Conf c4 = Conf("foo", IsPositive.no);
 immutable Conf c5 = Conf("bar", IsPositive.yes);
 immutable Conf c6 = Conf("bar", IsPositive.no);
 
+immutable allC = [c1, c2, c3, c4, c5, c6];
+
+VerConGen verConGen(uint seed) {
+	import std.random : Random;
+
+	VerConGen ret;
+	ret.rnd = Random(seed);
+	return ret;
+}
+
+struct VerConGen {
+@safe pure:
+	import std.random : Random, uniform, randomCover;
+	import std.algorithm.iteration : map;
+	import std.range : take, iota;
+	import std.array : array;
+	Random rnd;
+
+	bool empty;
+	VersionConfiguration front;
+
+	VersionRange newVersionRange() {
+		const sl = uniform(0, allS.length - 1, this.rnd);
+		const sh = uniform(sl, allS.length, this.rnd);
+		return VersionRange(
+				allS[sl],
+				uniform(0, 100, this.rnd) < 50 && sl != sh
+					? Inclusive.no
+					: Inclusive.yes,
+				allS[sh],
+				uniform(0, 100, this.rnd) < 50 && sl != sh
+					? Inclusive.no
+					: Inclusive.yes);
+	}
+
+	void popFront() {
+		const cl = uniform(1, 4, this.rnd);
+		const vrC = uniform(1, 3, this.rnd);
+
+		const vrs = iota(vrC).map!(it => newVersionRange()).array;
+
+		this.front = VersionConfiguration(
+			vrs.VersionUnion,
+			allC.randomCover(this.rnd).take(cl).array.Confs);
+
+	}
+}
+
 immutable vc1 = VersionConfiguration(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
-		Confs([c1, c3])
-	);
+		Confs([c1, c3]));
 
 immutable vc2 = VersionConfiguration(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
-		Confs([c3])
-	);
+		Confs([c3]));
 
 immutable vc3 = VersionConfiguration(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
-		Confs([c1])
-	);
+		Confs([c1]));
 
 immutable vc4 = VersionConfiguration(
 		VersionUnion([VersionRange(s20, Inclusive.yes, s30, Inclusive.yes)]),
-		Confs([c1, c3])
-	);
+		Confs([c1, c3]));
 
 immutable vc5 = VersionConfiguration(
 		VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)]),
-		Confs([c1, c3])
-	);
+		Confs([c1, c3]));
 
 immutable vc6 = VersionConfiguration(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
-		Confs([c1, c3])
-	);
+		Confs([c1, c3]));
+
+immutable vc7 = VersionConfiguration(
+		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c1, c4]));
+
+immutable vc8 = VersionConfiguration(
+		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c3]));
+
+immutable vc9 = VersionConfiguration(
+		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c1]));
+
+immutable vcA = VersionConfiguration(
+		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
+		Confs([c5]));
 
 // allowsAll
+
+unittest {
+	assert(allowsAll(vc9, vc8));
+	assert(allowsAll(vc9, vc9));
+	assert(allowsAll(vc9, vcA));
+}
 
 unittest {
 	assert(!allowsAll(vc6, vc1));
@@ -150,6 +216,20 @@ unittest {
 	assert( allowsAny(vc1, vc4));
 	assert( allowsAny(vc1, vc5));
 	assert( allowsAny(vc1, vc6));
+}
+
+unittest {
+	import std.range : take;
+	auto r1 = verConGen(1337);
+	auto r2 = verConGen(1338);
+	foreach(it; take(r1, 1000)) {
+		foreach(jt; take(r2, 1000)) {
+			const al = allowsAll(it, jt);
+			if(al) {
+				assert(allowsAny(it, jt), format("\nit: %s\njt: %s", it, jt));
+			}
+		}
+	}
 }
 
 // intersectionOf
