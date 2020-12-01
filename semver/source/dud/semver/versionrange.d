@@ -36,10 +36,10 @@ struct VersionRange {
 	{
 		enforce(low <= high, format("low %s must be lower equal to high %s",
 			low, high));
-		enforce(low < high || (incLow == incHigh && incLow == Inclusive.yes),
-			format("tried to construct an empty range with incLow '%s', "
-				~ "low '%s', incHigh '%s', high '%s'", incLow, low, incHigh,
-				high));
+		//enforce(low < high || (incLow == incHigh && incLow == Inclusive.yes),
+		//	format("tried to construct an empty range with incLow '%s', "
+		//		~ "low '%s', incHigh '%s', high '%s'", incLow, low, incHigh,
+		//		high));
 		this.low = low.dup();
 		this.inclusiveLow = incLow;
 		this.high = high.dup();
