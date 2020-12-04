@@ -22,8 +22,41 @@ This compiler daemon will need to understand dub files, and dud as a library
 should be usable for this purpose.
 This is the reason the cli for dud itself is quite small, and should stay that
 way.
+One might think of it as a library first approach.
+This does not mean the end user cli experience should suffer.
+Good error messaged and good dependency resolution information, especially on
+failure to resolve dependency, is a must.
+Therefore I decided to use the dependency resolution algorithm developed for the
+Dart package manager *pub*
+(https://github.com/dart-lang/pub/blob/master/doc/solver.md).
+
 
 Testing is paramount.
+The target should be 100% coverage by unittests.
+
+For that to make sense expressions like
+```d
+cond1 && cond2 && (cond3 || cond4)
+```
+
+should be written/rewritten to
+
+```
+cond1
+	&& cond2
+	&& (cond3
+		|| cond4
+	)
+```
+.
+
+On top of the unittests there is already code that pulls in all packages from
+code.dlang.org and test them.
+Not only parsing the dub.sdl and dub.json files but also trying to resolve them.
+
+At some point, dud actually needs build something.
+Currently, I think the best bet is to look reggae and for instance generate
+ninja files to then actually build the software.
 
 ## Features
 Most things do not work and are not even implemented yet.
