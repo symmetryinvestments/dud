@@ -58,6 +58,18 @@ At some point, dud actually needs build something.
 Currently, I think the best bet is to look reggae and for instance generate
 ninja files to then actually build the software.
 
+At least for now I would like the dependency to anything else but phobos to a
+minimum.
+Darser is used to generate the parser for sdl files, but the generation of the
+parser happens before compile time and the resulting classes are checked into
+the repo, so I think this is okay for now.
+
+Also, so far the code tries to stay away from newer D features like stricter
+memory safety.
+This does not mean the code is not memory safe, it only means that these
+features are not needed in dud right now, and to a degree, I think that it would
+be a code smell if those features are required to make dud memory safe.
+
 ## Features
 Most things do not work and are not even implemented yet.
 Currently, the focus is on getting the data structures correct.
