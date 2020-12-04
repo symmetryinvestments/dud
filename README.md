@@ -11,6 +11,18 @@ Meaning that, if you fix one thing you might break another.
 Dud's implementation tries to be boring.
 Dud is to be written in a declarative and functional style.
 
+Dud has two aims, be a dub replacement. Not a 100% compatible drop in
+replacement, but something that does the same thing as dub as long as you stay
+in the tasteful bounds of what dub allows.
+The other goal I had in mind was, that IMO at some point a D compiler will
+become a background daemon, that only compiles diffs in source.
+Not on a per file bases, but rather that the bulk of the compilation results,
+ast etc. is stored in memory.
+This compiler daemon will need to understand dub files, and dud as a library
+should be usable for this purpose.
+This is the reason the cli for dud itself is quite small, and should stay that
+way.
+
 Testing is paramount.
 
 ## Features
