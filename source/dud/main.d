@@ -36,6 +36,9 @@ int main(string[] args) {
 		case "convert":
 			import dud.convert : ConvertOptions, convert;
 			return genericCommand!("convert", ConvertOptions, convert)(args);
+		case "upgrade":
+			import dud.upgrade : UpgradeOptions, upgrade;
+			return genericCommand!("upgrade", UpgradeOptions, upgrade)(args);
 		default:
 			writefln("Operation '%s' is not supported", noUserOptions[1]);
 			return 1;
