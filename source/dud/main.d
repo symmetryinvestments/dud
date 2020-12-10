@@ -4,8 +4,25 @@ import std.array : empty, front;
 import std.algorithm.searching : countUntil;
 import std.stdio;
 
-import dud.pkgdescription;
-import dud.options;
+@safe:
+
+private int genericCommand(string command, CommandOptions, alias action)(ref string[] args)
+{
+	import dud.options : OptionReturn, getGenericCommandOptions, writeOptions;
+	OptionReturn!CommandOptions opts = getGenericCommandOptions!CommandOptions(args);
+
+	if(args == [command]) {
+		writefln!"Failed to process cmd options [%(%s, %)]"(args);
+		return 1;
+	}
+
+	if(opts.common.help) {
+		() @trusted { writeOptions(stdout.lockingTextWriter(), opts); }();
+		return 0;
+	}
+
+	return action(opts.common, opts.options);
+}
 
 int main(string[] args) {
 	const ptrdiff_t doubleSlash = args.countUntil("--");
@@ -17,8 +34,8 @@ int main(string[] args) {
 
 	switch(noUserOptions[1]) {
 		case "convert":
-			import dud.convert : convert;
-			return convert(noUserOptions);
+			import dud.convert : ConvertOptions, convert;
+			return genericCommand!("convert", ConvertOptions, convert)(args);
 		default:
 			writefln("Operation '%s' is not supported", noUserOptions[1]);
 			return 1;
