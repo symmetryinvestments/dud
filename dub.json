@@ -2,6 +2,16 @@
     "authors": [
         "Robert burner Schadek"
     ],
+    "configurations": [
+	    {
+		    "name": "executable",
+		    "targetType": "executable"
+	    },
+	    {
+		    "name": "library",
+		    "targetType": "library"
+	    }
+    ],
     "copyright": "Copyright © 2019, Symmetry Investments",
     "dependencies": {
         "pkgdescription": {
@@ -14,5 +24,4 @@
     "description": "A dub replacement",
     "license": "LGPL3",
     "name": "dud",
-    "targetType": "executable"
 }
