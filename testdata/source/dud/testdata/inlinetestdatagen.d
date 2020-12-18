@@ -116,10 +116,14 @@ PackageVersion toPackageVersion(JSONValue j, string prefix = "") @trusted {
 			PackageDep pd;
 			pd.name = key;
 			if(value.type == JSONType.string) {
-				pd.ver = value.get!string().parseVersionRange();
+				string s = value.get!string();
+				if(s.startsWith("v")) {
+					continue;
+				}
+				pd.ver = s.parseVersionRange();
 				ret.pkgDeps ~= pd;
 			} else {
-				writefln("%s %s", key, value.toString());
+				writefln("dep %s %s", key, value.toString());
 			}
 		}
 	} else if(deps.type != JSONType.null_) {
@@ -138,7 +142,7 @@ PackageVersion toPackageVersion(JSONValue j, string prefix = "") @trusted {
 				td.ver = value.get!string().parseVersionRange();
 				ret.toolDeps ~= td;
 			} else {
-				writefln("%s %s", key, value.toString());
+				writefln("tool %s %s", key, value.toString());
 			}
 		}
 	} else if(toolChain.type != JSONType.null_) {
@@ -257,7 +261,11 @@ Package toPackage(JSONValue jv) {
 	auto versions = jv.getNested(["versions"]);
 	if(versions.type == JSONType.array) {
 		foreach(JSONValue value; versions.arrayNoRef()) {
-			ret.versions ~= value.toPackageVersion("packageDescription");
+			try {
+				ret.versions ~= value.toPackageVersion("packageDescription");
+			} catch(Exception e) {
+				writeln(e.toString());
+			}
 		}
 	}
 	return ret;
@@ -403,5 +411,4 @@ unittest {
 	}
 ]`);
 	Package[string] pkgs = toPackages(jv);
-	writeln(pkgs);
 }

@@ -7,11 +7,13 @@ import std.getopt;
 import std.file : readText;
 
 import dud.descriptiongetter.code;
+import dud.testdata.inlinetestdatagen;
 
 private struct Options {
 	bool getCodeDump;
 	string outFilename;
 	string inFilename;
+	string dOutFilename;
 }
 
 version(App):
@@ -23,8 +25,10 @@ void main(string[] args) {
 		"o|outFilename", "The filename of the output of the trimed dump",
 		&options.outFilename,
 		"i|inFilename", "In filename to a code.dlang.org dump.json file",
-		&options.inFilename
-		);
+		&options.inFilename,
+		"d|dOutFilename", "The filename of the file to write a D source file "
+			~ "repesentation of the inFilename too",
+		&options.dOutFilename);
 
 	if(helpWanted.helpWanted) {
 		defaultGetoptPrinter("CLI to handle the code.dlang.org api dump",
@@ -49,5 +53,10 @@ void main(string[] args) {
 		f.writeln(shorter.toPrettyString());
 	} else {
 		writeln(shorter.toPrettyString());
+	}
+
+	if(!options.dOutFilename.empty) {
+		//auto f = File(options.dOutFilename, "w");
+		writeln(toPackages(shorter));
 	}
 }
