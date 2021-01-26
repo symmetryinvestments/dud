@@ -568,8 +568,7 @@ enum SetRelation {
 	/// The sets have elements in common, but the first is not a superset of the
 	/// second.
 	///
-	/// This is also used when the first set is a superset of the first, but in
-	/// practice we don't need to distinguish that from overlapping sets.
+	/// This is also used when the first set is a superset of the second
 	overlapping
 }
 
