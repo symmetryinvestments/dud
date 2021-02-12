@@ -14,6 +14,7 @@ private struct Options {
 	string outFilename;
 	string inFilename;
 	string dOutFilename;
+	string dOutModuleName;
 }
 
 version(App):
@@ -28,7 +29,11 @@ void main(string[] args) {
 		&options.inFilename,
 		"d|dOutFilename", "The filename of the file to write a D source file "
 			~ "repesentation of the inFilename too",
-		&options.dOutFilename);
+		&options.dOutFilename,
+		"m|dOutModuleName", "The module name of the file "
+			~ "repesentation of the inFilename",
+		&options.dOutModuleName
+		);
 
 	if(helpWanted.helpWanted) {
 		defaultGetoptPrinter("CLI to handle the code.dlang.org api dump",
@@ -52,11 +57,12 @@ void main(string[] args) {
 		auto f = File(options.outFilename, "w");
 		f.writeln(shorter.toPrettyString());
 	} else {
-		writeln(shorter.toPrettyString());
+		//writeln(shorter.toPrettyString());
 	}
 
 	if(!options.dOutFilename.empty) {
-		//auto f = File(options.dOutFilename, "w");
-		writeln(toPackages(shorter));
+		auto f = File(options.dOutFilename, "w");
+		toDCode(f.lockingTextWriter(), options.dOutModuleName
+				, toPackages(shorter));
 	}
 }

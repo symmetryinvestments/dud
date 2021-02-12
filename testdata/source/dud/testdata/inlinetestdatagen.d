@@ -1,10 +1,12 @@
 module dud.testdata.inlinetestdatagen;
 
+@safe:
+
 import std.array : array, empty, front;
 import std.algorithm.searching : startsWith;
 import std.algorithm.iteration : filter;
 import std.exception : enforce;
-import std.format : format;
+import std.format : format, formattedWrite;
 import std.json;
 import std.stdio;
 
@@ -91,6 +93,176 @@ struct PackageVersion {
 
 	PackageVersion[] subPackages;
 	PackageVersion[] configurations;
+}
+
+void formIndent(Out, T...)(auto ref Out o, size_t indent, string form, T t) {
+	foreach(i; 0 .. indent) {
+		formattedWrite(o, "\t");
+	}
+	formattedWrite(o, form, t);
+}
+
+enum BranchOrSemVerMixin = q{
+struct BranchOrSemVer {
+	pure @safe:
+	import std.typecons : Nullable;
+	Nullable!SemVer sv;
+	string s;
+
+	bool opEquals(const(BranchOrSemVer) other) const nothrow pure {
+		return !this.sv.isNull() && !other.sv.isNull()
+			? this.sv.get() == other.sv.get()
+			: this.sv.isNull() && !other.sv.isNull()
+				? false
+				: !this.sv.isNull() && other.sv.isNull()
+					? false
+					: this.s == other.s;
+	}
+
+	size_t toHash() const nothrow @nogc pure {
+		return this.sv.isNull()
+			? this.sv.toHash()
+			: hashOf(this.s);
+	}
+
+	string toString() const pure {
+		return this.sv.isNull()
+			? this.s
+			: this.sv.toString();
+	}
+}
+
+BranchOrSemVer toBranchOrSemVer(T)(T s) pure @safe {
+	BranchOrSemVer ret;
+	static if(is(T == SemVer)) {
+		ret.sv = s;
+	} else {
+		ret.s = s;
+	}
+	return ret;
+}
+};
+
+unittest {
+	pragma(msg, BranchOrSemVerMixin);
+	mixin(BranchOrSemVerMixin);
+
+	bool[BranchOrSemVer] aa;
+
+	auto a = toBranchOrSemVer("hello");
+	auto b = toBranchOrSemVer("world");
+	auto c = toBranchOrSemVer(SemVer(1, 0, 0));
+	auto d = toBranchOrSemVer(SemVer(1, 1, 0));
+
+	auto arr = [a, b, c, d];
+
+	foreach(idx, it; arr) {
+		assert(it !in aa);
+		aa[it] = true;
+		assert(it in aa, it.toString());
+		foreach(jt; arr[idx + 1 .. $]) {
+			assert(jt !in aa, jt.toString());
+		}
+	}
+}
+
+string replaceInvalidName(string s) {
+	import std.array : replace;
+	s = s.replace("-", "_");
+	return s;
+}
+
+void toDCode(Out)(auto ref Out o, const string modName,Package[string] pvs) {
+	formattedWrite(o, "module %s;\n\n", modName);
+	formattedWrite(o,
+`import dud.pkgdescription;
+import dud.semver.semver;
+
+`);
+
+	formattedWrite(o, BranchOrSemVerMixin);
+	formattedWrite(o, "\n");
+	foreach(key, ref value; pvs) {
+		formattedWrite(o
+			, "void build%s(ref PackageDescription[string][BranchOrSemVer] result) {\n"
+			, replaceInvalidName(key));
+		foreach(pv; value.versions) {
+			toDCode(o, pv);
+		}
+		formattedWrite(o, "}\n\n");
+	}
+
+	formattedWrite(o,
+`PackageDescription[string][BranchOrSemVer] buildAll() {
+	PackageDescription[string][BranchOrSemVer] ret;
+
+`);
+	foreach(key, ref value; pvs) {
+		formIndent(o, 1, "build%s(ret);\n", replaceInvalidName(key));
+	}
+	formattedWrite(o, "\treturn ret;\n}\n");
+}
+
+void toDCode(Out)(auto ref Out o, PackageVersion vr , const string nested = "") {
+	const indent = nested == "" ? 0 : 1;
+
+	const name = nested == "" ? "pkg" : "pkg" ~ nested;
+
+	formIndent(o, 1 + indent, "{\n");
+	formIndent(o, 2 + indent, "auto %s = PackageDescription.init;\n", name);
+	formIndent(o, 2 + indent, "%s.name = \"%s\";\n", name, vr.name);
+	formIndent(o, 2 + indent, "%s.dependencies = [%s", name
+			, vr.pkgDeps.empty ? "" : "\n");
+	foreach(idx; 0 .. vr.pkgDeps.length) {
+		formIndent(o, 3 + indent, "%s makeDependency(\"%s\", "
+				, idx == 0 ? '[' : ',', vr.pkgDeps[idx].name);
+		toDCode(o, vr.pkgDeps[idx].ver);
+		formattedWrite(o, ")\n");
+	}
+	formIndent(o, vr.pkgDeps.empty ? 0 : 3 + indent, "];\n", vr.name);
+	foreach(t; vr.toolDeps) {
+		formIndent(o, 2 + indent
+				, "%s.toolchainRequirements[Toolchain.%s] = makeToolDep("
+				, name, t.name);
+		toDCode(o, t.ver);
+		formattedWrite(o, ");\n");
+	}
+
+	foreach(sP; vr.subPackages) {
+		toDCode(o, sP, "subPackages");
+	}
+
+	foreach(conf; vr.configurations) {
+		toDCode(o, conf, "configuration");
+	}
+
+	switch(nested) {
+		case "subPackages":
+			formIndent(o, 2 + indent, "pkg.subPackages ~= %s;\n", name);
+			break;
+		case "configuration":
+			formIndent(o, 2 + indent, "pkg.configuration[\"%s\"] ~= %s;\n"
+					, vr.name, name);
+			break;
+		default:
+			formIndent(o, 2 + indent
+					, "result[\"%s\"][toBranchOrSemVer(%s)] = %s;\n"
+					, vr.name
+					, vr.branchName.empty
+						? vr.ver.toStringD()
+						: format("\"%s\"", vr.branchName)
+					, name);
+	}
+
+	formIndent(o, 1 + indent, "}\n");
+}
+
+
+void toDCode(Out)(auto ref Out o, VersionRange vr) {
+	formattedWrite(o, "VersionRange(");
+	formattedWrite(o, "%s, Inclusive.%s, ", vr.low.toStringD(), vr.inclusiveLow);
+	formattedWrite(o, "%s, Inclusive.%s", vr.high.toStringD(), vr.inclusiveHigh);
+	formattedWrite(o, ")");
 }
 
 PackageVersion toPackageVersion(JSONValue j, string prefix = "") @trusted {
@@ -214,7 +386,6 @@ unittest {
     "version": "2.2.1"
 }`);
 	PackageVersion pv = toPackageVersion(jv, "packageDescription");
-	writeln(pv);
 }
 
 unittest {
@@ -246,7 +417,6 @@ unittest {
 	    "version": "1.0.1"
 }`);
 	PackageVersion pv = toPackageVersion(jv, "packageDescription");
-	writeln(pv);
 }
 
 struct Package {
@@ -264,7 +434,7 @@ Package toPackage(JSONValue jv) {
 			try {
 				ret.versions ~= value.toPackageVersion("packageDescription");
 			} catch(Exception e) {
-				writeln(e.toString());
+				() @trusted { writeln(e.toString()); }();
 			}
 		}
 	}
@@ -322,7 +492,6 @@ unittest {
         ]
     }`);
 	Package pv = toPackage(jv);
-	writeln(pv);
 }
 
 Package[string] toPackages(JSONValue jv) {
@@ -411,4 +580,8 @@ unittest {
 	}
 ]`);
 	Package[string] pkgs = toPackages(jv);
+	() @trusted { writeln(pkgs); }();
+	foreach(key, value; pkgs) {
+		() @trusted { toDCode(stdout.lockingTextWriter(), value.versions.front); }();
+	}
 }
