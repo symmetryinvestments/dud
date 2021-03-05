@@ -169,23 +169,38 @@ unittest {
 string replaceInvalidName(string s) {
 	import std.array : replace;
 	s = s.replace("-", "_");
+	s = s.replace("+", "_plus_");
+	s = s.replace(":", "_colon_");
+	s = s.replace(" ", "_space_");
+	s = s.replace(".", "_dot_");
 	return s;
 }
 
 void toDCode(Out)(auto ref Out o, const string modName,Package[string] pvs) {
 	formattedWrite(o, "module %s;\n\n", modName);
 	formattedWrite(o,
-`import dud.pkgdescription;
+`import std.typecons : nullable;
+import dud.pkgdescription;
 import dud.semver.semver;
+import dud.semver.semver;
+import dud.semver.versionrange;
 
+Dependency makeDependency(string name, VersionRange vr) {
+	Dependency ret;
+	ret.name = name;
+	ret.version_ = nullable(vr);
+	return ret;
+}
 `);
 
 	formattedWrite(o, BranchOrSemVerMixin);
 	formattedWrite(o, "\n");
+	size_t cnt;
 	foreach(key, ref value; pvs) {
 		formattedWrite(o
-			, "void build%s(ref PackageDescription[string][BranchOrSemVer] result) {\n"
-			, replaceInvalidName(key));
+			, "void build%s%s(ref PackageDescription[BranchOrSemVer][string] result) {\n"
+			, replaceInvalidName(key), cnt);
+		++cnt;
 		foreach(pv; value.versions) {
 			toDCode(o, pv);
 		}
@@ -193,12 +208,13 @@ import dud.semver.semver;
 	}
 
 	formattedWrite(o,
-`PackageDescription[string][BranchOrSemVer] buildAll() {
-	PackageDescription[string][BranchOrSemVer] ret;
+`PackageDescription[BranchOrSemVer][string] buildAll() {
+	PackageDescription[BranchOrSemVer][string] ret;
 
 `);
+	cnt = 0;
 	foreach(key, ref value; pvs) {
-		formIndent(o, 1, "build%s(ret);\n", replaceInvalidName(key));
+		formIndent(o, 1, "build%s%s(ret);\n", replaceInvalidName(key), cnt++);
 	}
 	formattedWrite(o, "\treturn ret;\n}\n");
 }
@@ -206,13 +222,15 @@ import dud.semver.semver;
 void toDCode(Out)(auto ref Out o, PackageVersion vr , const string nested = "") {
 	const indent = nested == "" ? 0 : 1;
 
-	const name = nested == "" ? "pkg" : "pkg" ~ nested;
+	const name = nested == ""
+		? "pkg"
+		: "pkg" ~ vr.name.replaceInvalidName() ~ nested;
 
 	formIndent(o, 1 + indent, "{\n");
 	formIndent(o, 2 + indent, "auto %s = PackageDescription.init;\n", name);
 	formIndent(o, 2 + indent, "%s.name = \"%s\";\n", name, vr.name);
-	formIndent(o, 2 + indent, "%s.dependencies = [%s", name
-			, vr.pkgDeps.empty ? "" : "\n");
+	formIndent(o, 2 + indent, "%s.dependencies = %s", name
+			, vr.pkgDeps.empty ? "[" : "\n");
 	foreach(idx; 0 .. vr.pkgDeps.length) {
 		formIndent(o, 3 + indent, "%s makeDependency(\"%s\", "
 				, idx == 0 ? '[' : ',', vr.pkgDeps[idx].name);
@@ -222,27 +240,38 @@ void toDCode(Out)(auto ref Out o, PackageVersion vr , const string nested = "") 
 	formIndent(o, vr.pkgDeps.empty ? 0 : 3 + indent, "];\n", vr.name);
 	foreach(t; vr.toolDeps) {
 		formIndent(o, 2 + indent
-				, "%s.toolchainRequirements[Toolchain.%s] = makeToolDep("
+				, "%s.toolchainRequirements[Toolchain.%s] = ToolchainRequirement("
+					~ "false, "
 				, name, t.name);
 		toDCode(o, t.ver);
 		formattedWrite(o, ");\n");
 	}
 
+	if(!vr.subPackages.empty) {
+		formIndent(o, 2 + indent, "// subpackages\n");
+	}
 	foreach(sP; vr.subPackages) {
 		toDCode(o, sP, "subPackages");
 	}
 
+	if(!vr.configurations.empty) {
+		formIndent(o, 2 + indent, "// configurations\n");
+	}
 	foreach(conf; vr.configurations) {
 		toDCode(o, conf, "configuration");
 	}
 
 	switch(nested) {
 		case "subPackages":
-			formIndent(o, 2 + indent, "pkg.subPackages ~= %s;\n", name);
+			formIndent(o, 2 + indent, "auto p = pathFromString(\"%s\");\n"
+					, name);
+			formIndent(o, 2 + indent
+					, "pkg.subPackages ~= SubPackage(p, nullable(%s));\n"
+					, name);
 			break;
 		case "configuration":
-			formIndent(o, 2 + indent, "pkg.configuration[\"%s\"] ~= %s;\n"
-					, vr.name, name);
+			formIndent(o, 2 + indent, "%s.configurations[\"%s\"] = %s;\n"
+					, name, vr.name, name);
 			break;
 		default:
 			formIndent(o, 2 + indent
