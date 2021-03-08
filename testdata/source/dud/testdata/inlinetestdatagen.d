@@ -210,12 +210,19 @@ Dependency makeDependency(string name, VersionRange vr) {
 	formattedWrite(o,
 `PackageDescription[BranchOrSemVer][string] buildAll() {
 	PackageDescription[BranchOrSemVer][string] ret;
-
-`);
+	foreach(it; [ `);
 	cnt = 0;
 	foreach(key, ref value; pvs) {
-		formIndent(o, 1, "build%s%s(ret);\n", replaceInvalidName(key), cnt++);
+		if(cnt) {
+			formIndent(o, 2, ", ");
+		}
+		formattedWrite(o, "&build%s%s%s", replaceInvalidName(key)
+				, cnt, cnt < pvs.length - 1 ? "\n" : "");
+		++cnt;
 	}
+	formattedWrite(o, "])\n\t{\n");
+	formIndent(o, 2, "it(ret);\n");
+	formIndent(o, 1, "}\n");
 	formattedWrite(o, "\treturn ret;\n}\n");
 }
 
