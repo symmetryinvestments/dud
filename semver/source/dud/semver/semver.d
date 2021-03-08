@@ -3,6 +3,8 @@ module dud.semver.semver;
 @safe:
 
 struct SemVer {
+	import std.array : empty;
+	import std.format : format;
 @safe:
 
 	uint major;
@@ -50,8 +52,6 @@ struct SemVer {
 	}
 
 	string toString() const @safe pure {
-		import std.array : appender, empty;
-		import std.format : format;
 		string ret = format("%s.%s.%s", this.major, this.minor, this.patch);
 		if(!this.preRelease.empty) {
 			ret ~= format("-%-(%s.%)", this.preRelease);
@@ -60,5 +60,10 @@ struct SemVer {
 			ret ~= format("+%-(%s.%)", this.buildIdentifier);
 		}
 		return ret;
+	}
+
+	string toStringD() const @safe pure {
+		return format("SemVer(%s, %s, %s, %s, %s)", this.major, this.minor
+			, this.patch, this.preRelease, this.buildIdentifier);
 	}
 }

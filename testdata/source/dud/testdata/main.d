@@ -7,11 +7,14 @@ import std.getopt;
 import std.file : readText;
 
 import dud.descriptiongetter.code;
+import dud.testdata.inlinetestdatagen;
 
 private struct Options {
 	bool getCodeDump;
 	string outFilename;
 	string inFilename;
+	string dOutFilename;
+	string dOutModuleName;
 }
 
 version(App):
@@ -23,7 +26,13 @@ void main(string[] args) {
 		"o|outFilename", "The filename of the output of the trimed dump",
 		&options.outFilename,
 		"i|inFilename", "In filename to a code.dlang.org dump.json file",
-		&options.inFilename
+		&options.inFilename,
+		"d|dOutFilename", "The filename of the file to write a D source file "
+			~ "repesentation of the inFilename too",
+		&options.dOutFilename,
+		"m|dOutModuleName", "The module name of the file "
+			~ "repesentation of the inFilename",
+		&options.dOutModuleName
 		);
 
 	if(helpWanted.helpWanted) {
@@ -48,6 +57,12 @@ void main(string[] args) {
 		auto f = File(options.outFilename, "w");
 		f.writeln(shorter.toPrettyString());
 	} else {
-		writeln(shorter.toPrettyString());
+		//writeln(shorter.toPrettyString());
+	}
+
+	if(!options.dOutFilename.empty) {
+		auto f = File(options.dOutFilename, "w");
+		toDCode(f.lockingTextWriter(), options.dOutModuleName
+				, toPackages(shorter));
 	}
 }

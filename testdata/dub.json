@@ -9,6 +9,10 @@
 		"descriptiongetter": {
 			"path": "../descriptiongetter",
 			"version": ">=0.0.0"
+		},
+		"semver": {
+			"path": "../semver",
+			"version": ">=0.0.0"
 		}
 	},
 	"configurations": [

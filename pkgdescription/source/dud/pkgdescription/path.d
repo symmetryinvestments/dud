@@ -12,6 +12,10 @@ struct Path {
 	PathPlatform[] platforms;
 }
 
+Path pathFromString(string s) {
+	return Path(PathPlatform(UnprocessedPath(s, [Platform.all])));
+}
+
 struct PathPlatform {
 	UnprocessedPath path;
 	Platform[] platforms;

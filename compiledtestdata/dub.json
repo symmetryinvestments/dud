@@ -1,0 +1,10 @@
+{
+	"dependencies": {
+		"pkgdescription" : {
+			"path": "../pkgdescription",
+			"version": ">=0.0.0"
+		}
+	},
+	"name": "compiledtestdata",
+	"targetType": "library"
+}
