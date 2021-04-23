@@ -18,7 +18,7 @@ import dud.pkgdescription;
 import dud.semver.semver;
 import dud.semver.versionrange;
 
-PackageDescriptionNoPlatform select(const(PackageDescription) pkg,
+PackageDescriptionNoPlatform select()(const(PackageDescription) pkg,
 		const(Platform[]) platform)
 {
 	return selectImpl(pkg, platform);
@@ -128,7 +128,7 @@ struct DependencyNoPlatform {
 	Nullable!bool default_;
 }
 
-PackageDescriptionNoPlatform selectImpl(const(PackageDescription) pkg,
+PackageDescriptionNoPlatform selectImpl()(const(PackageDescription) pkg,
 		const(Platform[]) platform)
 {
 	import dud.pkgdescription.helper : isMem;
@@ -252,7 +252,7 @@ BuildRequirement[] select(const(BuildRequirements) brs,
 // Dependencies
 //
 
-DependencyNoPlatform select(const(Dependency) sp) {
+DependencyNoPlatform select()(const(Dependency) sp) {
 	DependencyNoPlatform ret;
 	ret.name = sp.name;
 	ret.path = ddup(sp.path);
@@ -262,7 +262,7 @@ DependencyNoPlatform select(const(Dependency) sp) {
 	return ret;
 }
 
-DependencyNoPlatform[string] select(const(Dependency[]) deps,
+DependencyNoPlatform[string] select()(const(Dependency[]) deps,
 		const(Platform[]) platform)
 {
 	Dependency[][string] sorted;
@@ -290,7 +290,7 @@ DependencyNoPlatform[string] select(const(Dependency[]) deps,
 // SubPackage(s)
 //
 
-SubPackageNoPlatform select(const(SubPackage) sp, const(Platform[]) platform) {
+SubPackageNoPlatform select()(const(SubPackage) sp, const(Platform[]) platform) {
 	SubPackageNoPlatform ret;
 	if(!sp.inlinePkg.isNull()) {
 		ret.inlinePkg.opAssign(select(sp.inlinePkg.get(), platform));
@@ -300,7 +300,7 @@ SubPackageNoPlatform select(const(SubPackage) sp, const(Platform[]) platform) {
 	return ret;
 }
 
-SubPackageNoPlatform[] select(const(SubPackage[]) sps, const(Platform[]) platform)
+SubPackageNoPlatform[] select()(const(SubPackage[]) sps, const(Platform[]) platform)
 {
 	return sps.map!(sp => select(sp, platform)).array;
 
