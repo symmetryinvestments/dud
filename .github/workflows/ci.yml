@@ -23,7 +23,13 @@ jobs:
           - 'dmd-latest'
           - 'ldc-latest'
           - 'dmd-beta'
-          # - 'ldc-beta' # the tests crash
+		packages:
+		  - 'utils'
+		  - 'semver'
+		  - 'sdlang'
+		  - 'path'
+		  - 'exception'
+		  - 'pkgdescription'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -34,13 +40,11 @@ jobs:
       with:
         compiler: ${{ matrix.compiler }}
 
-    - name: Test
+    - name: Build CLI
       run: |
-        dub test
+        dub build
 
-  Skip:
-    if: "contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip CI 🚫
-        run: echo skip CI
+	- name: Run semver
+	  working-directory: ${{ matrix.packages }}
+	  run: |
+		dub test --compiler= ${{ matrix.compiler }}
