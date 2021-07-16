@@ -481,8 +481,14 @@ unittest {
 }
 
 unittest {
-	auto l = Lexer(q{`Hello
- World`});
+	string input;
+	version(Windows) {
+		input = "Hello\n World";
+	} else {
+		input = q{`Hello
+ World`};
+	}
+	auto l = Lexer(input);
 	test(l, TokenType.value, ValueType.str, "Hello\n World");
 	test(l, TokenType.eof);
 	assert(l.empty);
