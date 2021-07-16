@@ -416,7 +416,7 @@ void test(ref Lexer lex, TokenType tt) {
 
 void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
 	import std.traits : isFloatingPoint;
-	import std.math : approxEqual;
+	import std.math : isClose;
 
 	import dud.utils : floatToStringPure;
 	assert(!lex.empty);
@@ -427,7 +427,7 @@ void test(T)(ref Lexer lex, TokenType tt, ValueType vt, T value) {
 
 	T tValue = lex.front.value.get!T();
 	static if(isFloatingPoint!T) {
-		assert(approxEqual(value, tValue),
+		assert(isClose(value, tValue),
 			format("\nexp: %s\ngot: %s", floatToStringPure(value),
 				floatToStringPure(tValue)));
 	} else {
