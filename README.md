@@ -1,6 +1,6 @@
 # dud: A build and dependency tool for the D programming language
 
-![Build Status](https://github.com/symmetryinvestments/dud/actions/workflows/ci/badge.svg)
+![Build Status](https://github.com/symmetryinvestments/dud/actions/workflows/ci.yml/badge.svg)
 
 Dud is meant to be a reasonable drop in replacement for
 [dub](https://github.com/dlang/dub).
