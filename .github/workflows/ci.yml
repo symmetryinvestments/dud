@@ -23,13 +23,13 @@ jobs:
           - 'dmd-latest'
           - 'ldc-latest'
           - 'dmd-beta'
-		packages:
-		  - 'utils'
-		  - 'semver'
-		  - 'sdlang'
-		  - 'path'
-		  - 'exception'
-		  - 'pkgdescription'
+        packages:
+          - 'utils'
+          - 'semver'
+          - 'sdlang'
+          - 'path'
+          - 'exception'
+          - 'pkgdescription'
     steps:
     - uses: actions/checkout@v2
       with:
@@ -44,7 +44,7 @@ jobs:
       run: |
         dub build
 
-	- name: Run semver
-	  working-directory: ${{ matrix.packages }}
-	  run: |
-		dub test --compiler= ${{ matrix.compiler }}
+    - name: Run semver
+      working-directory: ${{ matrix.packages }}
+      run: |
+        dub test --compiler= ${{ matrix.compiler }}
