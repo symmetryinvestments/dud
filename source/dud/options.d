@@ -7,7 +7,7 @@ import std.traits : FieldNameTuple;
 
 @safe:
 
-private struct OptionUDA {
+struct OptionUDA {
 	string s;
 	string l;
 	string documentation;
@@ -108,61 +108,17 @@ void writeOptions(Out, Ops)(auto ref Out output,
 	writeOption(output, options.common);
 }
 
-OptionReturn!ConvertOptions getConvertOptions(ref string[] args) {
+OptionReturn!CommandOptions getGenericCommandOptions(CommandOptions)(ref string[] args) {
 	CommonOptions common;
 	getOptions(common, args);
 
-	ConvertOptions conv;
-	getOptions(conv, args);
+	CommandOptions command;
+	getOptions(command, args);
 
-	return OptionReturn!(ConvertOptions)(conv, common);
-}
-
-enum ConvertTargetFormat {
-	undefined,
-	sdl,
-	json
+	return OptionReturn!(CommandOptions)(command, common);
 }
 
 @OptionUDA("", "", `
-Command specific options
-========================
-
-dud convert to convert $input.(sdl,json) to $output.$format files.
-
-If no $input filename is given the current working directory is search
-for a file with name "dub.json", "dub.sdl", or "package.json".
-
-If no $output is given the output file name will be derived from $format.
-If also no $format is given an error is printed.
-
-The option $keepInput will prevent dud convert from deleting $input.
-The option $keepInput is false by default.
-
-dud will not override $output if it exists.
-To override a file with name $output pass $override to convert.
-`)
-struct ConvertOptions {
-	@OptionUDA("i", "input", "The filename of the dub file to convert")
-	string inputFilename;
-
-	@OptionUDA("o", "output", "The filename of the output")
-	string outputFilename;
-
-	@OptionUDA("f", "format", "The type to convert to")
-	ConvertTargetFormat outputTargetType;
-
-	@OptionUDA("k", "keepInput", "Keep the input file")
-	bool keepInput;
-
-	@OptionUDA("", "override", "Override output file if exists")
-	bool override_;
-}
-
-@OptionUDA("", "", `
-Common Options
-==============
-
 General options that apply to all functions of dud`)
 struct CommonOptions {
 	@OptionUDA("h", "help", "Display general or command specific help")
