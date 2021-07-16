@@ -483,7 +483,7 @@ unittest {
 unittest {
 	string input;
 	version(Windows) {
-		input = "Hello\n World";
+		input = "`Hello\n World`";
 	} else {
 		input = q{`Hello
  World`};
