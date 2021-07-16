@@ -256,9 +256,15 @@ DependencyNoPlatform select()(const(Dependency) sp) {
 	DependencyNoPlatform ret;
 	ret.name = sp.name;
 	ret.path = ddup(sp.path);
-	sp.version_.apply!(v => ret.version_ = nullable(ddup(v)));
-	sp.optional.apply!((bool op) => ret.optional = nullable(op));
-	sp.default_.apply!((bool def) => ret.default_ = nullable(def));
+	if(!sp.version_.isNull()) {
+		ret.version_ = ddup(sp.version_.get());
+	}
+	if(!sp.optional.isNull()) {
+		ret.optional = sp.optional.get();
+	}
+	if(!sp.default_.isNull()) {
+		ret.default_ = sp.default_.get();
+	}
 	return ret;
 }
 
