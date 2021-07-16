@@ -42,6 +42,14 @@ const(Confs) c56 = Confs([c5, c6]);
 
 const cs = buildConfs();
 
+unittest {
+	auto a = Confs([c5]);
+	auto b = Confs([c1]);
+
+	assert(allowsAny(c5, c1), format("\n%s\n%s", c5, c6));
+	testAllowAny(a, b, true);
+}
+
 Confs[] buildConfs() {
 	Confs[] ret;
 	const cs = [c1, c2, c3, c4, c5, c6];
@@ -134,7 +142,7 @@ unittest {
 			__FILE__, line);
 	}
 
-	testAllowAll(Confs.init, Confs.init, false);
+	testAllowAll(Confs.init, Confs.init, true);
 	testAllowAll(Confs([c1, c5]), Confs([c1]), true);
 	testAllowAll(Confs([c5]), Confs([c1, c5]), true);
 	testAllowAll(Confs([c5]), Confs([c1, c3]), true);
@@ -146,7 +154,7 @@ unittest {
 	testAllowAll(Confs([c2]), Confs([c1]), false);
 	testAllowAll(Confs([c2]), Confs([c3]), false);
 	testAllowAll(Confs([c2]), Confs([c4]), false);
-	testAllowAll(Confs([c2]), Confs([c5]), false);
+	testAllowAll(Confs([c2]), Confs([c5]), true);
 	testAllowAll(Confs([c2]), Confs([c6]), false);
 
 	foreach(it; cs) {

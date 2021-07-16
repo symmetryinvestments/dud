@@ -39,6 +39,7 @@ VerConGen verConGen(uint seed) {
 
 	VerConGen ret;
 	ret.rnd = Random(seed);
+	ret.popFront();
 	return ret;
 }
 
@@ -122,54 +123,68 @@ immutable vcA = VersionConfiguration(
 
 // allowsAll
 
-unittest {
-	assert(allowsAll(vc9, vc8));
-	assert(allowsAll(vc9, vc9));
-	assert(allowsAll(vc9, vcA));
+void testAllowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b
+		, const bool exp, int line = __LINE__)
+{
+	import core.exception : AssertError;
+	import std.exception : enforce;
+
+	const bool rslt = allowsAll(a, b);
+	enforce!AssertError(rslt == exp,
+		format("\na: %s\nb: %s\nexp: %s\nrsl: %s", a, b,
+			exp,
+			rslt)
+		, __FILE__, line);
 }
 
 unittest {
-	assert(!allowsAll(vc6, vc1));
-	assert(!allowsAll(vc6, vc2));
-	assert(!allowsAll(vc6, vc3));
-	assert(!allowsAll(vc6, vc4));
-	assert(!allowsAll(vc6, vc5));
-	assert(!allowsAll(vc6, vc6));
+	testAllowsAll(vc9, vc8, true);
+	testAllowsAll(vc9, vc9, true);
+	testAllowsAll(vc9, vcA, true);
+}
 
-	assert(!allowsAll(vc5, vc1));
-	assert(!allowsAll(vc5, vc2));
-	assert(!allowsAll(vc5, vc3));
-	assert(!allowsAll(vc5, vc4));
-	assert(!allowsAll(vc5, vc5));
-	assert(!allowsAll(vc5, vc6));
+unittest {
+	testAllowsAll(vc6, vc1, false);
+	testAllowsAll(vc6, vc2, false);
+	testAllowsAll(vc6, vc3, false);
+	testAllowsAll(vc6, vc4, false);
+	testAllowsAll(vc6, vc5, false);
+	testAllowsAll(vc6, vc6, true);
 
-	assert(!allowsAll(vc4, vc1));
-	assert(!allowsAll(vc4, vc2));
-	assert(!allowsAll(vc4, vc3));
-	assert(!allowsAll(vc4, vc4));
-	assert(!allowsAll(vc4, vc5));
-	assert(!allowsAll(vc4, vc6));
+	testAllowsAll(vc5, vc1, false);
+	testAllowsAll(vc5, vc2, false);
+	testAllowsAll(vc5, vc3, false);
+	testAllowsAll(vc5, vc4, false);
+	testAllowsAll(vc5, vc5, true);
+	testAllowsAll(vc5, vc6, false);
 
-	assert( allowsAll(vc3, vc1));
-	assert( allowsAll(vc3, vc2));
-	assert( allowsAll(vc3, vc3));
-	assert(!allowsAll(vc3, vc4));
-	assert(!allowsAll(vc3, vc5));
-	assert(!allowsAll(vc3, vc6));
+	testAllowsAll(vc4, vc1, false);
+	testAllowsAll(vc4, vc2, false);
+	testAllowsAll(vc4, vc3, false);
+	testAllowsAll(vc4, vc4, true);
+	testAllowsAll(vc4, vc5, false);
+	testAllowsAll(vc4, vc6, true);
 
-	assert(!allowsAll(vc2, vc1));
-	assert( allowsAll(vc2, vc2));
-	assert(!allowsAll(vc2, vc3));
-	assert(!allowsAll(vc2, vc4));
-	assert(!allowsAll(vc2, vc5));
-	assert(!allowsAll(vc2, vc6));
+	testAllowsAll(vc3, vc1, true);
+	testAllowsAll(vc3, vc2, true);
+	testAllowsAll(vc3, vc3, true);
+	testAllowsAll(vc3, vc4, false);
+	testAllowsAll(vc3, vc5, false);
+	testAllowsAll(vc3, vc6, false);
 
-	assert(!allowsAll(vc1, vc1));
-	assert( allowsAll(vc1, vc2));
-	assert(!allowsAll(vc1, vc3));
-	assert(!allowsAll(vc1, vc4));
-	assert(!allowsAll(vc1, vc5));
-	assert(!allowsAll(vc1, vc6));
+	testAllowsAll(vc2, vc1, true);
+	testAllowsAll(vc2, vc2, true);
+	testAllowsAll(vc2, vc3, true);
+	testAllowsAll(vc2, vc4, false);
+	testAllowsAll(vc2, vc5, false);
+	testAllowsAll(vc2, vc6, false);
+
+	testAllowsAll(vc1, vc1, true);
+	testAllowsAll(vc1, vc2, true);
+	testAllowsAll(vc1, vc3, true);
+	testAllowsAll(vc1, vc4, false);
+	testAllowsAll(vc1, vc5, false);
+	testAllowsAll(vc1, vc6, false);
 }
 
 // allowsAny
@@ -197,7 +212,7 @@ unittest {
 	assert( allowsAny(vc4, vc6));
 
 	assert( allowsAny(vc3, vc1));
-	assert(!allowsAny(vc3, vc2));
+	assert( allowsAny(vc3, vc2));
 	assert( allowsAny(vc3, vc3));
 	assert( allowsAny(vc3, vc4));
 	assert( allowsAny(vc3, vc5));
@@ -219,14 +234,38 @@ unittest {
 }
 
 unittest {
+	static import dud.semver.checks;
+
+	auto vc1 = VersionConfiguration(VersionUnion(
+			[parseVersionRange(">=2.5.0 <=2.5.0").get()]),
+			Confs([Conf("", IsPositive.yes)]));
+	auto vc2 = VersionConfiguration(VersionUnion(
+			[parseVersionRange(">=2.5.0 <=2.5.0").get()]),
+			Confs([Conf("", IsPositive.no)]));
+	assert(!allowsAll(vc1, vc2), format("\nvc1: %s\nvc2: %s", vc1, vc2));
+	assert(!allowsAny(vc1, vc2), format(
+			"\nvc1: %s\nvc2: %s\nversionunion %s\nconfs %s", vc1, vc2
+			, dud.semver.checks.allowsAny(vc1.ver, vc2.ver)
+			, dud.resolve.confs.allowsAny(vc1.conf, vc2.conf)
+			));
+}
+
+unittest {
 	import std.range : take;
+
+	static import dud.semver.checks;
+
 	auto r1 = verConGen(1337);
 	auto r2 = verConGen(1338);
 	foreach(it; take(r1, 1000)) {
 		foreach(jt; take(r2, 1000)) {
 			const al = allowsAll(it, jt);
 			if(al) {
-				assert(allowsAny(it, jt), format("\nit: %s\njt: %s", it, jt));
+				assert(allowsAny(it, jt), format(
+						"\nit: %s\njt: %s\nversionunion %s\nconfs %s", it, jt
+						, dud.semver.checks.allowsAny(it.ver, jt.ver)
+						, dud.resolve.confs.allowsAny(it.conf, jt.conf)
+						));
 			}
 		}
 	}
@@ -234,8 +273,6 @@ unittest {
 
 // intersectionOf
 
-
-/+
 void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
 		const(SetRelation) exp, int line = __LINE__)
 {
@@ -250,19 +287,19 @@ void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
 
 unittest {
 	auto v1 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v2 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v3 = VersionConfiguration(
-			VersionUnion([VersionRange(a, Inclusive.yes, c, Inclusive.no)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s20, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
 	auto v4 = VersionConfiguration(
-			VersionUnion([VersionRange(b, Inclusive.yes, c, Inclusive.no)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s20, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
 
@@ -327,4 +364,3 @@ unittest {
 	testRelation(v3, v12, SetRelation.subset);
 	testRelation(v12, v3, SetRelation.subset);
 }
-+/

@@ -90,17 +90,14 @@ bool allowsAll(const(Confs) a, const(Conf) b) {
 }
 
 bool allowsAll(const(Confs) a, const(Confs) b) {
-	return !a.confs.empty
-		&& !b.confs.empty
-		&& b.confs.all!(it => allowsAll(a, it));
+	return b.confs.all!(it => allowsAny(a, it));
 }
 
 bool allowsAny(const(Confs) a, const(Conf) b) {
-	return b.isPositive == IsPositive.yes
-		&& (b.conf == ""
-			|| a.confs.any!(
-				it => it.isPositive == IsPositive.yes && it.conf == b.conf)
-			);
+	static import dud.resolve.conf;
+	const t = a.confs.any!(it => dud.resolve.conf.allowsAny(it, b));
+	//debug writefln("%s %s %s", a, b, t);
+	return t;
 }
 
 bool allowsAny(const(Confs) a, const(Confs) b) {
@@ -136,4 +133,8 @@ Confs differenceOf(const(Confs) a, const(Confs) b) {
 
 	Conf[] ret = a.confs.map!(it => it.dup).array ~ neg;
 	return Confs(ret);
+}
+
+SetRelation relation(const(Confs) a, const(Confs) b) pure {
+	assert(false);
 }

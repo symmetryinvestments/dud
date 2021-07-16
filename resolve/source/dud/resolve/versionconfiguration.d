@@ -59,8 +59,6 @@ VersionConfiguration intersectionOf(const(VersionConfiguration) a,
 			dud.resolve.confs.intersectionOf(a.conf, b.conf));
 }
 
-__EOF__
-
 /** Return if a is a subset of b, or if a and b are disjoint, or
 if a and b overlap
 */
@@ -88,15 +86,4 @@ SetRelation relation(const(VersionConfiguration) a,
 	assert(ver == SetRelation.subset && conf == SetRelation.subset,
 			format("a: %s, b: %s", a, b));
 	return SetRelation.subset;
-}
-
-VersionConfiguration intersectionOf(const(VersionConfiguration) a,
-		const(VersionConfiguration) b)
-{
-	static import dud.semver.setoperation;
-	static import dud.resolve.confs;
-	return VersionConfiguration(
-			dud.semver.setoperation.intersectionOf(a.ver, b.ver),
-			dud.resolve.confs.intersectionOf(a.conf, b.conf)
-		);
 }
