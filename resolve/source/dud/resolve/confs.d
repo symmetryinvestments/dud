@@ -135,6 +135,15 @@ Confs differenceOf(const(Confs) a, const(Confs) b) {
 	return Confs(ret);
 }
 
+/** Return if a is a subset of b, or if a and b are disjoint, or
+if a and b overlap
+*/
 SetRelation relation(const(Confs) a, const(Confs) b) pure {
-	assert(false);
+	if(b.allowsAll(a)) {
+		return SetRelation.subset;
+	}
+	if(b.allowsAny(a)) {
+		return SetRelation.overlapping;
+	}
+	return SetRelation.disjoint;
 }

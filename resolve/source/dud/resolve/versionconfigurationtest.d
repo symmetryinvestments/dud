@@ -305,8 +305,9 @@ unittest {
 
 	testRelation(v1, v2, SetRelation.overlapping);
 	testRelation(v1, v3, SetRelation.subset);
-	testRelation(v2, v4, SetRelation.disjoint);
-	testRelation(v1, v4, SetRelation.overlapping);
+	testRelation(v2, v4, SetRelation.subset);
+	testRelation(v1, v4, SetRelation.subset);
+	testRelation(v4, v2, SetRelation.overlapping);
 }
 
 __EOF__
