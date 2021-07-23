@@ -257,8 +257,8 @@ unittest {
 
 	auto r1 = verConGen(1337);
 	auto r2 = verConGen(1338);
-	foreach(it; take(r1, 1000)) {
-		foreach(jt; take(r2, 1000)) {
+	foreach(it; take(r1, 500)) {
+		foreach(jt; take(r2, 500)) {
 			const al = allowsAll(it, jt);
 			if(al) {
 				assert(allowsAny(it, jt), format(
@@ -310,17 +310,15 @@ unittest {
 	testRelation(v4, v2, SetRelation.overlapping);
 }
 
-__EOF__
-
 unittest {
 	auto v1 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
 	auto v2 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.no)])
 			, Confs([Conf("", IsPositive.yes)]));
 	auto v3 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)])
 			, Confs([Conf("conf2", IsPositive.yes)]));
 
 	testRelation(v1, v1, SetRelation.subset);
@@ -348,10 +346,10 @@ unittest {
 
 unittest {
 	auto v1 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(a, Inclusive.yes, e, Inclusive.yes)])
+			VersionUnion([VersionRange(s10, Inclusive.yes, s30, Inclusive.yes)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
 	auto v2 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(b, Inclusive.yes, c, Inclusive.no)])
+			VersionUnion([VersionRange(s15, Inclusive.yes, s20, Inclusive.no)])
 			, Confs([Conf("", IsPositive.yes)]));
 
 	auto v12 = intersectionOf(v1, v2);
@@ -360,7 +358,7 @@ unittest {
 	testRelation(v2, v12, SetRelation.overlapping);
 
 	auto v3 = VersionConfigurationToolchain(
-			VersionUnion([VersionRange(d, Inclusive.yes, e, Inclusive.no)])
+			VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.no)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
 	testRelation(v3, v12, SetRelation.subset);
 	testRelation(v12, v3, SetRelation.subset);

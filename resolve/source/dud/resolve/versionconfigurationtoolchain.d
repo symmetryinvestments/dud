@@ -35,22 +35,24 @@ VersionConfigurationToolchain dup(const(VersionConfigurationToolchain) old) {
 VersionConfigurationToolchain invert(const(VersionConfigurationToolchain) conf) {
 	static import dud.resolve.confs;
 	return VersionConfigurationToolchain(
-			dud.semver.setoperation.invert(conf.ver),
-			conf.conf.invert());
+			dud.semver.setoperation.invert(conf.ver)
+			, conf.conf.invert());
 }
 
 bool allowsAny(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b) {
 	static import dud.resolve.confs;
 	static import dud.semver.checks;
 	return dud.semver.checks.allowsAny(a.ver, b.ver)
-		&& dud.resolve.confs.allowsAny(a.conf, b.conf);
+		&& dud.resolve.confs.allowsAny(a.conf, b.conf)
+		&& dud.resolve.toolchain.allowsAny(a.toolchains, b.toolchains);
 }
 
 bool allowsAll(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b) {
 	static import dud.resolve.confs;
 	static import dud.semver.checks;
 	return dud.semver.checks.allowsAll(a.ver, b.ver)
-		&& dud.resolve.confs.allowsAll(a.conf, b.conf);
+		&& dud.resolve.confs.allowsAll(a.conf, b.conf)
+		&& dud.resolve.toolchain.allowsAll(a.toolchains, b.toolchains);
 }
 
 VersionConfigurationToolchain intersectionOf(const(VersionConfigurationToolchain) a,
@@ -59,8 +61,9 @@ VersionConfigurationToolchain intersectionOf(const(VersionConfigurationToolchain
 	static import dud.resolve.confs;
 	static import dud.semver.setoperation;
 	return VersionConfigurationToolchain(
-			dud.semver.setoperation.intersectionOf(a.ver, b.ver),
-			dud.resolve.confs.intersectionOf(a.conf, b.conf));
+			dud.semver.setoperation.intersectionOf(a.ver, b.ver)
+			, dud.resolve.confs.intersectionOf(a.conf, b.conf)
+			, dud.resolve.toolchain.intersectionOf(a.toolchains, b.toolchains));
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or
