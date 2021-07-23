@@ -1,4 +1,4 @@
-module dud.resolve.versionconfiguration;
+module dud.resolve.versionconfigurationtoolchain;
 
 import std.array : empty;
 import std.stdio;
@@ -18,43 +18,43 @@ import dud.resolve.positive;
 
 /** The algebraic datatype that stores a version range and a configuration
 */
-struct VersionConfiguration {
+struct VersionConfigurationToolchain {
 @safe pure:
 	VersionUnion ver;
 	Confs conf;
 }
 
-VersionConfiguration dup(const(VersionConfiguration) old) {
-	return VersionConfiguration(old.ver.dup, old.conf.dup);
+VersionConfigurationToolchain dup(const(VersionConfigurationToolchain) old) {
+	return VersionConfigurationToolchain(old.ver.dup, old.conf.dup);
 }
 
-VersionConfiguration invert(const(VersionConfiguration) conf) {
+VersionConfigurationToolchain invert(const(VersionConfigurationToolchain) conf) {
 	static import dud.resolve.confs;
-	return VersionConfiguration(
+	return VersionConfigurationToolchain(
 			dud.semver.setoperation.invert(conf.ver),
 			conf.conf.invert());
 }
 
-bool allowsAny(const(VersionConfiguration) a, const(VersionConfiguration) b) {
+bool allowsAny(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b) {
 	static import dud.resolve.confs;
 	static import dud.semver.checks;
 	return dud.semver.checks.allowsAny(a.ver, b.ver)
 		&& dud.resolve.confs.allowsAny(a.conf, b.conf);
 }
 
-bool allowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b) {
+bool allowsAll(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b) {
 	static import dud.resolve.confs;
 	static import dud.semver.checks;
 	return dud.semver.checks.allowsAll(a.ver, b.ver)
 		&& dud.resolve.confs.allowsAll(a.conf, b.conf);
 }
 
-VersionConfiguration intersectionOf(const(VersionConfiguration) a,
-		const(VersionConfiguration) b)
+VersionConfigurationToolchain intersectionOf(const(VersionConfigurationToolchain) a,
+		const(VersionConfigurationToolchain) b)
 {
 	static import dud.resolve.confs;
 	static import dud.semver.setoperation;
-	return VersionConfiguration(
+	return VersionConfigurationToolchain(
 			dud.semver.setoperation.intersectionOf(a.ver, b.ver),
 			dud.resolve.confs.intersectionOf(a.conf, b.conf));
 }
@@ -62,8 +62,8 @@ VersionConfiguration intersectionOf(const(VersionConfiguration) a,
 /** Return if a is a subset of b, or if a and b are disjoint, or
 if a and b overlap
 */
-SetRelation relation(const(VersionConfiguration) a,
-		const(VersionConfiguration) b) pure
+SetRelation relation(const(VersionConfigurationToolchain) a,
+		const(VersionConfigurationToolchain) b) pure
 {
 	static import dud.resolve.confs;
 	const SetRelation ver = allowsAll(b.ver, a.ver)

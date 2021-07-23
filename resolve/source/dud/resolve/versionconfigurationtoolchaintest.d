@@ -1,8 +1,8 @@
-module dud.resolve.versionconfigurationtest;
+module dud.resolve.versionconfigurationtoolchaintest;
 
 @safe pure:
 
-import dud.resolve.versionconfiguration;
+import dud.resolve.versionconfigurationtoolchain;
 import dud.resolve.conf;
 import dud.resolve.confs;
 import dud.resolve.positive;
@@ -52,7 +52,7 @@ struct VerConGen {
 	Random rnd;
 
 	bool empty;
-	VersionConfiguration front;
+	VersionConfigurationToolchain front;
 
 	VersionRange newVersionRange() {
 		const sl = uniform(0, allS.length - 1, this.rnd);
@@ -74,56 +74,56 @@ struct VerConGen {
 
 		const vrs = iota(vrC).map!(it => newVersionRange()).array;
 
-		this.front = VersionConfiguration(
+		this.front = VersionConfigurationToolchain(
 			vrs.VersionUnion,
 			allC.randomCover(this.rnd).take(cl).array.Confs);
 
 	}
 }
 
-immutable vc1 = VersionConfiguration(
+immutable vc1 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
 		Confs([c1, c3]));
 
-immutable vc2 = VersionConfiguration(
+immutable vc2 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
 		Confs([c3]));
 
-immutable vc3 = VersionConfiguration(
+immutable vc3 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s15, Inclusive.yes, s25, Inclusive.yes)]),
 		Confs([c1]));
 
-immutable vc4 = VersionConfiguration(
+immutable vc4 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s20, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c1, c3]));
 
-immutable vc5 = VersionConfiguration(
+immutable vc5 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)]),
 		Confs([c1, c3]));
 
-immutable vc6 = VersionConfiguration(
+immutable vc6 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c1, c3]));
 
-immutable vc7 = VersionConfiguration(
+immutable vc7 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c1, c4]));
 
-immutable vc8 = VersionConfiguration(
+immutable vc8 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c3]));
 
-immutable vc9 = VersionConfiguration(
+immutable vc9 = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c1]));
 
-immutable vcA = VersionConfiguration(
+immutable vcA = VersionConfigurationToolchain(
 		VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.yes)]),
 		Confs([c5]));
 
 // allowsAll
 
-void testAllowsAll(const(VersionConfiguration) a, const(VersionConfiguration) b
+void testAllowsAll(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b
 		, const bool exp, int line = __LINE__)
 {
 	import core.exception : AssertError;
@@ -236,10 +236,10 @@ unittest {
 unittest {
 	static import dud.semver.checks;
 
-	auto vc1 = VersionConfiguration(VersionUnion(
+	auto vc1 = VersionConfigurationToolchain(VersionUnion(
 			[parseVersionRange(">=2.5.0 <=2.5.0").get()]),
 			Confs([Conf("", IsPositive.yes)]));
-	auto vc2 = VersionConfiguration(VersionUnion(
+	auto vc2 = VersionConfigurationToolchain(VersionUnion(
 			[parseVersionRange(">=2.5.0 <=2.5.0").get()]),
 			Confs([Conf("", IsPositive.no)]));
 	assert(!allowsAll(vc1, vc2), format("\nvc1: %s\nvc2: %s", vc1, vc2));
@@ -273,7 +273,7 @@ unittest {
 
 // intersectionOf
 
-void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
+void testRelation(const(VersionConfigurationToolchain) a, const(VersionConfigurationToolchain) b,
 		const(SetRelation) exp, int line = __LINE__)
 {
 	import std.exception : enforce;
@@ -286,19 +286,19 @@ void testRelation(const(VersionConfiguration) a, const(VersionConfiguration) b,
 }
 
 unittest {
-	auto v1 = VersionConfiguration(
+	auto v1 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.yes)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
-	auto v2 = VersionConfiguration(
+	auto v2 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s10, Inclusive.yes, s15, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
-	auto v3 = VersionConfiguration(
+	auto v3 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s10, Inclusive.yes, s20, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
-	auto v4 = VersionConfiguration(
+	auto v4 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s10, Inclusive.yes, s20, Inclusive.no)])
 				, Confs([Conf("", IsPositive.yes)])
 			);
@@ -313,13 +313,13 @@ unittest {
 __EOF__
 
 unittest {
-	auto v1 = VersionConfiguration(
+	auto v1 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
-	auto v2 = VersionConfiguration(
+	auto v2 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.no)])
 			, Confs([Conf("", IsPositive.yes)]));
-	auto v3 = VersionConfiguration(
+	auto v3 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(a, Inclusive.yes, b, Inclusive.yes)])
 			, Confs([Conf("conf2", IsPositive.yes)]));
 
@@ -337,7 +337,7 @@ unittest {
 }
 
 unittest {
-	auto v1 = VersionConfiguration(
+	auto v1 = VersionConfigurationToolchain(
 			VersionUnion([ parseVersionRange(">=1.0.0").get() ])
 			, Confs([Conf("", IsPositive.yes)])
 		);
@@ -347,10 +347,10 @@ unittest {
 }
 
 unittest {
-	auto v1 = VersionConfiguration(
+	auto v1 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(a, Inclusive.yes, e, Inclusive.yes)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
-	auto v2 = VersionConfiguration(
+	auto v2 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(b, Inclusive.yes, c, Inclusive.no)])
 			, Confs([Conf("", IsPositive.yes)]));
 
@@ -359,7 +359,7 @@ unittest {
 	testRelation(v1, v12, SetRelation.overlapping);
 	testRelation(v2, v12, SetRelation.overlapping);
 
-	auto v3 = VersionConfiguration(
+	auto v3 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(d, Inclusive.yes, e, Inclusive.no)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
 	testRelation(v3, v12, SetRelation.subset);
