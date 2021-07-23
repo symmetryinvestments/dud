@@ -1,6 +1,7 @@
 module dud.resolve.versionconfigurationtoolchain;
 
-import std.array : empty;
+import std.algorithm.iteration : map;
+import std.array : array, empty;
 import std.stdio;
 import std.exception : enforce;
 import std.array : empty;
@@ -13,6 +14,7 @@ import dud.semver.versionunion;
 static import dud.semver.setoperation;
 import dud.resolve.confs : Confs;
 import dud.resolve.positive;
+import dud.resolve.toolchain;
 
 @safe pure:
 
@@ -22,10 +24,12 @@ struct VersionConfigurationToolchain {
 @safe pure:
 	VersionUnion ver;
 	Confs conf;
+	ToolchainVersionUnion[] toolchains;
 }
 
 VersionConfigurationToolchain dup(const(VersionConfigurationToolchain) old) {
-	return VersionConfigurationToolchain(old.ver.dup, old.conf.dup);
+	return VersionConfigurationToolchain(old.ver.dup(), old.conf.dup()
+			, old.toolchains.map!(it => dud.resolve.toolchain.dup(it)).array);
 }
 
 VersionConfigurationToolchain invert(const(VersionConfigurationToolchain) conf) {
