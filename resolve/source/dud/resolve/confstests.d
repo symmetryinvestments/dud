@@ -19,6 +19,7 @@ const c3 = Conf("bar", IsPositive.yes);
 const c4 = Conf("bar", IsPositive.no);
 const c5 = Conf("", IsPositive.yes);
 const c6 = Conf("", IsPositive.no);
+const c7 = Conf("conf1", IsPositive.yes);
 
 const(Confs) c12 = Confs([c1, c2]);
 const(Confs) c13 = Confs([c1, c3]);
@@ -271,6 +272,19 @@ unittest {
 }
 
 // intersectionOf
+
+void testInter(const(Conf) a, const(Conf) b, const(Confs) exp,
+		int line = __LINE__)
+{
+	const inter = intersectionOf(a, b);
+	enforce!AssertError(inter == exp, format(
+			"\na: %s\nb: %s\nint: %s\nexp: %s", a, b, inter, exp),
+			__FILE__, line);
+}
+
+unittest {
+	testInter(c7, c6, Confs([c6]));
+}
 
 void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
 		int line = __LINE__)

@@ -356,6 +356,8 @@ unittest {
 	debug writeln(v1);
 	debug writeln(v2);
 	debug writeln(v12);
+	assert(v12.conf == Confs([Conf("conf1", IsPositive.yes)])
+			, format("%s", v12.conf));
 	testRelation(v1, v12, SetRelation.overlapping);
 	testRelation(v2, v12, SetRelation.overlapping);
 

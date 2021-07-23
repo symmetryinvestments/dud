@@ -104,8 +104,11 @@ bool allowsAny(const(Confs) a, const(Confs) b) {
 	return b.confs.any!(it => allowsAny(a, it));
 }
 
+// TODO this one is having some problems
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
-	Conf[] allNeg = chain(a.confs, b.confs)
+	import std.algorithm.setops : cartesianProduct;
+	import std.algorithm.iteration : joiner;
+	/*Conf[] allNeg = chain(a.confs, b.confs)
 		.filter!(it => it.isPositive == IsPositive.no)
 		.map!(it => it.dup())
 		.array;
@@ -121,6 +124,15 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	Conf[] comb = allNeg ~ inBoth;
 
 	Confs ret = Confs(comb.empty ? [Conf("", IsPositive.no)] : comb);
+	return ret;
+	*/
+	Confs ret;
+	cartesianProduct(a.confs, b.confs)
+		.map!(it => dud.resolve.conf.intersectionOf(it[0], it[1]))
+		.map!(it => it.confs)
+		.joiner
+		.each!(it => ret.insert(it));
+
 	return ret;
 }
 
