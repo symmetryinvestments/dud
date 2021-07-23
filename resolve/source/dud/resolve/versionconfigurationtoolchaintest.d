@@ -353,6 +353,8 @@ unittest {
 			, Confs([Conf("", IsPositive.yes)]));
 
 	auto v12 = intersectionOf(v1, v2);
+	debug writeln(v1);
+	debug writeln(v2);
 	debug writeln(v12);
 	testRelation(v1, v12, SetRelation.overlapping);
 	testRelation(v2, v12, SetRelation.overlapping);

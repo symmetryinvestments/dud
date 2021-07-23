@@ -80,6 +80,7 @@ SetRelation relation(const(VersionConfigurationToolchain) a,
 			: SetRelation.disjoint;
 
 	const SetRelation conf = dud.resolve.confs.relation(a.conf, b.conf);
+	debug writefln("ver %s, conf %s", ver, conf);
 
 	//debug writefln("ver %s, conf %s", ver, conf);
 	if(ver == SetRelation.disjoint || conf == SetRelation.disjoint) {
