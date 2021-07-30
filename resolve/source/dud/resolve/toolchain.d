@@ -135,3 +135,18 @@ SetRelation relation(const(ToolchainVersionUnion) a
 			? SetRelation.overlapping
 			: SetRelation.disjoint;
 }
+
+SetRelation relation(const(ToolchainVersionUnion)[] as
+		, const(ToolchainVersionUnion)[] bs)
+{
+	import std.algorithm.iteration : reduce;
+	import std.algorithm.comparison : min;
+
+	return reduce!((a, b) => min(a, b))(SetRelation.overlapping,
+		as.map!(a => {
+			auto b = bs.find!(it => it.tool == a.tool);
+			return b.empty
+				? SetRelation.subset
+				: relation(a, b.front);
+		}()));
+}

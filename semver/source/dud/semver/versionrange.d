@@ -557,19 +557,19 @@ pure unittest {
 	}
 }
 
-enum SetRelation {
+enum SetRelation : int {
 	/// The second set contains all elements of the first, as well as possibly
 	/// more.
-	subset,
+	subset = 0,
 
 	/// Neither set contains any elements of the other.
-	disjoint,
+	disjoint = 1,
 
 	/// The sets have elements in common, but the first is not a superset of the
 	/// second.
 	///
 	/// This is also used when the first set is a superset of the second
-	overlapping
+	overlapping = 2
 }
 
 /** Tests the relation between a and b.
