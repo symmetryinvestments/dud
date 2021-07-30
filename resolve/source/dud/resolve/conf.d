@@ -2,6 +2,7 @@ module dud.resolve.conf;
 
 import std.array : empty;
 import std.typecons : Flag;
+import std.stdio;
 import std.format : format;
 
 import dud.resolve.positive;
@@ -49,13 +50,7 @@ struct Conf {
 }
 
 Conf invert(const(Conf) c) {
-	// If no configuration is selected aka
-	// c.conf.empty && c.isPositive == IsPositive.yes what does it even mean
-	// to invert that selection.
-	// Currently, the answer is that it is a no op
-	return c.conf.empty && c.isPositive == IsPositive.yes
-		? Conf("", IsPositive.yes)
-		: Conf(c.conf, cast(IsPositive)!c.isPositive);
+	return Conf(c.conf, cast(IsPositive)!c.isPositive);
 }
 
 bool allowsAny(const(Conf) a, const(Conf) b) {
@@ -94,36 +89,45 @@ Confs intersectionOf(const(Conf) a, const(Conf) b) {
 	if((a.isPositive == IsPositive.no && a.conf.empty)
 		|| (b.isPositive == IsPositive.no && b.conf.empty))
 	{
+		debug writeln(__LINE__);
 		return Confs([Conf("", IsPositive.no)]);
 	}
 
-	const bool aEqB = a.conf == b.conf;
-
-	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.yes) {
-		return Confs([a.conf.empty && b.conf.empty
-			? Conf("", IsPositive.yes)
-			: !a.conf.empty && !b.conf.empty
-				? Conf(aEqB ? a.conf : "", cast(IsPositive)aEqB)
-				: !a.conf.empty && b.conf.empty
-					? Conf(a.conf, IsPositive.yes)
-					: Conf(b.conf, IsPositive.yes)]);
+	if(a.isPositive == IsPositive.yes && a.conf.empty) {
+		debug writeln(__LINE__);
+		return b.isPositive == IsPositive.no
+			? Confs([a, Conf(b.conf, b.isPositive)])
+			: Confs([Conf(b.conf, b.isPositive)]);
 	}
 
-	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.no) {
-		return aEqB
-			? Confs([a.dup()])
-			: Confs([a.dup(), b.dup()]);
+	if(b.isPositive == IsPositive.yes && b.conf.empty) {
+		debug writeln(__LINE__);
+		return a.isPositive == IsPositive.no
+			? Confs([b, Conf(a.conf, a.isPositive)])
+			: Confs([Conf(a.conf, a.isPositive)]);
 	}
 
-	assert(a.isPositive != b.isPositive);
-	return aEqB
-		? Confs([Conf("", IsPositive.no)])
-		: Confs([a.dup(), b.dup()]);
+	/*
+	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.yes
+			&& a.conf == b.conf)
+	{
+		debug writeln(__LINE__);
+		return Confs([Conf(a.conf, IsPositive.yes)]);
+	}
+	*/
+	if(a == b) {
+		debug writeln(__LINE__);
+		return Confs([Conf(a.conf, a.isPositive)]);
+	}
+
+	debug writeln(__LINE__);
+	return Confs([]);
 }
 
 Confs differenceOf(const(Conf) a, const(Conf) b) {
-	Conf inv = invert(b);
-	return intersectionOf(a, inv);
+	return a == b
+		? Confs([])
+		: Confs([a]);
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or

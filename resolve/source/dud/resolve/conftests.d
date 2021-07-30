@@ -48,19 +48,19 @@ void testDifference(const(Conf) a, const(Conf) b, const(Confs) exp,
 //
 
 unittest {
-	testDifference(c1, c1, Confs([c6]));
+	testDifference(c1, c1, Confs([]));
 	testDifference(c1, c2, Confs([c1]));
-	testDifference(c1, c3, Confs([c1, c4]));
-	testDifference(c1, c4, Confs([c6]));
+	testDifference(c1, c3, Confs([c1]));
+	testDifference(c1, c4, Confs([c1]));
 	testDifference(c1, c5, Confs([c1]));
 	testDifference(c1, c6, Confs([c1]));
 
 	testDifference(c2, c1, Confs([c2]));
-	testDifference(c2, c2, Confs([c6]));
-	testDifference(c2, c3, Confs([c2, c4]));
-	testDifference(c2, c4, Confs([c2, c3]));
-	testDifference(c2, c5, Confs([c2, c5]));
-	testDifference(c2, c6, Confs([c2, c5]));
+	testDifference(c2, c2, Confs([]));
+	testDifference(c2, c3, Confs([c2]));
+	testDifference(c2, c4, Confs([c2]));
+	testDifference(c2, c5, Confs([c2]));
+	testDifference(c2, c6, Confs([c2]));
 }
 
 //
@@ -136,31 +136,31 @@ unittest {
 	testIntersection(c5, c5, Confs([c5]));
 	testIntersection(c5, c6, Confs([c6]));
 
-	testIntersection(c4, c1, Confs([c1, c4]));
-	testIntersection(c4, c2, Confs([c4, c2]));
-	testIntersection(c4, c3, Confs([c6]));
+	testIntersection(c4, c1, Confs([]));
+	testIntersection(c4, c2, Confs([]));
+	testIntersection(c4, c3, Confs([]));
 	testIntersection(c4, c4, Confs([c4]));
 	testIntersection(c4, c5, Confs([c4, c5]));
 	testIntersection(c4, c6, Confs([c6]));
 
-	testIntersection(c3, c1, Confs([c6]));
-	testIntersection(c3, c2, Confs([c2, c3]));
+	testIntersection(c3, c1, Confs([]));
+	testIntersection(c3, c2, Confs([]));
 	testIntersection(c3, c3, Confs([c3]));
-	testIntersection(c3, c4, Confs([c6]));
+	testIntersection(c3, c4, Confs([]));
 	testIntersection(c3, c5, Confs([c3]));
 	testIntersection(c3, c6, Confs([c6]));
 
-	testIntersection(c2, c1, Confs([c6]));
+	testIntersection(c2, c1, Confs([]));
 	testIntersection(c2, c2, Confs([c2]));
-	testIntersection(c2, c3, Confs([c2, c3]));
-	testIntersection(c2, c4, Confs([c2, c4]));
+	testIntersection(c2, c3, Confs([]));
+	testIntersection(c2, c4, Confs([]));
 	testIntersection(c2, c5, Confs([c2, c5]));
 	testIntersection(c2, c6, Confs([c6]));
 
 	testIntersection(c1, c1, Confs([c1]));
-	testIntersection(c1, c2, Confs([c6]));
-	testIntersection(c1, c3, Confs([c6]));
-	testIntersection(c1, c4, Confs([c1, c4]));
+	testIntersection(c1, c2, Confs([]));
+	testIntersection(c1, c3, Confs([]));
+	testIntersection(c1, c4, Confs([]));
 	testIntersection(c1, c5, Confs([c1]));
 	testIntersection(c1, c6, Confs([c6]));
 }
@@ -169,13 +169,21 @@ unittest {
 // invert
 //
 
+void testInvert(const(Conf) inp, const(Conf) exp, const int line = __LINE__) {
+	import std.exception : enforce;
+
+	const(Conf) inv = invert(inp);
+	enforce!AssertError(inv == exp
+			, format("\ninp %s\ninv %s\nexp %s", inp, inv, exp), __FILE__, line);
+}
+
 unittest {
-	assert(invert(c1) == c2);
-	assert(invert(c2) == c1);
-	assert(invert(c3) == c4);
-	assert(invert(c4) == c3);
-	assert(invert(c5) == c5);
-	assert(invert(c6) == c5);
+	testInvert(c1, c2);
+	testInvert(c2, c1);
+	testInvert(c3, c4);
+	testInvert(c4, c3);
+	testInvert(c5, c6);
+	testInvert(c6, c5);
 }
 
 //

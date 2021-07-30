@@ -1,10 +1,11 @@
 module dud.resolve.confstests;
 
-import std.format : format;
+import core.exception : AssertError;
 import std.algorithm.iteration : map, joiner, filter;
 import std.algorithm.searching : canFind;
 import std.exception : enforce;
-import core.exception : AssertError;
+import std.format : format;
+import std.stdio;
 
 import dud.resolve.conf;
 import dud.resolve.confs;
@@ -41,7 +42,11 @@ const(Confs) c46 = Confs([c4, c6]);
 
 const(Confs) c56 = Confs([c5, c6]);
 
-const cs = buildConfs();
+Confs[] cs;
+
+static this() {
+	cs = buildConfs();
+}
 
 unittest {
 	auto a = Confs([c5]);
@@ -57,20 +62,18 @@ Confs[] buildConfs() {
 	foreach(it; cs) {
 		foreach(jt; cs) {
 			foreach(kt; cs) {
-				ret ~= Confs([it, jt, kt]);
+				auto tmp = Confs([it, jt, kt]);
+				if(tmp == Confs.init) {
+					writefln("\n%s\n%s\n%s", it, jt, kt);
+					continue;
+				}
+				Confs d = tmp.dup();
+				assert(d == tmp, format("\nold: %s\nnew: %s", tmp, d));
+				ret ~= tmp;
 			}
 		}
 	}
 	return ret;
-}
-
-// testing the test data
-unittest {
-	foreach(idx, it; cs) {
-		assert(it != Confs.init, format("%s", idx));
-		Confs d = it.dup();
-		assert(d == it, format("idx: %s\nold: %s\nnew: %s", idx, it, d));
-	}
 }
 
 // invert
@@ -78,26 +81,26 @@ unittest {
 unittest {
 	void testInvert(const(Confs) a, const(Confs) exp, int line = __LINE__) {
 		const inv = a.invert();
-		enforce!AssertError(inv == exp, format("\ninp: %s\nexp: %s\nrst: %s", a,
+		enforce!AssertError(inv == exp, format("\n  a: %s\nexp: %s\nrst: %s", a,
 				exp, inv), __FILE__, line);
 	}
 
-	testInvert(c12, Confs([c1]));
+	testInvert(c12, Confs([]));
 	testInvert(c13, c24);
 	testInvert(c14, c23);
-	testInvert(c15, c25); // c5 is special
+	testInvert(c15, Confs([c6])); // c5 is special
 	testInvert(c16, Confs([c5])); // c6 makes everything false
 
 	testInvert(c23, c14);
 	testInvert(c24, c13);
-	testInvert(c25, c15);
+	testInvert(c25, Confs([c6]));
 	testInvert(c26, Confs([c5]));
 
-	testInvert(c34, Confs([c3]));
-	testInvert(c35, c45);
+	testInvert(c34, Confs([]));
+	testInvert(c35, Confs([c6]));
 	testInvert(c36, Confs([c5]));
 
-	testInvert(c45, c35);
+	testInvert(c45, Confs([c6]));
 	testInvert(c46, Confs([c5]));
 
 	testInvert(c56, Confs([c5]));
@@ -107,13 +110,6 @@ unittest {
 	const c = Confs([c1]).invert();
 	const e = Confs([c2]);
 	assert(c == e, format("\n%s\n%s", c, e));
-}
-
-unittest {
-	assert(c12 != Confs.init);
-	const nc12 = c12.invert();
-	assert(nc12.confs.length == 1, format("%s", nc12));
-	assert(nc12.confs[0] == c1);
 }
 
 // allowAll
@@ -147,8 +143,8 @@ unittest {
 	testAllowAll(Confs([c1, c5]), Confs([c1]), true);
 	testAllowAll(Confs([c5]), Confs([c1, c5]), true);
 	testAllowAll(Confs([c5]), Confs([c1, c3]), true);
-	testAllowAll(Confs([c1]), Confs([c1, c3, c5]), false);
-	testAllowAll(Confs([c3]), Confs([c1, c3, c5]), false);
+	testAllowAll(Confs([c1]), Confs([c1, c3, c5]), true);
+	testAllowAll(Confs([c3]), Confs([c1, c3, c5]), true);
 	testAllowAll(Confs([c3]), Confs([c3]), true);
 	testAllowAll(Confs([c1]), Confs([c1]), true);
 	testAllowAll(Confs([c2]), Confs([c2]), false);
@@ -238,7 +234,7 @@ unittest {
 	testAllowAny(c13, c1, true);
 	testAllowAny(c13, c3, true);
 	testAllowAny(c13, c5, true);
-	testAllowAny(c12, c5, true);
+	testAllowAny(c12, c5, false);
 }
 
 void testAllowAny(const(Confs) a, const(Confs) b, const bool exp,
@@ -257,7 +253,7 @@ unittest {
 	testAllowAny(c12, c12, false);
 	testAllowAny(c12, c13, false);
 	testAllowAny(c12, c14, false);
-	testAllowAny(c12, c15, true);
+	testAllowAny(c12, c15, false);
 	testAllowAny(c12, c16, false);
 
 	testAllowAny(c13, c14, true);
@@ -298,12 +294,12 @@ void testInter(const(Confs) a, const(Confs) b, const(Confs) exp,
 unittest {
 	testInter(Confs([c1, c3]), Confs([c1]), Confs([c1]));
 	testInter(Confs([c1]), Confs([c1]), Confs([c1]));
-	testInter(Confs([c3]), Confs([c1]), Confs([c6]));
+	testInter(Confs([c3]), Confs([c1]), Confs([]));
 }
 
 unittest {
 	testInter(c13, c13, c13);
-	testInter(c13, c35, Confs([c3]));
+	testInter(c13, c35, Confs([c1, c3]));
 	testInter(c35, c35, Confs([c3, c5]));
 	testInter(c56, c56, Confs([c6]));
 
@@ -313,30 +309,11 @@ unittest {
 	testInter(a, b, a);
 }
 
-unittest { // if the intersection is empty we should see nothing value
+unittest {
 	const a = Confs([c1]);
 	const b = Confs([c3]);
 
-	testInter(a, b, Confs([c6]));
-}
-
-unittest {
-	foreach(a; cs) {
-		foreach(b; cs) {
-			const ab = intersectionOf(a, b);
-			const(Conf)[] many = a.confs ~ b.confs;
-			foreach(it; many) {
-				if(canFind(a.confs, it) && canFind(b.confs, it)) {
-					assert(canFind(ab.confs, it));
-				}
-				if(it.isPositive == IsPositive.no) {
-					assert(canFind(ab.confs, Conf("", IsPositive.no))
-							|| canFind(ab.confs, it),
-						format("%s %s", ab, it));
-				}
-			}
-		}
-	}
+	testInter(a, b, Confs([]));
 }
 
 // differenceOf
@@ -345,9 +322,6 @@ unittest {
 	const c11 = Confs([c1]);
 	const c33 = Confs([c3]);
 	const c13 = differenceOf(c11, c33);
-	assert(c13.confs.length == 2);
-	assert(c13.confs[0] == c4, format("%s", c13.confs[0]));
-	assert(c13.confs[1] == c1, format("%s", c13.confs[1]));
 }
 
 unittest {

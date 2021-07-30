@@ -50,18 +50,46 @@ struct Confs {
 			return;
 		}
 
-		if(isOkayToInsert(this.confs, c)) {
-			this.confs ~= c;
-			this.confs = normalize(this.confs);
-			this.confs.sort();
+		// Already in ignore
+		if(canFind(this.confs, c)) {
+			return;
 		}
+
+		this.confs ~= Conf(c.conf, c.isPositive);
+		this.confs = normalize(this.confs);
 	}
 
 	Confs invert() const {
 		return this.confs.map!(it => it.invert()).array.Confs;
 	}
+
+	bool opEquals(const(Confs) other) const {
+		return this.confs.length == other.confs.length
+			&& this.confs.all!(c => canFind(other.confs, c));
+	}
 }
 
+private Conf[] normalize(Conf[] toNorm) {
+	Conf[] ret;
+	outer: foreach(idx, it; toNorm) {
+		Conf inv = it.invert();
+		foreach(jdx, jt; toNorm) {
+			if(idx != jdx && inv == jt) {
+				continue outer;
+			}
+		}
+		ret ~= it;
+	}
+	const everything = Conf("", IsPositive.yes);
+	if(canFind(ret, everything)) {
+		ret = ret.filter!(it => it == everything
+				|| it.isPositive == IsPositive.no)
+			.array;
+	}
+	return ret;
+}
+
+/*
 private bool isOkayToInsert(const(Conf[]) arr, const(Conf) it) {
 	const isNeg = it.isPositive == IsPositive.no;
 	const negPr = !isNegativPresent(arr, it);
@@ -81,7 +109,7 @@ private Conf[] normalize(Conf[] arr) {
 		.filter!(
 			it => !isNegativPresent(arr, it) || it.isPositive == IsPositive.no)
 		.array;
-}
+}*/
 
 bool allowsAll(const(Confs) a, const(Conf) b) {
 	static import dud.resolve.conf;
@@ -108,31 +136,17 @@ bool allowsAny(const(Confs) a, const(Confs) b) {
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	import std.algorithm.setops : cartesianProduct;
 	import std.algorithm.iteration : joiner;
-	/*Conf[] allNeg = chain(a.confs, b.confs)
-		.filter!(it => it.isPositive == IsPositive.no)
-		.map!(it => it.dup())
-		.array;
 
-	Conf[] inBoth = chain(a.confs, b.confs)
-		.filter!(it => isOkayToInsert(allNeg, it)
-				&& canFind(a.confs, it)
-				&& canFind(b.confs, it)
-			)
-		.map!(it => it.dup())
-		.array;
-
-	Conf[] comb = allNeg ~ inBoth;
-
-	Confs ret = Confs(comb.empty ? [Conf("", IsPositive.no)] : comb);
-	return ret;
-	*/
 	Confs ret;
-	cartesianProduct(a.confs, b.confs)
-		.map!(it => dud.resolve.conf.intersectionOf(it[0], it[1]))
-		.map!(it => it.confs)
-		.joiner
-		.each!(it => ret.insert(it));
-
+	foreach(aIt; a.confs) {
+		foreach(bIt; b.confs) {
+			Confs i = dud.resolve.conf.intersectionOf(aIt, bIt);
+			debug writefln("\n%s\n%s\n%s", aIt, bIt, i);
+			foreach(abIt; i.confs) {
+				ret.insert(abIt);
+			}
+		}
+	}
 	return ret;
 }
 
