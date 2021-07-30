@@ -89,38 +89,25 @@ Confs intersectionOf(const(Conf) a, const(Conf) b) {
 	if((a.isPositive == IsPositive.no && a.conf.empty)
 		|| (b.isPositive == IsPositive.no && b.conf.empty))
 	{
-		debug writeln(__LINE__);
 		return Confs([Conf("", IsPositive.no)]);
 	}
 
 	if(a.isPositive == IsPositive.yes && a.conf.empty) {
-		debug writeln(__LINE__);
 		return b.isPositive == IsPositive.no
 			? Confs([a, Conf(b.conf, b.isPositive)])
 			: Confs([Conf(b.conf, b.isPositive)]);
 	}
 
 	if(b.isPositive == IsPositive.yes && b.conf.empty) {
-		debug writeln(__LINE__);
 		return a.isPositive == IsPositive.no
 			? Confs([b, Conf(a.conf, a.isPositive)])
 			: Confs([Conf(a.conf, a.isPositive)]);
 	}
 
-	/*
-	if(a.isPositive == b.isPositive && a.isPositive == IsPositive.yes
-			&& a.conf == b.conf)
-	{
-		debug writeln(__LINE__);
-		return Confs([Conf(a.conf, IsPositive.yes)]);
-	}
-	*/
 	if(a == b) {
-		debug writeln(__LINE__);
 		return Confs([Conf(a.conf, a.isPositive)]);
 	}
 
-	debug writeln(__LINE__);
 	return Confs([]);
 }
 

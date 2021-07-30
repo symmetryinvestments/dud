@@ -111,25 +111,25 @@ private Conf[] normalize(Conf[] arr) {
 		.array;
 }*/
 
-bool allowsAll(const(Confs) a, const(Conf) b) {
-	static import dud.resolve.conf;
-	return !a.confs.empty
-		&& a.confs.all!(it => dud.resolve.conf.allowsAll(it, b));
-}
-
 bool allowsAll(const(Confs) a, const(Confs) b) {
 	return b.confs.all!(it => allowsAny(a, it));
 }
 
-bool allowsAny(const(Confs) a, const(Conf) b) {
-	static import dud.resolve.conf;
-	const t = a.confs.any!(it => dud.resolve.conf.allowsAny(it, b));
-	//debug writefln("%s %s %s", a, b, t);
-	return t;
+bool allowsAny(const(Confs) a, const(Confs) b) {
+	return b.confs.empty || b.confs.any!(it => allowsAny(a, it));
 }
 
-bool allowsAny(const(Confs) a, const(Confs) b) {
-	return b.confs.any!(it => allowsAny(a, it));
+bool allowsAll(const(Confs) a, const(Conf) b) {
+	static import dud.resolve.conf;
+	return !a.confs.empty
+		&& a.confs.any!(it => dud.resolve.conf.allowsAll(it, b));
+}
+
+bool allowsAny(const(Confs) a, const(Conf) b) {
+	static import dud.resolve.conf;
+	const t = !a.confs.empty
+		&& a.confs.any!(it => dud.resolve.conf.allowsAny(it, b));
+	return t;
 }
 
 // TODO this one is having some problems
@@ -141,7 +141,6 @@ Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	foreach(aIt; a.confs) {
 		foreach(bIt; b.confs) {
 			Confs i = dud.resolve.conf.intersectionOf(aIt, bIt);
-			debug writefln("\n%s\n%s\n%s", aIt, bIt, i);
 			foreach(abIt; i.confs) {
 				ret.insert(abIt);
 			}

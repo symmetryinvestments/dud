@@ -11,6 +11,7 @@ import dud.semver.setoperation;
 import dud.semver.parse;
 import dud.semver.versionunion;
 import dud.semver.versionrange;
+import dud.resolve.toolchain;
 
 import std.format : format;
 import std.stdio;
@@ -262,9 +263,17 @@ unittest {
 			const al = allowsAll(it, jt);
 			if(al) {
 				assert(allowsAny(it, jt), format(
-						"\nit: %s\njt: %s\nversionunion %s\nconfs %s", it, jt
+						"\nit: %s\njt: %s\n\tpart any all\nversionunion %s %s\nconfs "
+							~ "%s %s\ntoolchain %s %s"
+						, it, jt
 						, dud.semver.checks.allowsAny(it.ver, jt.ver)
+						, dud.semver.checks.allowsAll(it.ver, jt.ver)
 						, dud.resolve.confs.allowsAny(it.conf, jt.conf)
+						, dud.resolve.confs.allowsAll(it.conf, jt.conf)
+						, dud.resolve.toolchain.allowsAny(it.toolchains
+							, jt.toolchains)
+						, dud.resolve.toolchain.allowsAll(it.toolchains
+							, jt.toolchains)
 						));
 			}
 		}
@@ -359,11 +368,11 @@ unittest {
 	assert(v12.conf == Confs([Conf("conf1", IsPositive.yes)])
 			, format("%s", v12.conf));
 	testRelation(v1, v12, SetRelation.overlapping);
-	testRelation(v2, v12, SetRelation.overlapping);
+	testRelation(v2, v12, SetRelation.subset);
 
 	auto v3 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.no)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
-	testRelation(v3, v12, SetRelation.subset);
-	testRelation(v12, v3, SetRelation.subset);
+	testRelation(v3, v12, SetRelation.disjoint);
+	testRelation(v12, v3, SetRelation.disjoint);
 }

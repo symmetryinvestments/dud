@@ -64,7 +64,6 @@ Confs[] buildConfs() {
 			foreach(kt; cs) {
 				auto tmp = Confs([it, jt, kt]);
 				if(tmp == Confs.init) {
-					writefln("\n%s\n%s\n%s", it, jt, kt);
 					continue;
 				}
 				Confs d = tmp.dup();
@@ -190,9 +189,9 @@ unittest {
 	testAllowAll(c12, c5, false);
 	testAllowAll(c12, c6, false);
 
-	testAllowAll(c13, c1, false);
+	testAllowAll(c13, c1, true);
 	testAllowAll(c13, c2, false);
-	testAllowAll(c13, c3, false);
+	testAllowAll(c13, c3, true);
 	testAllowAll(c13, c4, false);
 	testAllowAll(c13, c5, false);
 	testAllowAll(c13, c6, false);
@@ -250,7 +249,7 @@ void testAllowAny(const(Confs) a, const(Confs) b, const bool exp,
 }
 
 unittest {
-	testAllowAny(c12, c12, false);
+	testAllowAny(c12, c12, true);
 	testAllowAny(c12, c13, false);
 	testAllowAny(c12, c14, false);
 	testAllowAny(c12, c15, false);
@@ -337,3 +336,12 @@ unittest {
 	}
 }
 
+// additional
+
+unittest {
+	auto a = Confs([Conf("", IsPositive.no)]);
+	auto b = Confs([]);
+
+	assert(allowsAll(a, b));
+	assert(allowsAny(a, b));
+}
