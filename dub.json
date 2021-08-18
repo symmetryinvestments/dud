@@ -21,7 +21,7 @@
             "path": "resolve"
         }
     },
-    "description": "A dub replacement",
+    "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
     "name": "dud",
 }
