@@ -89,28 +89,6 @@ private Conf[] normalize(Conf[] toNorm) {
 	return ret;
 }
 
-/*
-private bool isOkayToInsert(const(Conf[]) arr, const(Conf) it) {
-	const isNeg = it.isPositive == IsPositive.no;
-	const negPr = !isNegativPresent(arr, it);
-	const cf = !canFind(arr, it);
-
-	return (isNeg || negPr) && cf;
-}
-
-private bool isNegativPresent(const(Conf[]) arr, const(Conf) it) {
-	return arr
-		.filter!(a => a.isPositive == IsPositive.no)
-		.any!(a => a.conf == it.conf);
-}
-
-private Conf[] normalize(Conf[] arr) {
-	return arr
-		.filter!(
-			it => !isNegativPresent(arr, it) || it.isPositive == IsPositive.no)
-		.array;
-}*/
-
 bool allowsAll(const(Confs) a, const(Confs) b) {
 	return b.confs.all!(it => allowsAny(a, it));
 }
@@ -132,7 +110,6 @@ bool allowsAny(const(Confs) a, const(Conf) b) {
 	return t;
 }
 
-// TODO this one is having some problems
 Confs intersectionOf(const(Confs) a, const(Confs) b) {
 	import std.algorithm.setops : cartesianProduct;
 	import std.algorithm.iteration : joiner;

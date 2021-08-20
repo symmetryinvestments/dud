@@ -85,9 +85,9 @@ prevented a solution from being found.
 
 The fundamental unit on which Pubgrub operates is a `Term`, which represents a
 statement about a package that may be true or false for a given selection of
-package versions. For example, `foo ^1.0.0` is a term that's true if `foo 1.2.3`
-is selected and false if `foo 2.3.4` is selected. Conversely, `not foo ^1.0.0`
-is false if `foo 1.2.3` is selected and true if `foo 2.3.4` is selected or if
+package versions. For example, `foo ^1.0.0` is a term that's true if `foo 1.2.3`
+is selected and false if `foo 2.3.4` is selected. Conversely, `not foo ^1.0.0`
+is false if `foo 1.2.3` is selected and true if `foo 2.3.4` is selected or if
 no version of `foo` is selected at all.
 
 We say that a set of terms `S` "satisfies" a term `t` if `t` must be true
@@ -97,17 +97,17 @@ we say that `S` is "inconclusive" for `t`. As a shorthand, we say that a term
 `v` satisfies or contradicts `t` if `{v}` satisfies or contradicts it. For
 example:
 
-* `{foo >=1.0.0, foo <2.0.0}` satisfies `foo ^1.0.0`,
-* `foo ^1.5.0` contradicts `not foo ^1.0.0`,
-* and `foo ^1.0.0` is inconclusive for `foo ^1.5.0`.
+* `{foo >=1.0.0, foo <2.0.0}` satisfies `foo ^1.0.0`,
+* `foo ^1.5.0` contradicts `not foo ^1.0.0`,
+* and `foo ^1.0.0` is inconclusive for `foo ^1.5.0`.
 
 Terms can be viewed as denoting sets of allowed versions, with negative terms
 denoting the complement of the corresponding positive term. Set relations and
 operations can be defined accordingly. For example:
 
-* `foo ^1.0.0 ∪ foo ^2.0.0` is `foo >=1.0.0 <3.0.0`.
-* `foo >=1.0.0 ∩ not foo >=2.0.0` is `foo ^1.0.0`.
-* `foo ^1.0.0 \ foo ^1.5.0` is `foo >=1.0.0 <1.5.0`.
+* `foo ^1.0.0 ∪ foo ^2.0.0` is `foo >=1.0.0 <3.0.0`.
+* `foo >=1.0.0 ∩ not foo >=2.0.0` is `foo ^1.0.0`.
+* `foo ^1.0.0 \ foo ^1.5.0` is `foo >=1.0.0 <1.5.0`.
 
 > **Note:** we use the [ISO 31-11 standard notation][ISO 31-11] for set
 > operations.
@@ -117,7 +117,7 @@ operations can be defined accordingly. For example:
 This turns out to be useful for computing satisfaction and contradiction. Given
 a term `t` and a set of terms `S`, we have the following identities:
 
-* `S` satisfies `t` if and only if `⋂S ⊆ t`.
+* `S` satisfies `t` if and only if `⋂S ⊆ t`.
 * `S` contradicts `t` if and only if `⋂S` is disjoint with `t`.
 
 ## Incompatibility
@@ -125,18 +125,18 @@ a term `t` and a set of terms `S`, we have the following identities:
 An incompatibility is a set of terms that are not *all* allowed to be true. A
 given set of package versions can only be valid according to an incompatibility
 if at least one of the incompatibility's terms is false for that solution. For
-example, the incompatibility `{foo ^1.0.0, bar ^2.0.0}` indicates that
-`foo ^1.0.0` is incompatible with `bar ^2.0.0`, so a solution that contains
-`foo 1.1.0` and `bar 2.0.2` would be invalid. Incompatibilities are
+example, the incompatibility `{foo ^1.0.0, bar ^2.0.0}` indicates that
+`foo ^1.0.0` is incompatible with `bar ^2.0.0`, so a solution that contains
+`foo 1.1.0` and `bar 2.0.2` would be invalid. Incompatibilities are
 *context-independent*, meaning that their terms are mutually incompatible
 regardless of which versions are selected at any given point in time.
 
 There are two sources of incompatibilities:
 
 1. An incompatibility may come from an external fact about packages—for example,
-  "`foo ^1.0.0` depends on `bar ^2.0.0`" is represented as the incompatibility
-  `{foo ^1.0.0, not bar ^2.0.0}`, while "`foo <1.3.0` has an incompatible SDK
-  constraint" is represented by the incompatibility `{not foo <1.3.0}`. These
+  "`foo ^1.0.0` depends on `bar ^2.0.0`" is represented as the incompatibility
+  `{foo ^1.0.0, not bar ^2.0.0}`, while "`foo <1.3.0` has an incompatible SDK
+  constraint" is represented by the incompatibility `{not foo <1.3.0}`. These
   are known as "external incompatibilities", and they track the external facts
   that caused them to be generated.
 
@@ -147,8 +147,8 @@ There are two sources of incompatibilities:
   avoid exploring the same dead-end portion of the state space over and over.
 
 Incompatibilities are normalized so that at most one term refers to any given
-package name. For example, `{foo >=1.0.0, foo <2.0.0}` is normalized to
-`{foo ^1.0.0}`. Derived incompatibilities with more than one term are also
+package name. For example, `{foo >=1.0.0, foo <2.0.0}` is normalized to
+`{foo ^1.0.0}`. Derived incompatibilities with more than one term are also
 normalized to remove positive terms referring to the root package, since these
 terms will always be satisfied.
 
@@ -205,8 +205,8 @@ of the derivation graph.
 A derivation graph represents a proof that the terms in its root incompatibility
 are in fact incompatible. Because all derived incompatibilities track their
 causes, we can find a derivation graph for any of them and thereby prove it. In
-particular, when Pubgrub determines that no solution can be found, uses the
-derivation graph for the incompatibility `{root any}` to
+particular, when Pubgrub determines that no solution can be found, it uses the
+derivation graph for the incompatibility `{root any}` to
 [explain to the user](#error-reporting) why no versions of the root package can
 be selected and thus why version solving failed.
 
@@ -236,12 +236,12 @@ Here's an example of a derivation graph:
 This represents the following proof (with numbers corresponding to the
 incompatibilities above):
 
-1. Because `foo ^1.0.0` depends on `bar ^2.0.0`
-2. and `bar ^2.0.0` depends on `baz ^3.0.0`,
-3. `foo ^1.0.0` requires `baz ^3.0.0`.
-4. And, because `root` depends on `foo ^1.0.0`,
-5. `root` requires `baz ^3.0.0`.
-6. So, because `root` depends on `baz ^1.0.0`,
+1. Because `foo ^1.0.0` depends on `bar ^2.0.0`
+2. and `bar ^2.0.0` depends on `baz ^3.0.0`,
+3. `foo ^1.0.0` requires `baz ^3.0.0`.
+4. And, because `root` depends on `foo ^1.0.0`,
+5. `root` requires `baz ^3.0.0`.
+6. So, because `root` depends on `baz ^1.0.0`,
 7. `root` isn't valid and version solving has failed.
 
 # The Algorithm
@@ -249,7 +249,7 @@ incompatibilities above):
 The core of Pubgrub works as follows:
 
 * Begin by adding an incompatibility indicating that the current version of the
-  root package must be selected (for example, `{not root 1.0.0}`). Note that
+  root package must be selected (for example, `{not root 1.0.0}`). Note that
   although there's only one version of the root package, this is just an
   incompatibility, not an assignment.
 
@@ -315,14 +315,14 @@ The unit propagation algorithm takes a package name and works as follows:
         If this succeeds, it returns an incompatibility that's guaranteed to be
         almost satisfied by the partial solution. Call this incompatibility's
         unsatisfied term `term`.
-      * Add `not term` to the partial solution with `incompatibility` as its
+      * Add `not term` to the partial solution with `incompatibility` as its
         cause.
       * Replace `changed` with a set containing only `term`'s package name.
-        
+
     * Otherwise, if the partial solution almost satisfies `incompatibility`:
-    
+
       * Call `incompatibility`'s unsatisfied term `term`.
-      * Add `not term` to the partial solution with `incompatibility` as its
+      * Add `not term` to the partial solution with `incompatibility` as its
         cause.
       * Add `term`'s package name to `changed`.
 
@@ -340,18 +340,18 @@ substantially more efficient in real-world cases, since it avoids re-exploring
 parts of the solution space that are known not to work.
 
 The core of conflict resolution is based on the rule of [resolution][]: given
-`a or b` and `not a or c`, you can derive `b or c`. This means that given
-incompatibilities `{t, q}` and `{not t, r}`, we can derive the incompatibility
-`{q, r}`—if this is satisfied, one of the existing incompatibilities will also
+`a or b` and `not a or c`, you can derive `b or c`. This means that given
+incompatibilities `{t, q}` and `{not t, r}`, we can derive the incompatibility
+`{q, r}`—if this is satisfied, one of the existing incompatibilities will also
 be satisfied.
 
 [Resolution]: https://en.wikipedia.org/wiki/Resolution_(logic)
 
-In fact, we can generalize this: given *any* incompatibilities `{t1, q}` and
-`{t2, r}`, we can derive `{q, r, t1 ∪ t2}`, since either `t1` or `t2` is true in
-every solution in which `t1 ∪ t2` is true. This reduces to `{q, r}` in any case
-where `not t2 ⊆ t1` (that is, where `not t2` satisfies `t1`), including the case
-above where `t1 = t` and `t2 = not t`.
+In fact, we can generalize this: given *any* incompatibilities `{t1, q}` and
+`{t2, r}`, we can derive `{q, r, t1 ∪ t2}`, since either `t1` or `t2` is true in
+every solution in which `t1 ∪ t2` is true. This reduces to `{q, r}` in any case
+where `not t2 ⊆ t1` (that is, where `not t2` satisfies `t1`), including the case
+above where `t1 = t` and `t2 = not t`.
 
 We use this to describe the notion of a "prior cause" of a conflicting
 incompatibility—another incompatibility that's one step closer to the root
@@ -390,8 +390,8 @@ decisions. It works as follows:
     including that assignment plus `satisfier`. Call this `previousSatisfier`.
 
     * Note: `satisfier` may not satisfy `term` on its own. For example, if term
-      is `foo >=1.0.0 <2.0.0`, it may be satisfied by
-      `{foo >=1.0.0, foo <2.0.0}` but not by either assignment individually. If
+      is `foo >=1.0.0 <2.0.0`, it may be satisfied by
+      `{foo >=1.0.0, foo <2.0.0}` but not by either assignment individually. If
       this is the case, `previousSatisfier` may refer to the same package as
       `satisfier`.
 
@@ -420,14 +420,14 @@ decisions. It works as follows:
     the terms in `satisfier`'s cause, minus the terms referring to `satisfier`'s
     package.
 
-    * Note: this corresponds to the derived incompatibility `{q, r}` in the
+    * Note: this corresponds to the derived incompatibility `{q, r}` in the
       example above.
 
-  * If `satisfier` doesn't satisfy `term`, add `not (satisfier \ term)` to
+  * If `satisfier` doesn't satisfy `term`, add `not (satisfier \ term)` to
     `priorCause`.
 
-    * Note: `not (satisfier \ term)` corresponds to `t1 ∪ t2` above with
-      `term = t1` and `satisfier = not t2`, by the identity `(Sᶜ \ T)ᶜ = S ∪ T`.
+    * Note: `not (satisfier \ term)` corresponds to `t1 ∪ t2` above with
+      `term = t1` and `satisfier = not t2`, by the identity `(Sᶜ \ T)ᶜ = S ∪ T`.
 
   * Set `incompatibility` to `priorCause`.
 
@@ -457,16 +457,16 @@ Pubgrub collapses identical dependencies from adjacent package versions into
 individual incompatibilities. This substantially reduces the total number of
 incompatibilities and makes it much easier for Pubgrub to reason about multiple
 versions of packages at once. For example, rather than representing
-`foo 1.0.0 depends on bar ^1.0.0` and `foo 1.1.0 depends on bar ^1.0.0` as two
+`foo 1.0.0 depends on bar ^1.0.0` and `foo 1.1.0 depends on bar ^1.0.0` as two
 separate incompatibilities, they're collapsed together into the single
-incompatibility `{foo ^1.0.0, not bar ^1.0.0}`.
+incompatibility `{foo ^1.0.0, not bar ^1.0.0}`.
 
 The version ranges of the dependers (`foo` in the example above) always have an
 inclusive lower bound of the first version that has the dependency, and an
 exclusive upper bound of the first package that *doesn't* have the dependency.
 if the last published version of the package has the dependency, the upper bound
-is omitted (as in `foo >=1.0.0`); similarly, if the first published version of
-the package has the dependency, the lower bound is omitted (as in `foo <2.0.0`).
+is omitted (as in `foo >=1.0.0`); similarly, if the first published version of
+the package has the dependency, the lower bound is omitted (as in `foo <2.0.0`).
 Expanding the version range in this way makes it more closely match the format
 users tend to use when authoring dependencies, which makes it easier for Pubgrub
 to reason efficiently about the relationship between dependers and the packages
@@ -530,13 +530,13 @@ the next derived incompatibility. The only nuance is that, in practice, this
 tends to end up a little verbose. You can skip every other derived
 incompatibility without losing clarity. For example, instead of
 
-> ... And, because `root` depends on `foo ^1.0.0`, `root` requires `baz ^3.0.0`.
-> So, because `root` depends on `baz ^1.0.0`, `root` isn't valid and version
+> ... And, because `root` depends on `foo ^1.0.0`, `root` requires `baz ^3.0.0`.
+> So, because `root` depends on `baz ^1.0.0`, `root` isn't valid and version
 > solving has failed.
 
 you would emit:
 
-> ... So, because `root` depends on both `foo ^1.0.0` and `baz ^3.0.0`, `root`
+> ... So, because `root` depends on both `foo ^1.0.0` and `baz ^3.0.0`, `root`
 > isn't valid and version solving has failed.
 
 However, it's possible for derivation graphs to be more complex. A derived
@@ -600,7 +600,7 @@ follows:
         `incompatibility`."
 
    2. Otherwise, if only one cause has a line number:
-  
+
       * Recursively run error reporting on the cause without a line number.
 
       * Call the cause with the line number `cause`.
@@ -687,9 +687,9 @@ First, let's look at a simple case where no actual conflicts occur to get a
 sense of how unit propagation and decision making operate. Given the following
 packages:
 
-* `root 1.0.0` depends on `foo ^1.0.0`.
-* `foo 1.0.0` depends on `bar ^1.0.0`.
-* `bar 1.0.0` and `2.0.0` have no dependencies.
+* `root 1.0.0` depends on `foo ^1.0.0`.
+* `foo 1.0.0` depends on `bar ^1.0.0`.
+* `bar 1.0.0` and `2.0.0` have no dependencies.
 
 Pubgrub goes through the following steps. The table below shows each step in the
 algorithm where the state changes, either by adding an assignment to the partial
@@ -697,63 +697,63 @@ solution or by adding an incompatibility to the incompatibility set.
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
-| 3 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 4 | `{foo any, not bar ^1.0.0}` | incompatibility | decision making | |  |
-| 5 | `foo 1.0.0` | decision | decision making | | 1 |
-| 6 | `bar ^1.0.0` | derivation | unit propagation | step 4 | 1 |
-| 7 | `bar 1.0.0` | decision | decision making | | 2 |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
+| 3 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 4 | `{foo any, not bar ^1.0.0}` | incompatibility | decision making | |  |
+| 5 | `foo 1.0.0` | decision | decision making | | 1 |
+| 6 | `bar ^1.0.0` | derivation | unit propagation | step 4 | 1 |
+| 7 | `bar 1.0.0` | decision | decision making | | 2 |
 
 In steps 1 and 2, Pubgrub adds the information about the root package. This
 gives it a place to start its derivations. It then moves to unit propagation in
-step 3, where it sees that `root 1.0.0` is selected, which means that the
-incompatibility `{root 1.0.0, not foo ^1.0.0}` is almost satisfied. It adds the
-inverse of the unsatisfied term, `foo ^1.0.0`, to the partial solution as a
+step 3, where it sees that `root 1.0.0` is selected, which means that the
+incompatibility `{root 1.0.0, not foo ^1.0.0}` is almost satisfied. It adds the
+inverse of the unsatisfied term, `foo ^1.0.0`, to the partial solution as a
 derivation.
 
-Note in step 7 that Pubgrub chooses `bar 1.0.0` rather than `bar 2.0.0`. This is
-because it knows that the partial solution contains `bar ^1.0.0`, which
-`bar 2.0.0` not compatible with.
+Note in step 7 that Pubgrub chooses `bar 1.0.0` rather than `bar 2.0.0`. This is
+because it knows that the partial solution contains `bar ^1.0.0`, which
+`bar 2.0.0` not compatible with.
 
 Once the algorithm is done, we look at the decisions to see which package
-versions are selected: `root 1.0.0`, `foo 1.0.0`, and `bar 1.0.0`.
+versions are selected: `root 1.0.0`, `foo 1.0.0`, and `bar 1.0.0`.
 
 ## Avoiding Conflict During Decision Making
 
 In this example, decision making examines a package version that would cause a
 conflict and chooses not to select it. Given the following packages:
 
-* `root 1.0.0` depends on `foo ^1.0.0` and `bar ^1.0.0`.
-* `foo 1.1.0` depends on `bar ^2.0.0`.
-* `foo 1.0.0` has no dependencies.
-* `bar 1.0.0`, `1.1.0`, and `2.0.0` have no dependencies.
+* `root 1.0.0` depends on `foo ^1.0.0` and `bar ^1.0.0`.
+* `foo 1.1.0` depends on `bar ^2.0.0`.
+* `foo 1.0.0` has no dependencies.
+* `bar 1.0.0`, `1.1.0`, and `2.0.0` have no dependencies.
 
 Pubgrub goes through the following steps:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
-| 3 | `{root 1.0.0, not bar ^1.0.0}` | incompatibility | top level | | |
-| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 5 | `bar ^1.0.0` | derivation | unit propagation | step 3 | 0 |
-| 6 | `{foo >=1.1.0, not bar ^2.0.0}` | incompatibility | decision making | | |
-| 7 | `not foo >=1.1.0` | derivation | unit propagation | step 6 | 0 |
-| 8 | `foo 1.0.0` | decision | decision making | | 1 |
-| 9 | `bar 1.1.0` | decision | decision making | | 2 |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
+| 3 | `{root 1.0.0, not bar ^1.0.0}` | incompatibility | top level | | |
+| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 5 | `bar ^1.0.0` | derivation | unit propagation | step 3 | 0 |
+| 6 | `{foo >=1.1.0, not bar ^2.0.0}` | incompatibility | decision making | | |
+| 7 | `not foo >=1.1.0` | derivation | unit propagation | step 6 | 0 |
+| 8 | `foo 1.0.0` | decision | decision making | | 1 |
+| 9 | `bar 1.1.0` | decision | decision making | | 2 |
 
-In step 6, the decision making process considers `foo 1.1.0` by adding its
-dependency as the incompatibility `{foo >=1.1.0, not bar ^2.0.0}`. However, if
-`foo 1.1.0` were selected, this incompatibility would be satisfied: `foo 1.1.0`
-satisfies `foo >=1.1.0`, and `bar ^1.0.0` from step 5 satisfies
-`not bar ^2.0.0`. So decision making ends without selecting a version, and unit
+In step 6, the decision making process considers `foo 1.1.0` by adding its
+dependency as the incompatibility `{foo >=1.1.0, not bar ^2.0.0}`. However, if
+`foo 1.1.0` were selected, this incompatibility would be satisfied: `foo 1.1.0`
+satisfies `foo >=1.1.0`, and `bar ^1.0.0` from step 5 satisfies
+`not bar ^2.0.0`. So decision making ends without selecting a version, and unit
 propagation is run again.
 
 Unit propagation determines that the new incompatibility,
-`{foo >=1.1.0, not bar ^2.0.0}`, is almost satisfied (again because `bar ^1.0.0`
-satisfies `not bar ^2.0.0`). Thus it's able to deduce `not foo >=1.1.0` in step
-7, which lets the next iteration of decision making choose `foo 1.0.0` which is
+`{foo >=1.1.0, not bar ^2.0.0}`, is almost satisfied (again because `bar ^1.0.0`
+satisfies `not bar ^2.0.0`). Thus it's able to deduce `not foo >=1.1.0` in step
+7, which lets the next iteration of decision making choose `foo 1.0.0` which is
 compatible with `root`'s constraint on `bar`.
 
 ## Performing Conflict Resolution
@@ -761,57 +761,57 @@ compatible with `root`'s constraint on `bar`.
 This example shows full conflict resolution in action. Given the following
 packages:
 
-* `root 1.0.0` depends on `foo >=1.0.0`.
-* `foo 2.0.0` depends on `bar ^1.0.0`.
-* `foo 1.0.0` has no dependencies.
-* `bar 1.0.0` depends on `foo ^1.0.0`.
+* `root 1.0.0` depends on `foo >=1.0.0`.
+* `foo 2.0.0` depends on `bar ^1.0.0`.
+* `foo 1.0.0` has no dependencies.
+* `bar 1.0.0` depends on `foo ^1.0.0`.
 
 Pubgrub goes through the following steps:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo >=1.0.0}` | incompatibility | top level | | |
-| 3 | `foo >=1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 4 | `{foo >=2.0.0, not bar ^1.0.0}` | incompatibility | decision making | | |
-| 5 | `foo 2.0.0` | decision | decision making | | 1 |
-| 6 | `bar ^1.0.0` | derivation | unit propagation | step 4 | 1 |
-| 7 | `{bar any, not foo ^1.0.0}` | incompatibility | decision making | | |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo >=1.0.0}` | incompatibility | top level | | |
+| 3 | `foo >=1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 4 | `{foo >=2.0.0, not bar ^1.0.0}` | incompatibility | decision making | | |
+| 5 | `foo 2.0.0` | decision | decision making | | 1 |
+| 6 | `bar ^1.0.0` | derivation | unit propagation | step 4 | 1 |
+| 7 | `{bar any, not foo ^1.0.0}` | incompatibility | decision making | | |
 
 The incompatibility added at step 7 is satisfied by the partial assignment: `bar
-any` is satisfied by `bar ^1.0.0` from step 6, and `not foo ^1.0.0` is satisfied
-by `foo 2.0.0` from step 5. This causes Pubgrub to enter conflict resolution,
+any` is satisfied by `bar ^1.0.0` from step 6, and `not foo ^1.0.0` is satisfied
+by `foo 2.0.0` from step 5. This causes Pubgrub to enter conflict resolution,
 where it iteratively works towards the root cause of the conflict:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 8 | `{bar any, not foo ^1.0.0}` | `bar any` | `bar ^1.0.0` from step 6 | `{foo >=2.0.0, not bar ^1.0.0}` | `foo 2.0.0` from step 5 |
-| 9 | `{foo >=2.0.0}` | `foo >=1.0.0` | `foo 2.0.0` from step 5 | | |
+| 8 | `{bar any, not foo ^1.0.0}` | `bar any` | `bar ^1.0.0` from step 6 | `{foo >=2.0.0, not bar ^1.0.0}` | `foo 2.0.0` from step 5 |
+| 9 | `{foo >=2.0.0}` | `foo >=1.0.0` | `foo 2.0.0` from step 5 | | |
 
-In step 9, we merge the two incompatibilities `{bar any, not foo ^1.0.0}` and
-`{foo >=2.0.0, not bar ^1.0.0}` as described in
+In step 9, we merge the two incompatibilities `{bar any, not foo ^1.0.0}` and
+`{foo >=2.0.0, not bar ^1.0.0}` as described in
 [conflict resolution](#conflict-resolution), to produce
-`{not foo ^1.0.0, foo >=2.0.0, bar any ∪ not bar ^1.0.0}`. Since
-`not not bar ^1.0.0 = bar ^1.0.0` satisfies `bar any`, this simplifies to
-`{not foo ^1.0.0, foo >=2.0.0}`. We can then take the intersection of the two
-`foo` terms to get `{foo >=2.0.0}`.
+`{not foo ^1.0.0, foo >=2.0.0, bar any ∪ not bar ^1.0.0}`. Since
+`not not bar ^1.0.0 = bar ^1.0.0` satisfies `bar any`, this simplifies to
+`{not foo ^1.0.0, foo >=2.0.0}`. We can then take the intersection of the two
+`foo` terms to get `{foo >=2.0.0}`.
 
 Now Pubgrub has learned that, no matter which other package versions are
-selected, `foo 2.0.0` is never going to be a valid choice because of its
+selected, `foo 2.0.0` is never going to be a valid choice because of its
 dependency on `bar`. Because there's no previous satisfier in step 9, it
 backtracks all the way to level 0 and continues the main loop with the new
 incompatibility:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 10 | `{foo >=2.0.0}` | incompatibility | conflict resolution | | |
-| 11 | `not foo >=2.0.0` | derivation | unit propagation | step 10 | 0 |
-| 12 | `foo 1.0.0` | decision | decision making | | 1 |
+| 10 | `{foo >=2.0.0}` | incompatibility | conflict resolution | | |
+| 11 | `not foo >=2.0.0` | derivation | unit propagation | step 10 | 0 |
+| 12 | `foo 1.0.0` | decision | decision making | | 1 |
 
-Given this new incompatibility, Pubgrub knows to avoid selecting `foo 2.0.0` and
-selects the correction version, `foo 1.0.0`, instead. Because it backtracked,
+Given this new incompatibility, Pubgrub knows to avoid selecting `foo 2.0.0` and
+selects the correction version, `foo 1.0.0`, instead. Because it backtracked,
 all decisions previously made at decision levels higher than 0 are discarded,
-and the solution is `root 1.0.0` and `foo 1.0.0`.
+and the solution is `root 1.0.0` and `foo 1.0.0`.
 
 ## Conflict Resolution With a Partial Satisfier
 
@@ -819,16 +819,16 @@ In this example, we see a more complex example of conflict resolution where the
 term in question isn't totally satisfied by a single satisfier. Given the
 following packages:
 
-* `root 1.0.0` depends on `foo ^1.0.0` and `target ^2.0.0`.
-* `foo 1.1.0` depends on `left ^1.0.0` and `right ^1.0.0`.
-* `foo 1.0.0` has no dependencies.
-* `left 1.0.0` depends on `shared >=1.0.0`.
-* `right 1.0.0` depends on `shared <2.0.0`.
-* `shared 2.0.0` has no dependencies.
-* `shared 1.0.0` depends on `target ^1.0.0`.
-* `target 2.0.0` and `1.0.0` have no dependencies.
+* `root 1.0.0` depends on `foo ^1.0.0` and `target ^2.0.0`.
+* `foo 1.1.0` depends on `left ^1.0.0` and `right ^1.0.0`.
+* `foo 1.0.0` has no dependencies.
+* `left 1.0.0` depends on `shared >=1.0.0`.
+* `right 1.0.0` depends on `shared <2.0.0`.
+* `shared 2.0.0` has no dependencies.
+* `shared 1.0.0` depends on `target ^1.0.0`.
+* `target 2.0.0` and `1.0.0` have no dependencies.
 
-`foo 1.1.0` transitively depends on a version of `target` that's not
+`foo 1.1.0` transitively depends on a version of `target` that's not
 compatible with `root`'s constraint. However, this dependency only exists
 because of both `left` *and* `right`—either alone would allow a version of
 `shared` without a problematic dependency to be selected.
@@ -837,84 +837,84 @@ Pubgrub goes through the following steps:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
-| 3 | `{root 1.0.0, not target ^2.0.0}` | incompatibility | top level | | |
-| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 5 | `target ^2.0.0` | derivation | unit propagation | step 3 | 0 |
-| 6 | `{foo >=1.1.0, not left ^1.0.0}` | incompatibility | decision making | | |
-| 7 | `{foo >=1.1.0, not right ^1.0.0}` | incompatibility | decision making | | |
-| 8 | `target 2.0.0` | decision | decision making | | 1 |
-| 9 | `foo 1.1.0` | decision | decision making | | 2 |
-| 10 | `left ^1.0.0` | derivation | unit propagation | step 6 | 2 |
-| 11 | `right ^1.0.0` | derivation | unit propagation | step 7 | 2 |
-| 12 | `{right any, not shared <2.0.0}` | incompatibility | decision making | | |
-| 13 | `right 1.0.0` | decision | decision making | | 3 |
-| 14 | `shared <2.0.0` | derivation | unit propagation | step 12 | 3 |
-| 15 | `{left any, not shared >=1.0.0}` | incompatibility | decision making | | |
-| 16 | `left 1.0.0` | decision | decision making | | 4 |
-| 17 | `shared >=1.0.0` | derivation | unit propagation | step 15 | 4 |
-| 18 | `{shared ^1.0.0, not target ^1.0.0}` | incompatibility | decision making | | |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
+| 3 | `{root 1.0.0, not target ^2.0.0}` | incompatibility | top level | | |
+| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 5 | `target ^2.0.0` | derivation | unit propagation | step 3 | 0 |
+| 6 | `{foo >=1.1.0, not left ^1.0.0}` | incompatibility | decision making | | |
+| 7 | `{foo >=1.1.0, not right ^1.0.0}` | incompatibility | decision making | | |
+| 8 | `target 2.0.0` | decision | decision making | | 1 |
+| 9 | `foo 1.1.0` | decision | decision making | | 2 |
+| 10 | `left ^1.0.0` | derivation | unit propagation | step 6 | 2 |
+| 11 | `right ^1.0.0` | derivation | unit propagation | step 7 | 2 |
+| 12 | `{right any, not shared <2.0.0}` | incompatibility | decision making | | |
+| 13 | `right 1.0.0` | decision | decision making | | 3 |
+| 14 | `shared <2.0.0` | derivation | unit propagation | step 12 | 3 |
+| 15 | `{left any, not shared >=1.0.0}` | incompatibility | decision making | | |
+| 16 | `left 1.0.0` | decision | decision making | | 4 |
+| 17 | `shared >=1.0.0` | derivation | unit propagation | step 15 | 4 |
+| 18 | `{shared ^1.0.0, not target ^1.0.0}` | incompatibility | decision making | | |
 
-The incompatibility at step 18 is in conflict: `not target ^1.0.0` is satisfied
-by `target ^2.0.0` from step 5, and `shared ^1.0.0` is *jointly* satisfied by
-`shared <2.0.0` from step 14 and `shared >=1.0.0` from step 17. However, because
+The incompatibility at step 18 is in conflict: `not target ^1.0.0` is satisfied
+by `target ^2.0.0` from step 5, and `shared ^1.0.0` is *jointly* satisfied by
+`shared <2.0.0` from step 14 and `shared >=1.0.0` from step 17. However, because
 the satisfier and the previous satisfier have different decision levels,
 conflict resolution has no root cause to find and just backtracks to decision
 level 3, where it can make a new derivation:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 19 | `not shared ^1.0.0` | derivation | unit propagation | step 18 | 3 |
+| 19 | `not shared ^1.0.0` | derivation | unit propagation | step 18 | 3 |
 
 But this derivation causes a new conflict, which needs to be resolved:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 20 | `{left any, not shared >=1.0.0}` | `not shared >=1.0.0` | `not shared ^1.0.0` from step 19 | `{shared ^1.0.0, not target ^1.0.0}` | `shared <2.0.0` from step 14 |
-| 21 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | `not shared >=2.0.0` | `shared <2.0.0` from step 14 | `{right any, not shared <2.0.0}` | `left ^1.0.0` from step 10 |
+| 20 | `{left any, not shared >=1.0.0}` | `not shared >=1.0.0` | `not shared ^1.0.0` from step 19 | `{shared ^1.0.0, not target ^1.0.0}` | `shared <2.0.0` from step 14 |
+| 21 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | `not shared >=2.0.0` | `shared <2.0.0` from step 14 | `{right any, not shared <2.0.0}` | `left ^1.0.0` from step 10 |
 
 Once again, we merge two incompatibilities, but this time we aren't able to
 simplify the result.
-`{left any, not target ^1.0.0, not shared >=1.0.0 ∪ shared ^1.0.0}` becomes
-`{left any, not target ^1.0.0, not shared >=2.0.0}`.
+`{left any, not target ^1.0.0, not shared >=1.0.0 ∪ shared ^1.0.0}` becomes
+`{left any, not target ^1.0.0, not shared >=2.0.0}`.
 
 We once again stop conflict resolution and start backtracking, because the
-satisfier (`shared <2.0.0`) and the previous satisfier (`left ^1.0.0`) have
+satisfier (`shared <2.0.0`) and the previous satisfier (`left ^1.0.0`) have
 different decision levels. This pattern happens frequently in conflict
 resolution: Pubgrub finds the root cause of one conflict, backtracks a little
 bit, and sees another related conflict that allows it to determine a more
 broadly-applicable root cause. In this case, we backtrack to decision level 2,
-where `left ^1.0.0` was derived:
+where `left ^1.0.0` was derived:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 22 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | incompatibility | conflict resolution | | |
-| 23 | `shared >=2.0.0` | derivation | unit propagation | step 22 | 2 |
+| 22 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | incompatibility | conflict resolution | | |
+| 23 | `shared >=2.0.0` | derivation | unit propagation | step 22 | 2 |
 
 And we re-enter conflict resolution:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 24 | `{right any, not shared <2.0.0}` | `not shared <2.0.0` | `shared >=2.0.0` from step 23 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | `right ^1.0.0` from step 11 |
-| 25 | `{left any, right any, not target ^1.0.0}` | `right any` | `right ^1.0.0` from step 11 | `{foo >=1.1.0, not right ^1.0.0}` | `left ^1.0.0` from step 10 |
-| 26 | `{left any, foo >=1.1.0, not target ^1.0.0}` | `left any` | `left ^1.0.0` from step 10 | `{foo >=1.1.0, not left ^1.0.0}` | `foo 1.1.0` from step 9 |
-| 27 | `{foo >=1.1.0, not target ^1.0.0}` | `foo >=1.1.0` | `foo 1.1.0` from step 9 | | `target ^2.0.0` from step 5 |
+| 24 | `{right any, not shared <2.0.0}` | `not shared <2.0.0` | `shared >=2.0.0` from step 23 | `{left any, not target ^1.0.0, not shared >=2.0.0}` | `right ^1.0.0` from step 11 |
+| 25 | `{left any, right any, not target ^1.0.0}` | `right any` | `right ^1.0.0` from step 11 | `{foo >=1.1.0, not right ^1.0.0}` | `left ^1.0.0` from step 10 |
+| 26 | `{left any, foo >=1.1.0, not target ^1.0.0}` | `left any` | `left ^1.0.0` from step 10 | `{foo >=1.1.0, not left ^1.0.0}` | `foo 1.1.0` from step 9 |
+| 27 | `{foo >=1.1.0, not target ^1.0.0}` | `foo >=1.1.0` | `foo 1.1.0` from step 9 | | `target ^2.0.0` from step 5 |
 
-Pubgrub has figured out that `foo 1.1.0` transitively depends on `target
+Pubgrub has figured out that `foo 1.1.0` transitively depends on `target
 ^1.0.0`, even though that dependency goes through `left`, `right`, and `shared`.
-From here it backjumps to decision level 0, where `target ^2.0.0` was derived,
+From here it backjumps to decision level 0, where `target ^2.0.0` was derived,
 and quickly finds the correct solution:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 28 | `{foo >=1.1.0, not target ^1.0.0}` | incompatibility | conflict resolution | | |
-| 29 | `not foo >=1.1.0` | derivation | unit propagation | step 28 | 0 |
-| 30 | `foo 1.0.0` | decision | decision making | | 1 |
-| 31 | `target 2.0.0` | decision | decision making | | 2 |
+| 28 | `{foo >=1.1.0, not target ^1.0.0}` | incompatibility | conflict resolution | | |
+| 29 | `not foo >=1.1.0` | derivation | unit propagation | step 28 | 0 |
+| 30 | `foo 1.0.0` | decision | decision making | | 1 |
+| 31 | `target 2.0.0` | decision | decision making | | 2 |
 
-This produces the correct solution: `root 1.0.0`, `foo 1.0.0`, and
-`target 2.0.0`.
+This produces the correct solution: `root 1.0.0`, `foo 1.0.0`, and
+`target 2.0.0`.
 
 ## Linear Error Reporting
 
@@ -922,10 +922,10 @@ This example's dependency graph doesn't have a valid solution. It shows how
 error reporting works when the derivation graph is straightforwardly linear.
 Given the following packages:
 
-* `root 1.0.0` depends on `foo ^1.0.0` and `baz ^1.0.0`.
-* `foo 1.0.0` depends on `bar ^2.0.0`.
-* `bar 2.0.0` depends on `baz ^3.0.0`.
-* `baz 1.0.0` and `3.0.0` have no dependencies.
+* `root 1.0.0` depends on `foo ^1.0.0` and `baz ^1.0.0`.
+* `foo 1.0.0` depends on `bar ^2.0.0`.
+* `bar 2.0.0` depends on `baz ^3.0.0`.
+* `baz 1.0.0` and `3.0.0` have no dependencies.
 
 `root` transitively depends on a version of `baz` that's not compatible with
 `root`'s constraint.
@@ -934,40 +934,40 @@ Pubgrub goes through the following steps:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
-| 3 | `{root 1.0.0, not baz ^1.0.0}` | incompatibility | top level | | |
-| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 5 | `baz ^1.0.0` | derivation | unit propagation | step 3 | 0 |
-| 6 | `{foo any, not bar ^2.0.0}` | incompatibility | decision making | | |
-| 7 | `foo 1.0.0` | decision | decision making | | 1 |
-| 8 | `bar ^2.0.0` | derivation | unit propagation | step 6 | 1 |
-| 9 | `{bar any, not baz ^3.0.0}` | incompatibility | decision making | | |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
+| 3 | `{root 1.0.0, not baz ^1.0.0}` | incompatibility | top level | | |
+| 4 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 5 | `baz ^1.0.0` | derivation | unit propagation | step 3 | 0 |
+| 6 | `{foo any, not bar ^2.0.0}` | incompatibility | decision making | | |
+| 7 | `foo 1.0.0` | decision | decision making | | 1 |
+| 8 | `bar ^2.0.0` | derivation | unit propagation | step 6 | 1 |
+| 9 | `{bar any, not baz ^3.0.0}` | incompatibility | decision making | | |
 
-The incompatibility added at step 10 is in conflict: `bar any` is satisfied by
-`bar ^2.0.0` from step 8, and `not baz ^3.0.0` is satisfied by `baz ^1.0.0` from
+The incompatibility added at step 10 is in conflict: `bar any` is satisfied by
+`bar ^2.0.0` from step 8, and `not baz ^3.0.0` is satisfied by `baz ^1.0.0` from
 step 5. Because these two satisfiers have different decision levels, conflict
 resolution backtracks to level 0 where it can make a new derivation:
 
 | Step | Incompatibility | Term | Satisfier | Cause | Decision Level |
 | ---- | --------------- | ---- | --------- | ----- | ------------------ |
-| 10 | `not bar any` | derivation | unit propagation | step 9 | 0 |
+| 10 | `not bar any` | derivation | unit propagation | step 9 | 0 |
 
 This derivation causes a new conflict, which needs to be resolved:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 11 | `{foo any, not bar ^2.0.0}` | `not bar ^2.0.0` | `not bar any` from step 10 | `{bar any, not baz ^3.0.0}` | `foo ^1.0.0` from step 4 |
-| 12 | `{foo any, not baz ^3.0.0}` | `not baz ^3.0.0` | `baz ^1.0.0` from step 5 | `{root 1.0.0, not baz ^1.0.0}` | `foo ^1.0.0` from step 4 |
-| 13 | `{foo any, root 1.0.0}` | `foo any` | `foo ^1.0.0` from step 4 | `{root 1.0.0, not foo ^1.0.0}` | `root 1.0.0` from step 1 |
-| 14 | `{root 1.0.0}` | | | | |
+| 11 | `{foo any, not bar ^2.0.0}` | `not bar ^2.0.0` | `not bar any` from step 10 | `{bar any, not baz ^3.0.0}` | `foo ^1.0.0` from step 4 |
+| 12 | `{foo any, not baz ^3.0.0}` | `not baz ^3.0.0` | `baz ^1.0.0` from step 5 | `{root 1.0.0, not baz ^1.0.0}` | `foo ^1.0.0` from step 4 |
+| 13 | `{foo any, root 1.0.0}` | `foo any` | `foo ^1.0.0` from step 4 | `{root 1.0.0, not foo ^1.0.0}` | `root 1.0.0` from step 1 |
+| 14 | `{root 1.0.0}` | | | | |
 
-By deriving the incompatibility `{root 1.0.0}`, we've determined that no
+By deriving the incompatibility `{root 1.0.0}`, we've determined that no
 solution can exist and thus that version solving has failed. Our next task is to
-construct a derivation graph for `{root 1.0.0}`. Each derived incompatibility's
+construct a derivation graph for `{root 1.0.0}`. Each derived incompatibility's
 causes are the incompatibility that came before it in the conflict resolution
-table (`{foo any, root 1.0.0}` for the root incompatibility) and that
-incompatibility's satisfier cause (`{root 1.0.0, not foo ^1.0.0}` for the root
+table (`{foo any, root 1.0.0}` for the root incompatibility) and that
+incompatibility's satisfier cause (`{root 1.0.0, not foo ^1.0.0}` for the root
 incompatibility).
 
 This gives us the following derivation graph, with each incompatibility's step
@@ -995,15 +995,15 @@ number indicated:
 ```
 
 We run the [error reporting](#error-reporting) algorithm on this graph starting
-with the root incompatibility, `{root 1.0.0}`. Because this algorithm does a
+with the root incompatibility, `{root 1.0.0}`. Because this algorithm does a
 depth-first traversal of the graph, it starts by printing the outermost external
 incompatibilities and works its way towards the root. Here's what it prints,
 with the step of the algorithm that prints each line indicated:
 
 | Message | Algorithm Step | Line |
 | ------- | -------------- | ---- |
-| Because every version of `foo` depends on `bar ^2.0.0` which depends on `baz ^3.0.0`, every version of `foo` requires `baz ^3.0.0`. | 3 | |
-| So, because `root` depends on both `baz ^1.0.0` and `foo ^1.0.0`, version solving failed. | 2.ii | |
+| Because every version of `foo` depends on `bar ^2.0.0` which depends on `baz ^3.0.0`, every version of `foo` requires `baz ^3.0.0`. | 3 | |
+| So, because `root` depends on both `baz ^1.0.0` and `foo ^1.0.0`, version solving failed. | 2.ii | |
 
 There are a couple things worth noting about this output:
 
@@ -1014,13 +1014,13 @@ There are a couple things worth noting about this output:
     "every version of `foo`" rather than "`foo any`".
 
   * In the first line, instead of writing "every version of `foo` depends on
-    `bar ^2.0.0` and every version of `bar` depends on `baz ^3.0.0`", we write
-    "every version of `foo` depends on `bar ^2.0.0` which depends on
-    `baz ^3.0.0`".
+    `bar ^2.0.0` and every version of `bar` depends on `baz ^3.0.0`", we write
+    "every version of `foo` depends on `bar ^2.0.0` which depends on
+    `baz ^3.0.0`".
 
-  * In the second line, instead of writing "`root` depends on `baz ^1.0.0` and
-    `root` depends on `foo ^1.0.0`", we write "`root` depends on both
-    `baz ^1.0.0` and `foo ^1.0.0`".
+  * In the second line, instead of writing "`root` depends on `baz ^1.0.0` and
+    `root` depends on `foo ^1.0.0`", we write "`root` depends on both
+    `baz ^1.0.0` and `foo ^1.0.0`".
 
   * We omit the version number for the entrypoint package `root`.
 
@@ -1030,7 +1030,7 @@ There are a couple things worth noting about this output:
   * Instead of writing "`root` is forbidden", we write "version solving failed".
 
 * The second line collapses together the explanations of two incompatibilities
-  (`{foo any, root 1.0.0}` and `{root 1.0.0}`), as described in step 2.ii. We
+  (`{foo any, root 1.0.0}` and `{root 1.0.0}`), as described in step 2.ii. We
   never explicitly explain that every version of `foo` is incompatible with
   `root`, but the output is still clear.
 
@@ -1040,13 +1040,13 @@ This example fails for a reason that's too complex to explain in a linear chain
 of reasoning. It shows how error reporting works when it has to refer back to a
 previous derivation. Given the following packages:
 
-* `root 1.0.0` depends on `foo ^1.0.0`.
-* `foo 1.0.0` depends on `a ^1.0.0` and `b ^1.0.0`.
-* `foo 1.1.0` depends on `x ^1.0.0` and `y ^1.0.0`.
-* `a 1.0.0` depends on `b ^2.0.0`.
-* `b 1.0.0` and `2.0.0` have no dependencies.
-* `x 1.0.0` depends on `y ^2.0.0`.
-* `y 1.0.0` and `2.0.0` have no dependencies.
+* `root 1.0.0` depends on `foo ^1.0.0`.
+* `foo 1.0.0` depends on `a ^1.0.0` and `b ^1.0.0`.
+* `foo 1.1.0` depends on `x ^1.0.0` and `y ^1.0.0`.
+* `a 1.0.0` depends on `b ^2.0.0`.
+* `b 1.0.0` and `2.0.0` have no dependencies.
+* `x 1.0.0` depends on `y ^2.0.0`.
+* `y 1.0.0` and `2.0.0` have no dependencies.
 
 Neither version of `foo` can be selected due to their conflicting direct and
 transitive dependencies on `b` and `y`, which means version solving fails.
@@ -1055,61 +1055,61 @@ Pubgrub goes through the following steps:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 1 | `root 1.0.0` | decision | top level | | 0 |
-| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
-| 3 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
-| 4 | `foo 1.1.0` | decision | decision making | | 1 |
-| 5 | `{foo >=1.1.0, not y ^1.0.0}` | incompatibility | decision making | | |
-| 6 | `{foo >=1.1.0, not x ^1.0.0}` | incompatibility | decision making | | |
-| 7 | `y ^1.0.0` | derivation | unit propagation | step 5 | 1 |
-| 8 | `x ^1.0.0` | derivation | unit propagation | step 6 | 1 |
-| 9 | `{x any, not y ^2.0.0}` | incompatibility | decision making | | |
+| 1 | `root 1.0.0` | decision | top level | | 0 |
+| 2 | `{root 1.0.0, not foo ^1.0.0}` | incompatibility | top level | | |
+| 3 | `foo ^1.0.0` | derivation | unit propagation | step 2 | 0 |
+| 4 | `foo 1.1.0` | decision | decision making | | 1 |
+| 5 | `{foo >=1.1.0, not y ^1.0.0}` | incompatibility | decision making | | |
+| 6 | `{foo >=1.1.0, not x ^1.0.0}` | incompatibility | decision making | | |
+| 7 | `y ^1.0.0` | derivation | unit propagation | step 5 | 1 |
+| 8 | `x ^1.0.0` | derivation | unit propagation | step 6 | 1 |
+| 9 | `{x any, not y ^2.0.0}` | incompatibility | decision making | | |
 
 This incompatibility is in conflict, so we enter conflict resolution:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 10 | `{x any, not y ^2.0.0}` | `x any` | `x ^1.0.0` from step 8 | `{foo >=1.1.0, not x ^1.0.0}` | `y ^1.0.0` from step 7 |
-| 11 | `{foo >=1.1.0, not y ^2.0.0}` | `not y ^2.0.0` | `y ^1.0.0` from step 7 | `{foo >=1.1.0, not y ^1.0.0}` | `foo 1.1.0` from step 4 |
-| 12 | `{foo >=1.1.0}` | `foo >=1.1.0` | `foo 1.1.0` from step 4 | `{root 1.0.0, not foo ^1.0.0}` | |
+| 10 | `{x any, not y ^2.0.0}` | `x any` | `x ^1.0.0` from step 8 | `{foo >=1.1.0, not x ^1.0.0}` | `y ^1.0.0` from step 7 |
+| 11 | `{foo >=1.1.0, not y ^2.0.0}` | `not y ^2.0.0` | `y ^1.0.0` from step 7 | `{foo >=1.1.0, not y ^1.0.0}` | `foo 1.1.0` from step 4 |
+| 12 | `{foo >=1.1.0}` | `foo >=1.1.0` | `foo 1.1.0` from step 4 | `{root 1.0.0, not foo ^1.0.0}` | |
 
 We then backtrack to decision level 0, since there is no previous satisfier:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 13 | `{foo >=1.1.0}` | incompatibility | conflict resolution | | |
-| 14 | `not foo >=1.1.0` | derivation | unit propagation | step 13 | 0 |
-| 15 | `{foo <1.1.0, not b ^1.0.0}` | incompatibility | decision making | | |
-| 16 | `{foo <1.1.0, not a ^1.0.0}` | incompatibility | decision making | | |
-| 17 | `foo 1.0.0` | decision | decision making | | 1 |
-| 18 | `b ^1.0.0` | derivation | unit propagation | step 15 | 1 |
-| 19 | `a ^1.0.0` | derivation | unit propagation | step 16 | 1 |
-| 20 | `{a any, not b ^2.0.0}` | incompatibility | decision making | | |
+| 13 | `{foo >=1.1.0}` | incompatibility | conflict resolution | | |
+| 14 | `not foo >=1.1.0` | derivation | unit propagation | step 13 | 0 |
+| 15 | `{foo <1.1.0, not b ^1.0.0}` | incompatibility | decision making | | |
+| 16 | `{foo <1.1.0, not a ^1.0.0}` | incompatibility | decision making | | |
+| 17 | `foo 1.0.0` | decision | decision making | | 1 |
+| 18 | `b ^1.0.0` | derivation | unit propagation | step 15 | 1 |
+| 19 | `a ^1.0.0` | derivation | unit propagation | step 16 | 1 |
+| 20 | `{a any, not b ^2.0.0}` | incompatibility | decision making | | |
 
 We've found another conflicting incompatibility, so we'll go back into conflict
 resolution:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 21 | `{a any, not b ^2.0.0}` | `a any` | `a ^1.0.0` from step 19 | `{foo <1.1.0, not a ^1.0.0}` | `b ^1.0.0` from step 18 |
-| 22 | `{foo <1.1.0, not b ^2.0.0}` | `not b ^2.0.0` | `b ^1.0.0` from step 18 | `{foo >=1.1.0, not b ^1.0.0}` | `not foo >=1.0.0` from step 14 |
+| 21 | `{a any, not b ^2.0.0}` | `a any` | `a ^1.0.0` from step 19 | `{foo <1.1.0, not a ^1.0.0}` | `b ^1.0.0` from step 18 |
+| 22 | `{foo <1.1.0, not b ^2.0.0}` | `not b ^2.0.0` | `b ^1.0.0` from step 18 | `{foo >=1.1.0, not b ^1.0.0}` | `not foo >=1.0.0` from step 14 |
 
 We now backtrack to decision level 0 where the previous satisfier was derived:
 
 | Step | Value | Type | Where it was added | Cause | Decision level |
 | ---- | ----- | ---- | ------------------ | ----- | -------------- |
-| 23 | `{foo <1.1.0, not b ^2.0.0}` | incompatibility | conflict resolution | | |
-| 24 | `b ^2.0.0` | derivation | unit propagation | step 23 | 0 |
+| 23 | `{foo <1.1.0, not b ^2.0.0}` | incompatibility | conflict resolution | | |
+| 24 | `b ^2.0.0` | derivation | unit propagation | step 23 | 0 |
 
 But this produces another conflict, this time in the incompatibility from line
 15:
 
 | Step | Incompatibility | Term | Satisfier | Satisfier Cause | Previous Satisfier |
 | ---- | --------------- | ---- | --------- | --------------- | ------------------ |
-| 25 | `{foo <1.1.0, not b ^1.0.0}` | `not b ^1.0.0` | `b ^2.0.0` from step 24 | `{foo <1.1.0, not b ^2.0.0}` | `not foo >=1.1.0` from step 14 |
-| 26 | `{foo <1.1.0}` | `foo <1.1.0` | `not foo >=1.1.0` from step 14 | `{foo >=1.1.0}` | `foo ^1.0.0` from step 3 |
-| 27 | `{foo any}` | `foo any` | `foo ^1.0.0` from step 3 | `{root 1.0.0, not foo ^1.0.0}` | |
-| 28 | `{root 1.0.0}` | | | | |
+| 25 | `{foo <1.1.0, not b ^1.0.0}` | `not b ^1.0.0` | `b ^2.0.0` from step 24 | `{foo <1.1.0, not b ^2.0.0}` | `not foo >=1.1.0` from step 14 |
+| 26 | `{foo <1.1.0}` | `foo <1.1.0` | `not foo >=1.1.0` from step 14 | `{foo >=1.1.0}` | `foo ^1.0.0` from step 3 |
+| 27 | `{foo any}` | `foo any` | `foo ^1.0.0` from step 3 | `{root 1.0.0, not foo ^1.0.0}` | |
+| 28 | `{root 1.0.0}` | | | | |
 
 This produces a more complex derivation graph than the previous example:
 
@@ -1147,19 +1147,19 @@ We run the [error reporting](#error-reporting) algorithm on this graph:
 
 | Message | Algorithm Step | Line |
 | ------- | -------------- | ---- |
-| Because `foo <1.1.0` depends on `a ^1.0.0` which depends on `b ^2.0.0`, `foo <1.1.0` requires `b ^2.0.0`. | 3 | |
-| So, because `foo <1.1.0` depends on `b ^1.0.0`, `foo <1.1.0` is forbidden. | 2.iii | 1 |
+| Because `foo <1.1.0` depends on `a ^1.0.0` which depends on `b ^2.0.0`, `foo <1.1.0` requires `b ^2.0.0`. | 3 | |
+| So, because `foo <1.1.0` depends on `b ^1.0.0`, `foo <1.1.0` is forbidden. | 2.iii | 1 |
 | | |
-| Because `foo >=1.1.0` depends on `x ^1.0.0` which depends on `y ^2.0.0`, `foo >=1.1.0` requires `y ^2.0.0`. | 3 | |
-| And because `foo >=1.1.0` depends on `y ^1.0.0`, `foo >=1.1.0` is forbidden. | 2.iii | |
+| Because `foo >=1.1.0` depends on `x ^1.0.0` which depends on `y ^2.0.0`, `foo >=1.1.0` requires `y ^2.0.0`. | 3 | |
+| And because `foo >=1.1.0` depends on `y ^1.0.0`, `foo >=1.1.0` is forbidden. | 2.iii | |
 | And because `foo <1.1.0` is forbidden (1), `foo` is forbidden. | 1.ii | |
 | So, because `root` depends on `foo ^1.0.0`, version solving failed. | 2.iii | |
 
-Because the derivation graph is non-linear–the incompatibility `{not foo any}`
+Because the derivation graph is non-linear–the incompatibility `{not foo any}`
 is caused by two derived incompatibilities–we can't just explain everything in a
 single sequence like we did in the last example. We first explain why
-`foo <1.1.0` is forbidden, giving the conclusion an explicit line number so that
-we can refer back to it later on. Then we explain why `foo >=1.1.0` is forbidden
+`foo <1.1.0` is forbidden, giving the conclusion an explicit line number so that
+we can refer back to it later on. Then we explain why `foo >=1.1.0` is forbidden
 before finally concluding that version solving has failed.
 
 # Differences From CDCL and Answer Set Solving
@@ -1201,7 +1201,7 @@ O(n²) in the number of versions per package.
 
 To avoid that overhead, the mutual exclusivity of different versions of the same
 package (as well as packages with the same name from different sources) is built
-into Pubgrub. For example, it considers `foo ^1.0.0` and `foo ^2.0.0` to be
+into Pubgrub. For example, it considers `foo ^1.0.0` and `foo ^2.0.0` to be
 contradictory even though it doesn't have an explicit formula saying so.
 
 ## Lazy Formulas
