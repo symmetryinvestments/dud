@@ -2,7 +2,7 @@ module dud.resolve.toolchain;
 
 import std.array : array, front;
 import std.algorithm.iteration : filter, map;
-import std.algorithm.searching : all, find;
+import std.algorithm.searching : all, find, canFind;
 import std.typecons : nullable, Nullable;
 import std.exception : enforce;
 import std.format : format;
@@ -101,18 +101,23 @@ ToolchainVersionUnion intersectionOf(const(ToolchainVersionUnion) a,
 					, b.version_));
 }
 
-ToolchainVersionUnion[] intersectionOf(const(ToolchainVersionUnion)[] as
-		, const(ToolchainVersionUnion)[] bs)
+ToolchainVersionUnion[] intersectionOf(
+		const(ToolchainVersionUnion)[] as, const(ToolchainVersionUnion)[] bs)
 {
-	return as.map!(a => {
-				auto other = bs.find!(it => it.tool == a.tool);
-				return other.empty
-					? Nullable!(ToolchainVersionUnion).init
-					: nullable(intersectionOf(a, other.front));
-			}())
-			.filter!(it => !it.isNull())
-			.map!(it => it.get())
-			.array;
+	ToolchainVersionUnion[] ret;
+	foreach(a; as) {
+		auto other = bs.find!(it => it.tool == a.tool);
+		if(other.empty) {
+			ret ~= a.dup();
+		} else {
+			ret ~= intersectionOf(a, other.front);
+		}
+	}
+
+	foreach(b; bs.filter!(it => !ret.canFind!(jt => it.tool == jt.tool))) {
+		ret ~= b.dup();
+	}
+	return ret;
 }
 
 /** Return if `a` is a subset of `b`, or if `a` and `b` are disjoint, or

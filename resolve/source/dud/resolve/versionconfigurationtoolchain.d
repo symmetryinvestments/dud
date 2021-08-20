@@ -1,11 +1,13 @@
 module dud.resolve.versionconfigurationtoolchain;
 
 import std.algorithm.iteration : map;
+import std.array : empty;
+import std.algorithm.searching : canFind;
 import std.array : array, empty;
 import std.stdio;
 import std.exception : enforce;
-import std.array : empty;
 import std.format : format;
+
 import dud.semver.semver;
 import dud.semver.parse;
 import dud.semver.checks : allowsAll, allowsAny;

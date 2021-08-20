@@ -1,5 +1,6 @@
 module dud.resolve.term;
 
+import std.array : empty;
 import std.exception : enforce;
 import std.typecons : Nullable, nullable;
 debug import std.stdio;
@@ -40,6 +41,8 @@ bool satisfies(const(Term) that, const(Term) other) {
 }
 
 SetRelation relation(const(Term) that, const(Term) other) {
+	static import dud.resolve.versionconfigurationtoolchain;
+
 	enforce(that.pkg.pkg.name == other.pkg.pkg.name);
 
 	debug writefln("that: %3s other: %3s", that.isPositive, other.isPositive);
@@ -56,18 +59,20 @@ SetRelation relation(const(Term) that, const(Term) other) {
 }
 
 Nullable!(Term) intersectionOf(const(Term) a, const(Term) b) {
+	static import dud.resolve.versionconfigurationtoolchain;
+
 	const(VersionConfigurationToolchain) a2 = a.isPositive
 		? a.constraint
-		: dud.resolve.versionconfigurationtoolchain.invert(a.constraint);
+		: invert(a.constraint);
 
 	const(VersionConfigurationToolchain) b2 = b.isPositive
 		? b.constraint
-		: dud.resolve.versionconfigurationtoolchain.invert(b.constraint);
+		: invert(b.constraint);
 
 	VersionConfigurationToolchain r = dud.resolve.versionconfigurationtoolchain
 		.intersectionOf(a2, b2);
 
 	return r.conf.confs.empty || r.ver.ranges.empty
 		? Nullable!(Term).init
-		: nullable(Term(r, a.pkg, IsPositive.yes));
+		: nullable(Term(r, a.pkg.dup(), IsPositive.yes));
 }
