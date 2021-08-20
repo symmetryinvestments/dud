@@ -7,6 +7,7 @@ import std.array : array, empty;
 import std.stdio;
 import std.exception : enforce;
 import std.format : format;
+import std.typecons : Nullable, nullable;
 
 import dud.semver.semver;
 import dud.semver.parse;
@@ -57,15 +58,21 @@ bool allowsAll(const(VersionConfigurationToolchain) a, const(VersionConfiguratio
 		&& dud.resolve.toolchain.allowsAll(a.toolchains, b.toolchains);
 }
 
-VersionConfigurationToolchain intersectionOf(const(VersionConfigurationToolchain) a,
-		const(VersionConfigurationToolchain) b)
+Nullable!(VersionConfigurationToolchain) intersectionOf(
+		const(VersionConfigurationToolchain) a
+		, const(VersionConfigurationToolchain) b)
 {
 	static import dud.resolve.confs;
 	static import dud.semver.setoperation;
-	return VersionConfigurationToolchain(
-			dud.semver.setoperation.intersectionOf(a.ver, b.ver)
-			, dud.resolve.confs.intersectionOf(a.conf, b.conf)
-			, dud.resolve.toolchain.intersectionOf(a.toolchains, b.toolchains));
+	auto ver = dud.semver.setoperation.intersectionOf(a.ver, b.ver);
+	auto confs = dud.resolve.confs.intersectionOf(a.conf, b.conf);
+	auto tc = dud.resolve.toolchain.intersectionOf(a.toolchains, b.toolchains);
+
+	if(tc.isNull()) {
+		return Nullable!(VersionConfigurationToolchain).init;
+	}
+
+	return nullable(VersionConfigurationToolchain(ver, confs, tc.get()));
 }
 
 /** Return if a is a subset of b, or if a and b are disjoint, or

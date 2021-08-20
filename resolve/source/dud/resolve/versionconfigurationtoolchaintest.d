@@ -365,14 +365,15 @@ unittest {
 	debug writeln(v1);
 	debug writeln(v2);
 	debug writeln(v12);
-	assert(v12.conf == Confs([Conf("conf1", IsPositive.yes)])
-			, format("%s", v12.conf));
-	testRelation(v1, v12, SetRelation.overlapping);
-	testRelation(v2, v12, SetRelation.subset);
+	assert(!v12.isNull());
+	assert(v12.get().conf == Confs([Conf("conf1", IsPositive.yes)])
+			, format("%s", v12.get().conf));
+	testRelation(v1, v12.get(), SetRelation.overlapping);
+	testRelation(v2, v12.get(), SetRelation.subset);
 
 	auto v3 = VersionConfigurationToolchain(
 			VersionUnion([VersionRange(s25, Inclusive.yes, s30, Inclusive.no)])
 			, Confs([Conf("conf1", IsPositive.yes)]));
-	testRelation(v3, v12, SetRelation.disjoint);
-	testRelation(v12, v3, SetRelation.disjoint);
+	testRelation(v3, v12.get(), SetRelation.disjoint);
+	testRelation(v12.get(), v3, SetRelation.disjoint);
 }

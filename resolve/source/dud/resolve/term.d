@@ -69,10 +69,11 @@ Nullable!(Term) intersectionOf(const(Term) a, const(Term) b) {
 		? b.constraint
 		: invert(b.constraint);
 
-	VersionConfigurationToolchain r = dud.resolve.versionconfigurationtoolchain
+	Nullable!(VersionConfigurationToolchain) r = dud.resolve
+		.versionconfigurationtoolchain
 		.intersectionOf(a2, b2);
 
-	return r.conf.confs.empty || r.ver.ranges.empty
+	return r.isNull()
 		? Nullable!(Term).init
-		: nullable(Term(r, a.pkg.dup(), IsPositive.yes));
+		: nullable(Term(r.get(), a.pkg.dup(), IsPositive.yes));
 }

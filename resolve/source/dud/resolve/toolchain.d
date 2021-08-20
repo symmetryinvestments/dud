@@ -101,7 +101,7 @@ ToolchainVersionUnion intersectionOf(const(ToolchainVersionUnion) a,
 					, b.version_));
 }
 
-ToolchainVersionUnion[] intersectionOf(
+Nullable!(ToolchainVersionUnion[]) intersectionOf(
 		const(ToolchainVersionUnion)[] as, const(ToolchainVersionUnion)[] bs)
 {
 	ToolchainVersionUnion[] ret;
@@ -110,14 +110,18 @@ ToolchainVersionUnion[] intersectionOf(
 		if(other.empty) {
 			ret ~= a.dup();
 		} else {
-			ret ~= intersectionOf(a, other.front);
+			ToolchainVersionUnion r = intersectionOf(a, other.front);
+			if(r.version_.ranges.empty) {
+				return Nullable!(ToolchainVersionUnion[]).init;
+			}
+			ret ~= r;
 		}
 	}
 
 	foreach(b; bs.filter!(it => !ret.canFind!(jt => it.tool == jt.tool))) {
 		ret ~= b.dup();
 	}
-	return ret;
+	return nullable(ret);
 }
 
 /** Return if `a` is a subset of `b`, or if `a` and `b` are disjoint, or
