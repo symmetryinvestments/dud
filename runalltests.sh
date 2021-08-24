@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 function unittest() {
-	dub test --compiler=$1
+	dub test --compiler=$1 --root=..
 	return $?
 }
 
