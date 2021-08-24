@@ -22,7 +22,8 @@
         "./resolve",
         "./testdata",
         "./exception",
-        "./utils"
+        "./utils",
+        "./semver"
     ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
