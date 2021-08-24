@@ -3,10 +3,7 @@
 		"dud:testdata": "*",
 		"dud:pkgdescription": "*",
 		"dud:exception": "*",
-		"utils" : {
-			"path": "../utils",
-			"version": ">=0.0.0"
-		},
+		"dud:utils" : "*",
 		"semver" : {
 			"path": "../semver",
 			"version": ">=0.0.0"

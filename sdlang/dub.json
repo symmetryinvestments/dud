@@ -2,9 +2,7 @@
 	"name": "sdlang",
 	"targetType": "library",
 	"dependencies" : {
-		"utils" : {
-			"path" : "../utils"
-		},
+		"dud:utils" : "*",
 		"dud:testdata" : "*"
 	},
 	"configurations" : [
