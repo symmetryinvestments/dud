@@ -2,10 +2,7 @@
 	"dependencies": {
 		"dud:testdata": "*",
 		"dud:pkgdescription": "*",
-		"exception": {
-			"path": "../exception",
-			"version": ">=0.0.0"
-		},
+		"dud:exception": "*",
 		"utils" : {
 			"path": "../utils",
 			"version": ">=0.0.0"

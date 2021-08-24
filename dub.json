@@ -21,6 +21,7 @@
         "./pkgdescription",
         "./resolve",
         "./testdata",
+        "./exception"
     ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
