@@ -4,10 +4,7 @@
 		"dud:pkgdescription": "*",
 		"dud:exception": "*",
 		"dud:utils" : "*",
-		"semver" : {
-			"path": "../semver",
-			"version": ">=0.0.0"
-		}
+		"dud:semver" : "*"
 	},
 	"name": "resolve",
 	"targetType": "library"

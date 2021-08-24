@@ -23,7 +23,8 @@
         "./testdata",
         "./exception",
         "./utils",
-        "./semver"
+        "./semver",
+        "./sdlang"
     ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",

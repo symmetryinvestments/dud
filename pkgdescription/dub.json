@@ -1,15 +1,9 @@
 {
 	"dependencies": {
 		"dud:testdata": "*",
-		"sdlang": {
-			"path": "../sdlang",
-			"version": ">=0.0.0"
-		},
+		"dud:sdlang": "*",
 		"dud:exception": "*",
-		"semver": {
-			"path": "../semver",
-			"version": ">=0.0.0"
-		},
+		"dud:semver": "*",
 		"dud:utils" : "*"
 	},
 	"name": "pkgdescription",
