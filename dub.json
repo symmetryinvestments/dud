@@ -20,6 +20,7 @@
     "subPackages": [
         "./pkgdescription",
         "./resolve",
+        "./testdata",
     ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",

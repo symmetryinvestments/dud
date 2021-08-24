@@ -1,9 +1,6 @@
 {
 	"dependencies": {
-		"testdata": {
-			"path": "../testdata",
-			"version": ">=0.0.0"
-		},
+		"dud:testdata": "*",
 		"sdlang": {
 			"path": "../sdlang",
 			"version": ">=0.0.0"

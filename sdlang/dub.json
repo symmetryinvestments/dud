@@ -5,9 +5,7 @@
 		"utils" : {
 			"path" : "../utils"
 		},
-		"testdata" : {
-			"path" : "../testdata"
-		}
+		"dud:testdata" : "*"
 	},
 	"configurations" : [
 		{ "name" : "ExcessiveTests"
