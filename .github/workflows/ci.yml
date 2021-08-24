@@ -19,7 +19,7 @@ jobs:
           compiler: ${{ matrix.dc }}
 
       - name: Run tests
-        run: ./runalltests.sh $DC library
+        run: ./runalltests.sh $DC
 
       - name: Build binary
         run: dub build -q

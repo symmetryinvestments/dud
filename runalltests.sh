@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -euo pipefail
+
 function unittest() {
 	dub test --compiler=$1 --root=..
 	return $?
@@ -24,6 +26,7 @@ function test() {
 
 	for i in ${@:3} ;
 	do
+		echo "BUILDING: $1 with $2 using config $i"
 		buildConf $2 $i
 		local f=$?
 		if [[ $f -ne 0 ]]
@@ -42,12 +45,13 @@ do
 	test utils ${dc}
 	test exception ${dc}
 	#test sdlang ${dc} "ExcessiveTests"
-	test testdata ${dc} "app"
+	test testdata ${dc}
 	test sdlang ${dc}
 	test semver ${dc}
 	#test pkgdescription ${dc} "ExcessiveSDLTests" "ExcessiveJSONTests" "ExcessiveConvTests"
 	test pkgdescription ${dc}
 	test resolve ${dc}
 	test descriptiongetter ${dc}
+	dub build -c testdata-app --compiler=${dc}
 done
 exit 0
