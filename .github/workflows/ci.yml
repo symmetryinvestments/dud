@@ -74,7 +74,7 @@ jobs:
       run: |
         dub test --compiler=${{ matrix.compiler }}
 
-	- name: Build CLI ${{ matrix.compiler }}
-	  run: |
-		dub build --compiler=${{ matrix.compiler }}
+    - name: Build CLI ${{ matrix.compiler }}
+      run: |
+        dub build --compiler=${{ matrix.compiler }}
 
