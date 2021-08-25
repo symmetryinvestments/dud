@@ -21,7 +21,18 @@
             "path": "resolve"
         }
     },
+	"subPackages": [
+		"descriptiongetter",
+		"exception",
+		"path",
+		"pkgdescription",
+		"resolve",
+		"sdlang",
+		"semver",
+		"testdata",
+		"utils"
+	],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
-    "name": "dud",
+    "name": "dud"
 }
