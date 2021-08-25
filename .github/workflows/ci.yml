@@ -69,7 +69,12 @@ jobs:
       with:
         compiler: ${{ matrix.compiler }}
 
-    - name: Run ${{ matrix.packages }}
+    - name: Run ${{ matrix.packages }} ${{ matrix.compiler }}
       working-directory: ${{ matrix.packages }}
       run: |
         dub test
+
+    - name: Build CLI ${{ matrix.compiler }}
+      run: |
+        dub build
+

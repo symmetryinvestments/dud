@@ -14,14 +14,20 @@
     ],
     "copyright": "Copyright © 2019, Symmetry Investments",
     "dependencies": {
-        "pkgdescription": {
-            "path": "pkgdescription"
-        },
-        "resolve": {
-            "path": "resolve"
-        }
+        "dud:pkgdescription": "*",
+        "dud:resolve": "*"
     },
+	"subPackages": [
+		"./descriptiongetter/",
+		"./exception/",
+		"./path/",
+		"./pkgdescription/",
+		"./resolve/",
+		"./sdlang/",
+		"./semver/",
+		"./utils/"
+	],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
-    "name": "dud",
+    "name": "dud"
 }
