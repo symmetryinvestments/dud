@@ -14,12 +14,8 @@
     ],
     "copyright": "Copyright © 2019, Symmetry Investments",
     "dependencies": {
-        "pkgdescription": {
-            "path": "pkgdescription"
-        },
-        "resolve": {
-            "path": "resolve"
-        }
+        "pkgdescription": "*",
+        "resolve": "*"
     },
 	"subPackages": [
 		"descriptiongetter",
