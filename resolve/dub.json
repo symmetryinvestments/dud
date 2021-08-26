@@ -1,25 +1,10 @@
 {
 	"dependencies": {
-		"testdata": {
-			"path": "../testdata",
-			"version": ">=0.0.0"
-		},
-		"pkgdescription": {
-			"path": "../pkgdescription",
-			"version": ">=0.0.0"
-		},
-		"exception": {
-			"path": "../exception",
-			"version": ">=0.0.0"
-		},
-		"utils" : {
-			"path": "../utils",
-			"version": ">=0.0.0"
-		},
-		"semver" : {
-			"path": "../semver",
-			"version": ">=0.0.0"
-		}
+		"dud:testdata": "*",
+		"dud:pkgdescription": "*",
+		"dud:exception": "*",
+		"dud:utils" : "*",
+		"dud:semver" : "*"
 	},
 	"name": "resolve",
 	"targetType": "library"

@@ -62,3 +62,8 @@ dud-test-*
 *.o
 *.obj
 *.lst
+
+*-test-library
+sdlang-test-ExcessiveTests
+testdata/testdata
+testdata/testdata-test-app

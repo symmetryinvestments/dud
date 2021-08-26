@@ -10,17 +10,31 @@
 	    {
 		    "name": "library",
 		    "targetType": "library"
-	    }
+	    },
+        {
+            "name": "testdata-app",
+            "mainSourceFile": "testdata-app.d",
+            "targetType": "executable",
+            "dependencies": {
+                "dud:testdata": "*"
+            }
+        }
     ],
     "copyright": "Copyright © 2019, Symmetry Investments",
     "dependencies": {
-        "pkgdescription": {
-            "path": "pkgdescription"
-        },
-        "resolve": {
-            "path": "resolve"
-        }
+        "dud:pkgdescription": "*",
+        "dud:resolve": "*"
     },
+    "subPackages": [
+        "./pkgdescription",
+        "./resolve",
+        "./testdata",
+        "./exception",
+        "./utils",
+        "./semver",
+        "./sdlang",
+        "./descriptiongetter",
+    ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
     "name": "dud",
