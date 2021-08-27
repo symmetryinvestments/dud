@@ -33,21 +33,36 @@ PackageDescriptionVersionRange dup(const(PackageDescriptionVersionRange) i) {
 			i.ver.dup());
 }
 
+package DumpFileProvidier depGraphFromJson(string s) {
+	return DumpFileProvidier.init;
+}
+
+DumpFileProvidier fromDumpFile(string filename) {
+	DumpFileProvidier ret = DumpFileProvidier(false, filename);
+	return ret;
+}
+
+DumpFileProvidier fromJson(string content) {
+	DumpFileProvidier ret = DumpFileProvidier(false, "", content);
+	return ret;
+}
+
 struct DumpFileProvidier {
 	// the cache either holds all or non
 	bool isLoaded;
 	const string dumpFileName;
+	const string content;
 	PackageDescriptionVersionRange[][string] cache;
 	JSONValue[string] parsedPackages;
-
-	this(string dumpFileName) {
-		this.dumpFileName = dumpFileName;
-	}
 
 	private void makeSureIsLoaded() {
 		import std.file : readText;
 		if(!this.isLoaded) {
-			JSONValue dump = parseJSON(readText(this.dumpFileName));
+			JSONValue dump = parseJSON(
+					this.content.empty
+						? readText(this.dumpFileName)
+						: this.content
+				);
 			enforce(dump.type == JSONType.array);
 			foreach(value; dump.arrayNoRef()) {
 				enforce(value.type == JSONType.object);
@@ -131,3 +146,4 @@ private PackageDescriptionVersionRange[] dumpJSONToPackage(JSONValue jv) {
 		.sort!((a, b) => a.ver > b.ver)
 		.array;
 }
+
