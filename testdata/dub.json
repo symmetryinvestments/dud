@@ -8,4 +8,11 @@
 	"dependencies": {
 		"dud:descriptiongetter": "*"
 	},
+	"configurations": [
+		{ "name" : "app"
+		, "mainSourceFile" : "source/dud/testdata/main.d"
+		, "targetType" : "executable"
+		, "versions" : ["App"]
+		}
+	]
 }
