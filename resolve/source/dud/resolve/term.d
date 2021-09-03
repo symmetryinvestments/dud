@@ -2,7 +2,7 @@ module dud.resolve.term;
 
 import std.array : empty;
 import std.exception : enforce;
-import std.typecons : Nullable, nullable;
+import std.typecons : Nullable, nullable, Flag;
 debug import std.stdio;
 
 import dud.pkgdescription;
@@ -14,6 +14,8 @@ import dud.resolve.positive;
 import dud.resolve.conf;
 import dud.resolve.confs;
 
+alias IsRootPackage = Flag!"IsRootPackage";
+
 @safe pure:
 struct Term {
 @safe pure:
@@ -22,11 +24,12 @@ struct Term {
 
 	/// is only an indicator `contraint` is used to store both stats
 	IsPositive isPositive;
+	IsRootPackage isRootPackage;
 
 	string toString() const {
 		import std.format : format;
-		return format("Term(%s, %s, %s)", this.pkg.pkg.name
-				, this.isPositive, this.constraint);
+		return format("Term(%s, %s, %s, %s)", this.pkg.pkg.name
+				, this.isRootPackage, this.isPositive, this.constraint);
 	}
 }
 

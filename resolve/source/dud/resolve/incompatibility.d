@@ -1,5 +1,13 @@
 module dud.resolve.incompatibility;
 
+import std.array : array;
+import std.exception : enforce;
+import std.format : format;
+import std.typecons : Nullable;
+import std.algorithm.iteration : filter;
+import std.algorithm.searching : any;
+
+import dud.resolve.positive;
 import dud.resolve.term;
 
 /// The reason an [Incompatibility]'s terms are incompatible.
@@ -64,4 +72,48 @@ class PackageNotFoundCause : IncompatibilityCause {
 struct Incompatibility {
 	Term[] terms;
 	IncompatibilityCause cause;
+
+	static Incompatibility opCall(Term[] terms, IncompatibilityCause cause) {
+		Incompatibility ret;
+
+		if(terms.length != 1
+				&& (cast(ConflictCause)cause) !is null
+				&& terms.any!(t => t.isPositive == IsPositive.yes
+						&& t.isRootPackage == IsRootPackage.yes))
+		{
+			terms = terms
+				.filter!(t => t.isPositive == IsPositive.no
+						&& t.isRootPackage == IsRootPackage.no)
+				.array;
+		}
+
+		if(terms.length == 1
+				|| (terms.length == 2
+					&& terms[0].pkg.pkg.name == terms[1].pkg.pkg.name))
+		{
+			ret.terms = terms;
+			ret.cause = cause;
+			return ret;
+		}
+
+		Term[string] byName;
+		foreach(term; terms) {
+			Term* fromAA = term.pkg.pkg.name in byName;
+			if(fromAA is null) {
+				byName[term.pkg.pkg.name] = term;
+			} else {
+				Nullable!Term inter = intersectionOf(*fromAA, term);
+				enforce(!inter.isNull, format("the following terms where "
+							~ "expected to intersect\na: %s\nb: %s"
+							, *fromAA, term));
+				Term interNN = inter.get();
+				byName[interNN.pkg.pkg.name] = interNN;
+			}
+		}
+
+
+		ret.terms = terms;
+		ret.cause = cause;
+		return ret;
+	}
 }
