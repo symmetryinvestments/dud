@@ -15,7 +15,7 @@ unittest {
 	VersionRange vr1 = parseVersionRange(">=1.0.0 <=2.0.0").get();
 	assert(vr1 == vr1);
 	VersionRange vr2 = parseVersionRange(">=1.5.0 <=3.0.0").get();
-	assert(vr1 == vr2);
+	assert(vr1 != vr2);
 
 	VersionRange m = merge(vr1, vr2);
 	SetRelation sr = relation(m, parseVersionRange(">=1.0.0 <=3.0.0").get());
