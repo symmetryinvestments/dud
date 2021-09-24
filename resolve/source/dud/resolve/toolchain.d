@@ -16,9 +16,49 @@ import dud.semver.versionrange : SetRelation;
 @safe pure:
 
 struct ToolchainVersionUnion {
+@safe pure:
 	Toolchain tool;
 	bool no;
 	VersionUnion version_;
+
+	bool opEquals()(auto ref const(ToolchainVersionUnion) other) const {
+		return this.tool == other.tool
+			&& this.no == other.no
+			&& this.version_ == other.version_;
+	}
+}
+
+bool areEqual(const(ToolchainVersionUnion)[] a
+		, const(ToolchainVersionUnion)[] b)
+{
+	if(a.length != b.length) {
+		return false;
+	}
+
+	// TODO make canFind work with const
+	//const bool leftToRight = a.all!(it => canFind(b, it));
+	//const bool rightToLeft = b.all!(it => canFind(a, it));
+
+	bool leftToRight;
+	outerLR: foreach(ref it; a) {
+		foreach(ref jt; b) {
+			if(it == jt) {
+				continue outerLR;
+			}
+		}
+		return false;
+	}
+
+	outerRL: foreach(ref it; b) {
+		foreach(ref jt; a) {
+			if(it == jt) {
+				continue outerRL;
+			}
+		}
+		return false;
+	}
+
+	return true;
 }
 
 ToolchainVersionUnion dup(const(ToolchainVersionUnion) old) {

@@ -28,6 +28,12 @@ struct VersionConfigurationToolchain {
 	VersionUnion ver;
 	Confs conf;
 	ToolchainVersionUnion[] toolchains;
+
+	bool opEquals()(auto ref const(VersionConfigurationToolchain) other) const {
+		return this.ver == other.ver
+			&& this.conf == other.conf
+			&& areEqual(this.toolchains, other.toolchains);
+	}
 }
 
 VersionConfigurationToolchain dup(const(VersionConfigurationToolchain) old) {

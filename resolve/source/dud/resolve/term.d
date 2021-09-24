@@ -31,6 +31,13 @@ struct Term {
 		return format("Term(%s, %s, %s, %s)", this.pkg.pkg.name
 				, this.isRootPackage, this.isPositive, this.constraint);
 	}
+
+	bool opEquals()(auto ref const(Term) other) const {
+		return this.isPositive == other.isPositive
+			&& this.isRootPackage == other.isRootPackage
+			&& this.constraint == other.constraint
+			&& this.pkg == other.pkg;
+	}
 }
 
 Term invert(const(Term) t) {
