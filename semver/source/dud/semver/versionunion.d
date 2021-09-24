@@ -3,6 +3,7 @@ module dud.semver.versionunion;
 import std.algorithm.sorting : sort;
 import std.array : empty, front, popFront;
 import std.format : format, formattedWrite;
+
 import dud.semver.versionrange;
 import dud.semver.semver;
 
