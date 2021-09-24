@@ -50,7 +50,7 @@ struct VersionRange {
 		return !this.branch.empty;
 	}
 
-	bool opEquals(const VersionRange o) const pure @safe {
+	bool opEquals()(auto ref const VersionRange o) const pure @safe {
 		return this.isBranch() != o.isBranch()
 				? false
 				: this.isBranch()

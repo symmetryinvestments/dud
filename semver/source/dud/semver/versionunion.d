@@ -29,6 +29,17 @@ struct VersionUnion {
 		ret.ranges = this.ranges.map!(it => it.dup).array;
 		return ret;
 	}
+
+	bool opEquals()(auto ref const(VersionUnion) other) const {
+		import std.algorithm.searching : all, canFind;
+		const bool leftToRight = this.ranges
+			.all!(vr => canFind(other.ranges, vr));
+
+		const bool rightToLeft = other.ranges
+			.all!(vr => canFind(this.ranges, vr));
+
+		return leftToRight && rightToLeft;
+	}
 }
 
 VersionRange merge(const(VersionRange) a, const(VersionRange) b) {
