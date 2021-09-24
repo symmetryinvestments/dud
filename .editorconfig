@@ -13,3 +13,10 @@ max_line_length = 80
 
 [*.yaml]
 indent_style = space
+indent_size = 2
+tab_width = 2
+
+[*.yml]
+indent_style = space
+indent_size = 2
+tab_width = 2

@@ -72,4 +72,4 @@ jobs:
     - name: Run ${{ matrix.packages }}
       working-directory: ${{ matrix.packages }}
       run: |
-		  dub test :${{matrix.packages}} --root=..
+        dub test :${{matrix.packages}} --root=..
