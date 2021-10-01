@@ -58,3 +58,10 @@ Nullable!(Incompatibility) resolve(const(Incompatibility) input) {
 		? Nullable!(Incompatibility).init
 		: nullable(Incompatibility(ret));
 }
+
+bool satisfies(const(Incompatibility) incompatibility, const(Term)[] terms) {
+	import std.algorithm.searching : all, any;
+
+	return incompatibility.terms
+		.all!(it => terms.any!(t => dud.resolve.term.satisfies(t, it)));
+}
