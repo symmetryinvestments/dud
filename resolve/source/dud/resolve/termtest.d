@@ -1,5 +1,7 @@
 module dud.resolve.termtest;
 
+import std.format : format;
+
 import dud.resolve.conf;
 import dud.resolve.confs;
 import dud.resolve.positive;
@@ -23,8 +25,12 @@ unittest {
 	assert(satisfies(t1, t1));
 
 	Term t2 = t1.invert();
+
+	// Inverting does also invert isPositive which yields another inversion when
+	// running statisfies
+	t2.isPositive = IsPositive.yes;
 	assert(!allowsAny(t1.constraint.ver, t2.constraint.ver));
-	assert(!satisfies(t1, t2));
+	assert(!satisfies(t1, t2), format("\nt1: %s\nt2: %s", t1, t2));
 }
 
 private void testRelation(const(Term) a, const(Term) b, const(SetRelation) exp

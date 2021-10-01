@@ -1,5 +1,6 @@
 module dud.semver.versionunion;
 
+import std.algorithm.iteration : filter;
 import std.algorithm.sorting : sort;
 import std.array : empty, front, popFront;
 import std.format : format, formattedWrite;
@@ -14,7 +15,9 @@ struct VersionUnion {
 	VersionRange[] ranges;
 
 	this(const(VersionRange)[] rng) {
-		foreach(it; rng) {
+		foreach(it; rng
+				.filter!(jt => jt.isPossibleRange()))
+		{
 			this.insert(it);
 		}
 	}
@@ -27,7 +30,9 @@ struct VersionUnion {
 		import std.array : array;
 		import std.algorithm.iteration : map;
 		VersionUnion ret;
-		ret.ranges = this.ranges.map!(it => it.dup).array;
+		ret.ranges = this.ranges
+			.filter!(jt => jt.isPossibleRange())
+			.map!(it => it.dup).array;
 		return ret;
 	}
 

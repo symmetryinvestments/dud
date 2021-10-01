@@ -70,10 +70,12 @@ Nullable!(VersionConfigurationToolchain) intersectionOf(
 {
 	static import dud.resolve.confs;
 	static import dud.semver.setoperation;
+
 	VersionUnion ver = dud.semver.setoperation.intersectionOf(a.ver, b.ver);
 	if(ver.ranges.empty) {
 		return Nullable!(VersionConfigurationToolchain).init;
 	}
+
 	auto confs = dud.resolve.confs.intersectionOf(a.conf, b.conf);
 	auto tc = dud.resolve.toolchain.intersectionOf(a.toolchains, b.toolchains);
 

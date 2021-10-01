@@ -14,6 +14,14 @@ struct Incompatibility {
 	Term[] terms;
 }
 
+/** Given an array of Term's this functions will minimize or as known in CS
+ * terms resolve this array.
+ * The idea is to join Term's that are about the same package.
+ * For instance if we have { name: 'FOO', isPositive: true, semver: ^1.0.0 }
+ * and { name: 'FOO', isPositive: false, semver: ^1.0.0 } in the input
+ * no Term for package FOO will be in the output as the positive and negative
+ * Term cancel each other out.
+ */
 Nullable!(Incompatibility) resolve(const(Incompatibility) input) {
 	import std.algorithm.comparison : min;
 

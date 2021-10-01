@@ -46,11 +46,11 @@ struct VersionRange {
 		this.inclusiveHigh = incHigh;
 	}
 
-	bool isBranch() const pure @safe nothrow @nogc {
+	bool isBranch() const pure nothrow @nogc {
 		return !this.branch.empty;
 	}
 
-	bool opEquals()(auto ref const VersionRange o) const pure @safe {
+	bool opEquals()(auto ref const VersionRange o) const pure {
 		return this.isBranch() != o.isBranch()
 				? false
 				: this.isBranch()
@@ -63,7 +63,7 @@ struct VersionRange {
 	}
 
 	/// ditto
-	int opCmp(const VersionRange o) const pure @safe {
+	int opCmp(const VersionRange o) const pure {
 		import std.algorithm.comparison : cmp;
 		if(this.isBranch() && o.isBranch()) {
 			return cmp(this.branch, o.branch);
@@ -103,7 +103,7 @@ struct VersionRange {
 				this.inclusiveHigh);
 	}
 
-	string toString() const @safe pure {
+	string toString() const pure {
 		import std.array : appender;
 		import std.format : format;
 		if(!this.branch.empty) {
@@ -116,6 +116,20 @@ struct VersionRange {
 		}
 		return ret;
 	}
+
+	bool isPossibleRange() const pure {
+		if(this.low == SemVer.max()
+				&& this.inclusiveLow == Inclusive.no)
+		{
+			return false;
+		}
+		if(this.high == SemVer.min()
+				&& this.inclusiveHigh == Inclusive.no)
+		{
+			return false;
+		}
+		return true;
+	}
 }
 
 unittest {
@@ -124,6 +138,7 @@ unittest {
 	VersionRange s = snn.get();
 	assert(s == s);
 	assert(s.toHash() != 0);
+	assert(s.isPossibleRange());
 
 	snn = parseVersionRange("~master");
 	assert(!snn.isNull);

@@ -93,3 +93,10 @@ unittest {
 	assert(allowsAll(m, vr2));
 	assert(allowsAll(m, vr4));
 }
+
+// VersionUnion invert
+unittest {
+	VersionUnion vu1 = VersionUnion([parseVersionRange(">=1.0.0").get()]);
+	VersionUnion vu2 = invert(vu1);
+	assert(vu2.ranges.length == 1, format("%s", vu2));
+}

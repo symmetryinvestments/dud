@@ -56,8 +56,11 @@ Term invert(const(Term) t) {
 }
 
 bool satisfies(const(Term) that, const(Term) other) {
+	import std.algorithm.searching : canFind;
 	return that.pkg.pkg.name == other.pkg.pkg.name
-		&& relation(other, that) == SetRelation.subset;
+		&& canFind([SetRelation.subset, SetRelation.overlapping]
+				, relation(other, that)
+			);
 }
 
 SetRelation relation(const(Term) that, const(Term) other) {
