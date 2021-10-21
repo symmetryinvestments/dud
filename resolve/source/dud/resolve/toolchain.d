@@ -47,12 +47,12 @@ private void testToolchainEqual(const(ToolchainVersionUnion) a
 bool allowsAny(const(ToolchainVersionUnion)[] as
 		, const(ToolchainVersionUnion)[] bs)
 {
-	return bs.map!(b => {
+	return bs.map!((b) {
 				auto other = as.find!(it => it.tool == b.tool);
 				return other.empty
 					? true
 					: allowsAny(other.front, b);
-			}())
+			})
 			.all;
 }
 
@@ -71,12 +71,12 @@ bool allowsAny(const(ToolchainVersionUnion) a, const(ToolchainVersionUnion) b) {
 bool allowsAll(const(ToolchainVersionUnion)[] as
 		, const(ToolchainVersionUnion)[] bs)
 {
-	return bs.map!(b => {
+	return bs.map!((b) {
 				auto other = as.find!(it => it.tool == b.tool);
 				return other.empty
 					? true
 					: allowsAll(other.front, b);
-			}())
+			})
 			.all;
 }
 
@@ -152,10 +152,10 @@ SetRelation relation(const(ToolchainVersionUnion)[] as
 	import std.algorithm.comparison : min;
 
 	return reduce!((a, b) => min(a, b))(SetRelation.overlapping,
-		as.map!(a => {
+		as.map!((a) {
 			auto b = bs.find!(it => it.tool == a.tool);
 			return b.empty
 				? SetRelation.subset
 				: relation(a, b.front);
-		}()));
+		}));
 }
