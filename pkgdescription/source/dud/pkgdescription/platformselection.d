@@ -137,7 +137,7 @@ PackageDescriptionNoPlatform selectImpl()(const(PackageDescription) pkg,
 	static foreach(mem; FieldNameTuple!PackageDescription) {{
 		alias MemType = typeof(__traits(getMember, PackageDescription, mem));
 		static if(canFind(
-			[ isMem!"name", /*isMem!"version_",*/ isMem!"description"
+			[ isMem!"name", isMem!"version_", isMem!"description"
 			, isMem!"homepage", isMem!"authors", isMem!"copyright"
 			, isMem!"license", isMem!"systemDependencies", isMem!"targetType"
 			, isMem!"ddoxFilterArgs", isMem!"debugVersionFilters"
