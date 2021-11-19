@@ -12,6 +12,8 @@ import dud.resolve.versionconfigurationtoolchain;
 import dud.semver.versionrange;
 import dud.semver.versionunion;
 
+@safe:
+
 unittest {
 	Term t1;
 	t1.pkg.pkg.name = "Foo";
@@ -81,4 +83,27 @@ unittest {
 	auto i = Incompatibility([t1, t2]);
 	auto ir = resolve(i);
 	assert(ir.isNull(), format("%s", ir.get()));
+}
+
+unittest {
+	Term[] ta;
+	auto i = Incompatibility(ta);
+	auto ir = resolve(i);
+	assert(ir.isNull());
+}
+
+unittest {
+	Term t1;
+	t1.pkg.pkg.name = "Foo";
+	t1.isPositive = IsPositive.yes;
+	t1.constraint = VersionConfigurationToolchain(
+			VersionUnion([ parseVersionRange(">=1.0.0").get() ]),
+			Confs([Conf("", IsPositive.yes)])
+		);
+
+	auto i = Incompatibility([t1]);
+	auto ir = resolve(i);
+	assert(!ir.isNull());
+
+	assert(ir.get().isSatisfiesBy([t1]));
 }

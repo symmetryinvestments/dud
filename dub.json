@@ -33,9 +33,9 @@
         "./utils",
         "./semver",
         "./sdlang",
-        "./descriptiongetter",
+        "./descriptiongetter"
     ],
     "description": "Experimental tool for manipulating dub packages",
     "license": "LGPL3",
-    "name": "dud",
+    "name": "dud"
 }

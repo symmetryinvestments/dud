@@ -10,6 +10,8 @@ import std.algorithm.searching : any;
 import dud.resolve.positive;
 import dud.resolve.term;
 
+@safe:
+
 struct Incompatibility {
 	Term[] terms;
 }
@@ -22,7 +24,7 @@ struct Incompatibility {
  * no Term for package FOO will be in the output as the positive and negative
  * Term cancel each other out.
  */
-Nullable!(Incompatibility) resolve(const(Incompatibility) input) {
+Nullable!(Incompatibility) resolve(const(Incompatibility) input) pure {
 	import std.algorithm.comparison : min;
 
 	Term[] ret;
@@ -36,7 +38,8 @@ Nullable!(Incompatibility) resolve(const(Incompatibility) input) {
 
 		cur = dud.resolve.term.dup(it);
 
-		foreach(jdx, ref jt; input.terms[min(idx + 1, input.terms.length) .. $]) {
+		foreach(jdx, ref jt; input.terms[min(idx + 1, input.terms.length) .. $])
+		{
 			const actualJdx = idx + 1 + jdx;
 			if(actualJdx !in alreadyProcessed
 					&& input.terms[actualJdx].pkg.pkg.name ==
@@ -59,9 +62,12 @@ Nullable!(Incompatibility) resolve(const(Incompatibility) input) {
 		: nullable(Incompatibility(ret));
 }
 
-bool satisfies(const(Incompatibility) incompatibility, const(Term)[] terms) {
+bool isSatisfiesBy(const(Incompatibility) incompatibility
+		, const(Term)[] partialSolution) pure
+{
 	import std.algorithm.searching : all, any;
 
 	return incompatibility.terms
-		.all!(it => terms.any!(t => dud.resolve.term.satisfies(t, it)));
+		.all!(it => partialSolution
+			.any!(t => dud.resolve.term.satisfies(t, it)));
 }

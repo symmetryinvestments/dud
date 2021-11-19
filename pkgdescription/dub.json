@@ -1,6 +1,5 @@
 {
 	"dependencies": {
-		"dud:testdata": "*",
 		"dud:sdlang": "*",
 		"dud:exception": "*",
 		"dud:semver": "*",

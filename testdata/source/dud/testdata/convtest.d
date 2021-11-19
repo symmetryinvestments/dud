@@ -1,5 +1,3 @@
-module dud.pkgdescription.convtest;
-
 import std.stdio;
 import std.array : empty, front;
 import std.algorithm.iteration : filter, map;
@@ -11,7 +9,7 @@ import std.range : chain;
 import std.typecons : tuple;
 import std.json;
 
-import dud.testdata;
+//import dud.testdata;
 import dud.pkgdescription;
 import dud.pkgdescription.sdl;
 import dud.pkgdescription.json;
@@ -117,7 +115,10 @@ void fun2() {
 	writefln("fails %s, %d worked", failCnt, worked);
 }
 
-void main() {
+unittest {
 	fun1();
+}
+
+unittest {
 	fun2();
 }

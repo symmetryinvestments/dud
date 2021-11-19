@@ -1,4 +1,9 @@
 {
 	"name": "descriptiongetter",
-	"targetType": "library"
+	"targetType": "library",
+	"dependencies": {
+		"dud:pkgdescription": "*",
+		"dud:exception": "*",
+		"dud:semver" : "*"
+	}
 }

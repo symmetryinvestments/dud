@@ -2,8 +2,7 @@
 	"name": "sdlang",
 	"targetType": "library",
 	"dependencies" : {
-		"dud:utils" : "*",
-		"dud:testdata" : "*"
+		"dud:utils" : "*"
 	},
 	"configurations" : [
 		{ "name" : "ExcessiveTests"
