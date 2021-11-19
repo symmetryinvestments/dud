@@ -62,3 +62,7 @@ struct SemVer {
 		return ret;
 	}
 }
+
+bool less(const(SemVer) a, const(SemVer) b) pure nothrow {
+	return a < b;
+}
